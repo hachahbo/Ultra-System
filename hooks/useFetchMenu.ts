@@ -22,6 +22,20 @@ const BASE_ID = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID ?? '';
 const API_KEY = process.env.EXPO_PUBLIC_AIRTABLE_API_KEY ?? '';
 const AIRTABLE_BASE_URL = `https://api.airtable.com/v0/${BASE_ID}`;
 
+// ─── Linked-record helper ─────────────────────────────────────────────────────
+
+/**
+ * Airtable returns "Link to another record" fields as string[] (an array of
+ * Airtable record IDs, e.g. ["recXXXXXXXXXXXXXX"]) even when only one record
+ * is linked. This helper safely extracts the first element so the rest of the
+ * code can treat linked fields as plain strings.
+ */
+function resolveLinkedId(value: unknown): string {
+  if (Array.isArray(value)) return (value as string[])[0] ?? '';
+  if (typeof value === 'string') return value;
+  return '';
+}
+
 // ─── Mappers: AirtableRecord<TFields> → domain model ─────────────────────────
 
 function mapRestaurant(r: AirtableRecord<RestaurantFields>): Restaurant {
@@ -32,12 +46,27 @@ function mapCategory(r: AirtableRecord<CategoryFields>): Category {
   return { _recordId: r.id, ...r.fields };
 }
 
+/**
+ * `category_id` on Items is a linked record field → normalise to a single
+ * Airtable record ID string so composition can key on it safely.
+ */
 function mapItem(r: AirtableRecord<ItemFields>): Item {
-  return { _recordId: r.id, ...r.fields };
+  return {
+    _recordId: r.id,
+    ...r.fields,
+    category_id: resolveLinkedId(r.fields.category_id),
+  };
 }
 
+/**
+ * `item_id` on Modifiers is a linked record field → same normalisation.
+ */
 function mapModifier(r: AirtableRecord<ModifierFields>): Modifier {
-  return { _recordId: r.id, ...r.fields };
+  return {
+    _recordId: r.id,
+    ...r.fields,
+    item_id: resolveLinkedId(r.fields.item_id),
+  };
 }
 
 // ─── Airtable fetch helper ────────────────────────────────────────────────────
@@ -69,23 +98,10 @@ async function airtableFetch<TFields>(
 
 // ─── Airtable formula helpers ─────────────────────────────────────────────────
 
-/**
- * Builds an equality filter for a single field value.
- *   singleEqual('slug', 'tacos-al-amin')
- *   → '{slug}="tacos-al-amin"'
- */
 function singleEqual(field: string, value: string): string {
   return `{${field}}="${value}"`;
 }
 
-/**
- * Builds an OR filter across multiple values for the same field.
- * Falls back to a plain equality expression when only one value is given,
- * since Airtable accepts single-argument OR() but the plain form is cleaner.
- *
- *   orEqual('category_id', ['cat_1', 'cat_2'])
- *   → 'OR({category_id}="cat_1",{category_id}="cat_2")'
- */
 function orEqual(field: string, values: string[]): string {
   const conditions = values.map((v) => `{${field}}="${v}"`).join(',');
   return values.length === 1 ? conditions : `OR(${conditions})`;
@@ -95,21 +111,21 @@ function orEqual(field: string, values: string[]): string {
 
 /**
  * Fetches the full menu for a given restaurant slug from Airtable and
- * hydrates the Zustand store. Components read `menuPayload`, `isMenuLoading`,
- * and `menuError` directly from the store; this hook returns nothing.
+ * hydrates the Zustand store.
  *
  * Fetch sequence:
  *   Round 1 (parallel): Restaurants + Categories   — both filter by slug
  *   Round 2 (serial):   Items                      — filters by category_id list
  *   Round 3 (serial):   Modifiers                  — filters by item_id list
  *
- * Rounds 2 and 3 are skipped entirely (no network call) when the upstream
- * list is empty, so an empty category or item set doesn't waste requests.
+ * Composition key insight (after normalisation):
+ *   item.category_id  → Airtable record ID of the linked category  → matches cat._recordId
+ *   mod.item_id       → Airtable record ID of the linked item       → matches item._recordId
  */
 export function useFetchMenu(restaurantSlug: string): void {
   const setMenuPayload = useCartStore((s) => s.setMenuPayload);
   const setMenuLoading = useCartStore((s) => s.setMenuLoading);
-  const setMenuError = useCartStore((s) => s.setMenuError);
+  const setMenuError   = useCartStore((s) => s.setMenuError);
 
   useEffect(() => {
     if (!restaurantSlug) return;
@@ -122,7 +138,7 @@ export function useFetchMenu(restaurantSlug: string): void {
       setMenuError(null);
 
       try {
-        // ── Round 1: restaurant + categories (parallel, both keyed by slug) ──
+        // ── Round 1: restaurant + categories (parallel) ───────────────────────
         const [restaurantRecords, categoryRecords] = await Promise.all([
           airtableFetch<RestaurantFields>(
             'Restaurants',
@@ -146,7 +162,7 @@ export function useFetchMenu(restaurantSlug: string): void {
           .map(mapCategory)
           .sort((a, b) => a.sort_order - b.sort_order);
 
-        // ── Round 2: items (skip if no categories) ────────────────────────────
+        // ── Round 2: items, filtered by each category's custom category_id ────
         const categoryIds = categories.map((c) => c.category_id);
 
         const items: Item[] =
@@ -159,8 +175,10 @@ export function useFetchMenu(restaurantSlug: string): void {
                   signal
                 )
               ).map(mapItem);
+        // After mapItem, item.category_id is now the Airtable record ID of the
+        // linked category (e.g. "recABC123"), NOT the custom "cat_1" string.
 
-        // ── Round 3: modifiers (skip if no items) ─────────────────────────────
+        // ── Round 3: modifiers, filtered by each item's custom item_id ────────
         const itemIds = items.map((i) => i.item_id);
 
         const modifiers: Modifier[] =
@@ -173,30 +191,35 @@ export function useFetchMenu(restaurantSlug: string): void {
                   signal
                 )
               ).map(mapModifier);
+        // After mapModifier, mod.item_id is the Airtable record ID of the
+        // linked item (e.g. "recDEF456").
 
-        // ── Compose: modifiers → items → categories ───────────────────────────
-
-        const modsByItemId = new Map<string, Modifier[]>();
+        // ── Compose: group modifiers by item._recordId ────────────────────────
+        // mod.item_id (linked record ID) === item._recordId  ✓
+        const modsByItemRecordId = new Map<string, Modifier[]>();
         for (const mod of modifiers) {
-          const bucket = modsByItemId.get(mod.item_id) ?? [];
+          const bucket = modsByItemRecordId.get(mod.item_id) ?? [];
           bucket.push(mod);
-          modsByItemId.set(mod.item_id, bucket);
+          modsByItemRecordId.set(mod.item_id, bucket);
         }
 
-        const itemsByCategoryId = new Map<string, ItemWithModifiers[]>();
+        // ── Compose: group items by item.category_id ──────────────────────────
+        // item.category_id (linked record ID) === cat._recordId  ✓
+        const itemsByCategoryRecordId = new Map<string, ItemWithModifiers[]>();
         for (const item of items) {
           const itemWithMods: ItemWithModifiers = {
             ...item,
-            modifiers: modsByItemId.get(item.item_id) ?? [],
+            modifiers: modsByItemRecordId.get(item._recordId) ?? [],
           };
-          const bucket = itemsByCategoryId.get(item.category_id) ?? [];
+          const bucket = itemsByCategoryRecordId.get(item.category_id) ?? [];
           bucket.push(itemWithMods);
-          itemsByCategoryId.set(item.category_id, bucket);
+          itemsByCategoryRecordId.set(item.category_id, bucket);
         }
 
+        // ── Compose: attach item lists to each category ───────────────────────
         const categoriesWithItems: CategoryWithItems[] = categories.map((cat) => ({
           ...cat,
-          items: itemsByCategoryId.get(cat.category_id) ?? [],
+          items: itemsByCategoryRecordId.get(cat._recordId) ?? [],
         }));
 
         const payload: MenuPayload = { restaurant, categories: categoriesWithItems };

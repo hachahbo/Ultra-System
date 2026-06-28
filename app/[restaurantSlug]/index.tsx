@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,6 +9,9 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchMenu } from '../../hooks/useFetchMenu';
 import { useCartStore } from '../../store/useCartStore';
+import { CategoryTabs } from '../../components/CategoryTabs';
+import { ProductCard } from '../../components/ProductCard';
+import { StickyCartFooter } from '../../components/StickyCartFooter';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,20 +25,30 @@ type RouteParams = {
 export default function MenuScreen(): JSX.Element | null {
   const { restaurantSlug, table } = useLocalSearchParams<RouteParams>();
 
-  // Store actions — selected individually to avoid triggering re-renders from
-  // unrelated state slices (e.g. cart mutations).
-  const setTableId = useCartStore((s) => s.setTableId);
+  // Selective subscriptions — cart mutations do not re-render this screen
+  const setTableId    = useCartStore((s) => s.setTableId);
   const isMenuLoading = useCartStore((s) => s.isMenuLoading);
-  const menuError = useCartStore((s) => s.menuError);
-  const menuPayload = useCartStore((s) => s.menuPayload);
+  const menuError     = useCartStore((s) => s.menuError);
+  const menuPayload   = useCartStore((s) => s.menuPayload);
 
-  // Persist the table ID into the store on mount so the WhatsApp engine
-  // can embed it in the order string without prop-drilling.
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+
+  // Write the table ID into the store so the WhatsApp engine can read it
+  // without it being passed through every component in the tree.
   useEffect(() => {
     setTableId(table ?? null);
   }, [table, setTableId]);
 
-  // Trigger the full Airtable fetch sequence for this restaurant.
+  // Auto-select the first category once the payload arrives.
+  // The null-guard prevents this from overwriting the user's active tab
+  // if the component ever re-mounts while a payload is already in the store.
+  useEffect(() => {
+    if (menuPayload && activeCategoryId === null) {
+      setActiveCategoryId(menuPayload.categories[0]?.category_id ?? null);
+    }
+  }, [menuPayload, activeCategoryId]);
+
+  // Trigger the Airtable fetch sequence for this slug.
   useFetchMenu(restaurantSlug);
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -60,43 +73,65 @@ export default function MenuScreen(): JSX.Element | null {
     );
   }
 
-  // ── Guard: payload not yet set (avoids flash before first fetch resolves) ──
+  // ── Guard: payload not yet hydrated ───────────────────────────────────────
 
   if (!menuPayload) return null;
 
   const { restaurant } = menuPayload;
 
+  // Find the items for the currently selected tab.
+  // Falls back to undefined (renders an empty list) during the one-frame
+  // window before the auto-select effect fires.
+  const activeCategory = menuPayload.categories.find(
+    (cat) => cat.category_id === activeCategoryId
+  );
+
   // ── Loaded ─────────────────────────────────────────────────────────────────
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.screenContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ── Restaurant header ─────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <Text style={styles.restaurantName}>{restaurant.restaurant_name}</Text>
-        {table ? (
-          <Text style={styles.tableLabel}>Table N°{table}</Text>
-        ) : null}
-      </View>
+    // Outer View gives StickyCartFooter a bounded stacking context while
+    // the ScrollView fills the remaining vertical space.
+    <View style={styles.screen}>
 
-      {/* ── Category tabs ─ placeholder ───────────────────────────────────── */}
-      <View style={[styles.placeholder, styles.placeholderTabs]}>
-        <Text style={styles.placeholderLabel}>[ Category Tabs ]</Text>
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        // child index 1 (CategoryTabs) is pinned below the header as the
+        // user scrolls through a long product list.
+        stickyHeaderIndices={[1]}
+      >
 
-      {/* ── Product list ─ placeholder ────────────────────────────────────── */}
-      <View style={[styles.placeholder, styles.placeholderList]}>
-        <Text style={styles.placeholderLabel}>[ Product List ]</Text>
-      </View>
+        {/* ── child 0: Restaurant header ──────────────────────────────────── */}
+        <View style={styles.header}>
+          <Text style={styles.restaurantName}>{restaurant.restaurant_name}</Text>
+          {table ? (
+            <Text style={styles.tableLabel}>Table N°{table}</Text>
+          ) : null}
+        </View>
 
-      {/* ── Cart footer ─ placeholder ─────────────────────────────────────── */}
-      <View style={[styles.placeholder, styles.placeholderCart]}>
-        <Text style={styles.placeholderLabel}>[ Cart Footer ]</Text>
-      </View>
-    </ScrollView>
+        {/* ── child 1: Category tabs (sticky) ─────────────────────────────── */}
+        <CategoryTabs
+          categories={menuPayload.categories}
+          activeCategoryId={activeCategoryId ?? ''}
+          onSelectCategory={setActiveCategoryId}
+        />
+
+        {/* ── child 2: Product list ────────────────────────────────────────── */}
+        <View style={styles.productList}>
+          {activeCategory?.items.map((item) => (
+            <ProductCard key={item.item_id} item={item} />
+          ))}
+        </View>
+
+      </ScrollView>
+
+      {/* Rendered as a sibling of the ScrollView so it sits in the same
+          flex column but floats over the content via position:absolute.
+          This prevents the ScrollView from compressing when the footer
+          is visible — the absolute footer overlaps, not displaces. */}
+      <StickyCartFooter />
+
+    </View>
   );
 }
 
@@ -116,7 +151,7 @@ const COLORS = {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // Shared
+  // ── Full-screen fallback states ───────────────────────────────────────────
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -125,15 +160,11 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 24,
   },
-
-  // Loading
   loadingText: {
     fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 4,
   },
-
-  // Error
   errorTitle: {
     fontSize: 17,
     fontWeight: '600',
@@ -147,16 +178,16 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Loaded — shell
+  // ── Loaded layout ──────────────────────────────────────────────────────────
   screen: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  screenContent: {
-    paddingBottom: 120, // room for the future fixed Cart Footer
+  scrollContent: {
+    paddingBottom: 120, // keeps the last card above the StickyCartFooter
   },
 
-  // Restaurant header
+  // ── Restaurant header ──────────────────────────────────────────────────────
   header: {
     backgroundColor: COLORS.surface,
     paddingHorizontal: 20,
@@ -176,29 +207,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Placeholders
-  placeholder: {
-    margin: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderTabs: {
-    height: 48,
-  },
-  placeholderList: {
-    height: 320,
-  },
-  placeholderCart: {
-    height: 72,
-  },
-  placeholderLabel: {
-    fontSize: 13,
-    color: COLORS.border,
-    fontWeight: '500',
-    letterSpacing: 0.5,
+  // ── Product list ───────────────────────────────────────────────────────────
+  productList: {
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 16,
   },
 });
