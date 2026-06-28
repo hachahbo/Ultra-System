@@ -1,46 +1,40 @@
-// ─── Airtable raw API response wrappers ───────────────────────────────────────
+// ─── Raw Airtable REST API envelope ──────────────────────────────────────────
+// Every row Airtable returns is wrapped in this shape.
+// The app never works with these directly — use the domain models below.
 
-export interface AirtableRecord<T> {
+export interface AirtableRecord<TFields> {
   id: string;
   createdTime: string;
-  fields: T;
+  fields: TFields;
 }
 
-export interface AirtableResponse<T> {
-  records: AirtableRecord<T>[];
-  offset?: string;
+export interface AirtableListResponse<TFields> {
+  records: AirtableRecord<TFields>[];
+  offset?: string; // present when the result set is paginated
 }
 
-// ─── Table 1: Restaurants ─────────────────────────────────────────────────────
+// ─── Raw field shapes (1-to-1 with Airtable column names) ────────────────────
 
 export interface RestaurantFields {
-  slug: string;
+  slug: string;              // primary key, e.g. "tacos-al-amin"
   restaurant_name: string;
-  whatsapp_number: string;
-  currency: string;
+  whatsapp_number: string;   // e.g. "+2126XXXXXXXX"
+  currency: string;          // e.g. "MAD"
   delivery_fee: number;
   is_active: boolean;
 }
 
-export type RestaurantRecord = AirtableRecord<RestaurantFields>;
-
-// ─── Table 2: Categories ──────────────────────────────────────────────────────
-
 export interface CategoryFields {
-  category_id: string;
-  restaurant_slug: string;
+  category_id: string;       // e.g. "cat_1"
+  restaurant_slug: string;   // FK → Restaurants.slug
   name_fr: string;
   name_ar: string;
   sort_order: number;
 }
 
-export type CategoryRecord = AirtableRecord<CategoryFields>;
-
-// ─── Table 3: Items ───────────────────────────────────────────────────────────
-
 export interface ItemFields {
-  item_id: string;
-  category_id: string;
+  item_id: string;           // e.g. "item_101"
+  category_id: string;       // FK → Categories.category_id
   name_fr: string;
   name_ar: string;
   base_price: number;
@@ -49,44 +43,46 @@ export interface ItemFields {
   has_modifiers: boolean;
 }
 
-export type ItemRecord = AirtableRecord<ItemFields>;
-
-// ─── Table 4: Modifiers ───────────────────────────────────────────────────────
-
 export interface ModifierFields {
-  modifier_id: string;
-  item_id: string;
-  group_name_fr: string;
-  option_name_fr: string;
-  price_impact: number;
+  modifier_id: string;       // e.g. "mod_1"
+  item_id: string;           // FK → Items.item_id
+  group_name_fr: string;     // e.g. "Choix de Sauce"
+  option_name_fr: string;    // e.g. "Algérienne"
+  price_impact: number;      // 0.00 for free, positive for upsells
   is_required: boolean;
 }
 
-export type ModifierRecord = AirtableRecord<ModifierFields>;
+// ─── Clean domain models ──────────────────────────────────────────────────────
+// Derived from AirtableRecord by mappers in the data-fetching hook.
+// All components and the Zustand store consume these shapes exclusively.
 
-// ─── Normalised domain models (used throughout the app) ──────────────────────
-// These are the clean, flat shapes derived from AirtableRecord.fields.
-// All components and the Zustand store consume these, never raw API payloads.
-
-export interface Restaurant extends RestaurantFields {}
-
-export interface Category extends CategoryFields {}
-
-export interface Item extends ItemFields {}
-
-export interface Modifier extends ModifierFields {}
-
-// ─── Composed "menu payload" assembled after all fetches complete ─────────────
-
-export interface CategoryWithItems extends Category {
-  items: ItemWithModifiers[];
+export interface Restaurant extends RestaurantFields {
+  _recordId: string;
 }
+
+export interface Category extends CategoryFields {
+  _recordId: string;
+}
+
+export interface Item extends ItemFields {
+  _recordId: string;
+}
+
+export interface Modifier extends ModifierFields {
+  _recordId: string;
+}
+
+// ─── Composed types assembled after all four tables are fetched ───────────────
 
 export interface ItemWithModifiers extends Item {
   modifiers: Modifier[];
 }
 
+export interface CategoryWithItems extends Category {
+  items: ItemWithModifiers[];
+}
+
 export interface MenuPayload {
   restaurant: Restaurant;
-  categories: CategoryWithItems[];
+  categories: CategoryWithItems[]; // pre-sorted by sort_order
 }
