@@ -118,9 +118,19 @@ export default function MenuScreen(): JSX.Element | null {
 
         {/* ── child 2: Product list ────────────────────────────────────────── */}
         <View style={styles.productList}>
-          {activeCategory?.items.map((item) => (
-            <ProductCard key={item.item_id} item={item} />
-          ))}
+          {activeCategory && activeCategory.items.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🍽️</Text>
+              <Text style={styles.emptyTitle}>Aucun article disponible</Text>
+              <Text style={styles.emptyBody}>
+                Cette catégorie ne contient pas encore d'articles.
+              </Text>
+            </View>
+          ) : (
+            activeCategory?.items.map((item) => (
+              <ProductCard key={item.item_id} item={item} />
+            ))
+          )}
         </View>
 
       </ScrollView>
@@ -212,5 +222,28 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 8,
     gap: 16,
+  },
+
+  // ── Empty category state ───────────────────────────────────────────────────
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 64,
+    paddingHorizontal: 32,
+    gap: 8,
+  },
+  emptyIcon: {
+    fontSize: 40,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+  },
+  emptyBody: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
