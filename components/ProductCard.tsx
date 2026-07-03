@@ -67,6 +67,16 @@ export function ProductCard({ item }: ProductCardProps): JSX.Element {
   const hasModifiers = item.modifiers.length > 0;
   const groups = hasModifiers ? groupModifiers(item.modifiers) : [];
 
+  // Required groups with no selection yet — blocks confirmation.
+  const missingRequiredGroups = groups.filter(
+    (g) =>
+      g.is_required &&
+      !g.options.some((opt) =>
+        selectedModifiers.some((m) => m.modifier_id === opt.modifier_id)
+      )
+  );
+  const canConfirm = missingRequiredGroups.length === 0;
+
   // ── Card actions ───────────────────────────────────────────────────────────
 
   function handleAddPress(): void {
@@ -90,6 +100,7 @@ export function ProductCard({ item }: ProductCardProps): JSX.Element {
   }
 
   function handleConfirm(): void {
+    if (!canConfirm) return; // required groups must be satisfied first
     addLine(item, selectedModifiers);
     setIsModalVisible(false);
     setSelectedModifiers([]);
@@ -274,12 +285,19 @@ export function ProductCard({ item }: ProductCardProps): JSX.Element {
 
             {/* Confirm CTA */}
             <View style={styles.ctaWrapper}>
+              {!canConfirm && (
+                <Text style={styles.ctaHint}>
+                  Veuillez choisir : {missingRequiredGroups.map((g) => g.group_name_fr).join(', ')}
+                </Text>
+              )}
               <TouchableOpacity
-                style={styles.ctaButton}
+                style={[styles.ctaButton, !canConfirm && styles.ctaButtonDisabled]}
                 onPress={handleConfirm}
+                disabled={!canConfirm}
                 activeOpacity={0.85}
                 accessibilityRole="button"
                 accessibilityLabel="Ajouter au panier"
+                accessibilityState={{ disabled: !canConfirm }}
               >
                 <Text style={styles.ctaText}>Ajouter au panier</Text>
               </TouchableOpacity>
@@ -553,6 +571,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  ctaButtonDisabled: {
+    backgroundColor: COLORS.textDisabled,
+  },
+  ctaHint: {
+    fontSize: 12,
+    color: COLORS.requiredText,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   ctaText: {
     fontSize: 16,

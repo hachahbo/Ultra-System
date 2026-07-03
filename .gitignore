@@ -8,7 +8,14 @@ expo-env.d.ts
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+.expo/
+.vercel/
+
 # Environment variables — never commit secrets
 .env
 .env.local
 .env*.local
+.vercel
+.env*

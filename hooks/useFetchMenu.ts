@@ -76,24 +76,31 @@ async function airtableFetch<TFields>(
   formula: string,
   signal: AbortSignal
 ): Promise<AirtableRecord<TFields>[]> {
-  const url =
-    `${AIRTABLE_BASE_URL}/${encodeURIComponent(tableName)}` +
-    `?filterByFormula=${encodeURIComponent(formula)}`;
+  const all: AirtableRecord<TFields>[] = [];
+  let offset: string | undefined;
 
-  const res = await fetch(url, {
-    signal,
-    headers: {
-      Authorization: `Bearer ${API_KEY}`,
-    },
-  });
+  do {
+    const url =
+      `${AIRTABLE_BASE_URL}/${encodeURIComponent(tableName)}` +
+      `?filterByFormula=${encodeURIComponent(formula)}` +
+      (offset ? `&offset=${encodeURIComponent(offset)}` : '');
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Airtable [${tableName}] ${res.status}: ${body}`);
-  }
+    const res = await fetch(url, {
+      signal,
+      headers: { Authorization: `Bearer ${API_KEY}` },
+    });
 
-  const data: AirtableListResponse<TFields> = await res.json();
-  return data.records;
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Airtable [${tableName}] ${res.status}: ${body}`);
+    }
+
+    const data: AirtableListResponse<TFields> = await res.json();
+    all.push(...data.records);
+    offset = data.offset;
+  } while (offset);
+
+  return all;
 }
 
 // ─── Airtable formula helpers ─────────────────────────────────────────────────
@@ -126,9 +133,14 @@ export function useFetchMenu(restaurantSlug: string): void {
   const setMenuPayload = useCartStore((s) => s.setMenuPayload);
   const setMenuLoading = useCartStore((s) => s.setMenuLoading);
   const setMenuError   = useCartStore((s) => s.setMenuError);
+  const resetMenu      = useCartStore((s) => s.resetMenu);
+
 
   useEffect(() => {
     if (!restaurantSlug) return;
+
+    // Reset cart + menu so a slug change never shows stale data.
+    resetMenu();
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -235,5 +247,5 @@ export function useFetchMenu(restaurantSlug: string): void {
     fetchMenu();
 
     return () => controller.abort();
-  }, [restaurantSlug, setMenuPayload, setMenuLoading, setMenuError]);
+  }, [restaurantSlug, setMenuPayload, setMenuLoading, setMenuError, resetMenu]);
 }

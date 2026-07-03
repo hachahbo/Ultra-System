@@ -1,44 +1,22 @@
 import React from 'react';
-import {
-  Alert,
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowRight, ShoppingBag } from 'lucide-react-native';
 import { useCartStore } from '../store/useCartStore';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function StickyCartFooter(): JSX.Element | null {
+  const router = useRouter();
+  const { restaurantSlug } = useLocalSearchParams<{ restaurantSlug: string }>();
   const total = useCartStore((s) => s.total);
   const totalItemCount = useCartStore((s) => s.totalItemCount);
-  const generateWhatsAppLink = useCartStore((s) => s.generateWhatsAppLink);
 
   // Nothing in the cart — render nothing so the menu is fully visible.
   if (totalItemCount === 0) return null;
 
-  async function handleCheckout(): Promise<void> {
-    const url = generateWhatsAppLink();
-
-    // generateWhatsAppLink() returns null only when cart is empty or restaurant
-    // context is missing — both are impossible here, but we guard defensively.
-    if (!url) return;
-
-    const supported = await Linking.canOpenURL(url);
-
-    if (!supported) {
-      Alert.alert(
-        'WhatsApp introuvable',
-        'Veuillez installer WhatsApp pour passer votre commande.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    await Linking.openURL(url);
+  function handleCheckout(): void {
+    router.push({ pathname: '/[restaurantSlug]/checkout', params: { restaurantSlug } });
   }
 
   const articleLabel = totalItemCount === 1 ? 'article' : 'articles';

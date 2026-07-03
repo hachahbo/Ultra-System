@@ -22,6 +22,18 @@ export interface RestaurantFields {
   currency: string;          // e.g. "MAD"
   delivery_fee: number;
   is_active: boolean;
+
+  // ── Website content (optional — filled by the owner in Airtable) ───────────
+  tagline?: string;
+  about_text?: string;
+  hero_image_url?: string;
+  logo_url?: string;
+  address?: string;
+  city?: string;
+  opening_hours?: string;
+  phone?: string;
+  instagram_url?: string;
+  facebook_url?: string;
 }
 
 export interface CategoryFields {

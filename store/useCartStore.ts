@@ -59,6 +59,7 @@ interface CartState {
   setMenuPayload: (payload: MenuPayload) => void;
   setMenuLoading: (loading: boolean) => void;
   setMenuError: (error: string | null) => void;
+  resetMenu: () => void;
 
   // ── Actions: session ──────────────────────────────────────────────────────
   setRestaurant: (restaurant: Restaurant) => void;
@@ -196,6 +197,18 @@ export const useCartStore = create<CartState>((set, get) => ({
   setMenuLoading: (isMenuLoading: boolean) => set({ isMenuLoading }),
 
   setMenuError: (menuError: string | null) => set({ menuError }),
+
+  resetMenu: () =>
+    set({
+      menuPayload: null,
+      restaurant: null,
+      lines: [],
+      subtotal: 0,
+      deliveryFee: 0,
+      total: 0,
+      totalItemCount: 0,
+      menuError: null,
+    }),
 
   // ── Session actions ────────────────────────────────────────────────────────
 
