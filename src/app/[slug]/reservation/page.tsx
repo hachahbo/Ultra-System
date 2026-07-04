@@ -1,0 +1,28 @@
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { getRestaurantBySlug } from "@/lib/menu";
+import { ReservationForm } from "@/components/site/reservation-form";
+
+export const metadata: Metadata = { title: "Réserver une table" };
+
+export default async function ReservationPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const restaurant = await getRestaurantBySlug(slug);
+  if (!restaurant) notFound();
+
+  return (
+    <div className="mx-auto max-w-lg px-4 py-8">
+      <h1 className="font-display text-3xl font-semibold tracking-tight">
+        Réserver une table
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Le restaurant confirme votre réservation par téléphone ou WhatsApp.
+      </p>
+      <ReservationForm slug={restaurant.slug} />
+    </div>
+  );
+}

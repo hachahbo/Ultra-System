@@ -106,15 +106,15 @@ Now that v1 includes **authentication + an owner dashboard**, use **Supabase** a
 
 ---
 
-## 5.5 Front-End design source (Figma)
+## 5.5 Front-End design source   .claude/Design/HomePage Palette.png
 
-The public site's visual design lives in Figma. Build the front end to match it.
+
 
 - **File key:** `xix3eKReKkjtAYbKSNPFGr` · **Page:** "Page 1" · **Main frame:** `HomePage`, node **`1:3`** (desktop, 1512px wide).
 - **What's designed:** only the **HomePage** (a long marketing/landing page) with **placeholder content** (Lorem ipsum, sample dishes). The Menu, Reservation, Contact, and About pages are **not designed yet** — derive them from the HomePage's visual language (same nav, colors, type scale, spacing, components).
 - **HomePage sections (top → bottom):** sticky nav + "Book a table" CTA → hero ("We provide the best food for you") → "Our Special Dishes" (dish cards with photo + price) → "Welcome to Our Restaurant" (about blurb) → "Our Expert Chef" → "Our Happy Customers" (testimonials) → footer.
 
-**Nav reconciliation (design vs this plan):** the Figma nav reads *Menu · Gallery · About · Contact · Events · Book a table*.
+**Nav reconciliation (design vs this plan):** ts *Menu · Gallery · About · Contact · Events · Book a table*.
 - `Book a table` → **Reservation** flow (§3D).
 - `About` → **Who We Are** page.
 - `Gallery` → optional simple photo grid (cheap; keep if desired).
@@ -122,7 +122,6 @@ The public site's visual design lives in Figma. Build the front end to match it.
 
 **Two hard front-end requirements the current design doesn't cover yet:**
 1. **Mobile-first is mandatory.** The design is desktop-only, but the whole product is scanned from a phone (QR at table / in delivery bag). Every page must be built mobile-first and look right at ~380px before desktop. Don't ship desktop-only.
-2. **Exact tokens must come from Figma, not guesses.** Precise hex colors and font families could not be exported here (the Figma Dev Mode export hit the Starter-plan MCP rate limit). Before pixel-perfect build, pull tokens from **Figma Dev Mode** — call `get_design_context` on node `1:3` once the limit resets (or on a paid plan), or read them from the Figma inspect panel. **Do not invent hex values or fonts.**
 
 **Design → code mapping:** build these as reusable components (shadcn/ui + Tailwind): `NavBar` (with Book-a-table CTA), `Hero`, `DishCard` (photo, name, price → links into the ordering flow), `SectionHeading`, `TestimonialCard`, `Footer`. The dish cards and Menu link into the ordering flow (§3B/C); "Book a table" links into the reservation flow (§3D). Content on the live site comes from the DB (§8), not hard-coded placeholders.
 
@@ -201,7 +200,7 @@ Menu is served to the public site as JSON; names stay as language objects so the
 5. **M5 — Dine-in QR** (`?table=`, no phone, table on kitchen view).
 6. **M6 — Reservation flow** (public form → `reservations` → dashboard confirm/decline).
 7. **M7 — Menu management in dashboard** (edit items/prices/photos, toggle stock).
-8. **M8 — Site pages + design polish.** Build Home to match the Figma HomePage (node `1:3`); derive Menu, Reservation, Contact, and About from its visual language. **Pull exact color/font tokens from Figma Dev Mode first** (§5.5) and set them as Tailwind theme tokens before styling. Everything **mobile-first**. Park the Events nav item; Gallery optional.
+8. **M8 — Site pages + design polish.** Build Home to match the .claude/Design/HomePage Palette.png HomePage (node `1:3`); derive Menu, Reservation, Contact, and About from its visual language.  (§5.5) and set them as Tailwind theme tokens before styling. Everything **mobile-first**. Park the Events nav item; Gallery optional.
 
 Ship **M1–M2 to a real owner before building the rest.** If phone numbers aren't landing, nothing else matters.
 
