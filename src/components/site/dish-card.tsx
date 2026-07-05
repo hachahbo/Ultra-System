@@ -18,16 +18,17 @@ export function DishCard({
   return (
     <Link
       href={`/${slug}/menu`}
-      className="group relative flex flex-col items-center rounded-xl bg-card p-5 pt-14 text-center shadow-sm ring-1 ring-border/60 transition-shadow hover:shadow-md"
+      className="group relative mt-16 flex flex-col items-center rounded-3xl bg-background p-6 pt-20 text-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)]"
     >
-      <div className="absolute -top-10">
-        <div className="relative size-24 overflow-hidden rounded-full ring-4 ring-background transition-transform duration-300 group-hover:scale-105">
+      {/* Floating circular image */}
+      <div className="absolute -top-16 z-10 flex h-32 w-32 items-center justify-center">
+        <div className="relative size-full overflow-hidden rounded-full shadow-lg transition-transform duration-500 group-hover:scale-105">
           {item.image_url ? (
             <Image
               src={item.image_url}
               alt={item.name_fr}
               fill
-              sizes="96px"
+              sizes="128px"
               className="object-cover"
             />
           ) : (
@@ -36,13 +37,19 @@ export function DishCard({
             </div>
           )}
         </div>
-        <span className="absolute -right-1 -top-1 rounded-full bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
-          {formatPrice(item.base_price, currency)}
-        </span>
+        
+        {/* Floating price badge */}
+        <div className="absolute -right-2 top-4 z-20 flex size-12 items-center justify-center rounded-full bg-[#111827] text-sm font-bold text-white shadow-xl ring-4 ring-background">
+          {formatPrice(item.base_price, currency).replace(".00", "")}
+        </div>
       </div>
-      <p className="mt-2 font-display text-lg font-semibold">{item.name_fr}</p>
+
+      <h3 className="mt-2 font-display text-xl font-bold text-foreground">
+        {item.name_fr}
+      </h3>
+      
       {item.description_fr && (
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground/80">
           {item.description_fr}
         </p>
       )}

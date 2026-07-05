@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Menu as MenuIcon } from "lucide-react";
+import { Menu as MenuIcon, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/sheet";
 
 const links = [
-  { href: "", label: "Accueil" },
   { href: "/menu", label: "Menu" },
-  { href: "/about", label: "Qui sommes-nous" },
+  { href: "/events", label: "Events" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -33,8 +34,9 @@ export function NavBar({
   const base = `/${slug}`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Left: Logo */}
         <Link href={base} className="flex items-center gap-2.5 min-w-0">
           {logoUrl ? (
             <Image
@@ -46,32 +48,38 @@ export function NavBar({
             />
           ) : (
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-lg font-bold text-primary-foreground">
-              {name.charAt(0)}
+              <UtensilsCrossed className="size-5" />
             </span>
           )}
-          <span className="truncate font-display text-lg font-semibold">
+          <span className="truncate font-display text-xl font-bold tracking-tight text-foreground">
             {name}
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        {/* Center: Navigation Links */}
+        <nav className="hidden items-center gap-8 md:flex">
           {links.map((l) => (
             <Link
               key={l.href}
               href={`${base}${l.href}`}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium text-foreground/70 transition-colors hover:text-foreground"
             >
               {l.label}
             </Link>
           ))}
-          <Button asChild size="sm">
-            <Link href={`${base}/reservation`}>Réserver une table</Link>
-          </Button>
         </nav>
 
+        {/* Right: CTA Button */}
+        <div className="hidden items-center gap-2 md:flex">
+          <Button asChild size="lg" className="rounded-md px-8 shadow-md">
+            <Link href={`${base}/reservation`}>Book a table</Link>
+          </Button>
+        </div>
+
+        {/* Mobile Menu */}
         <div className="flex items-center gap-2 md:hidden">
-          <Button asChild size="sm">
-            <Link href={`${base}/reservation`}>Réserver</Link>
+          <Button asChild size="sm" className="rounded-md shadow-md">
+            <Link href={`${base}/reservation`}>Book</Link>
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -83,7 +91,7 @@ export function NavBar({
               <SheetHeader>
                 <SheetTitle className="font-display">{name}</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 px-4">
+              <nav className="flex flex-col gap-1 px-4 mt-6">
                 {links.map((l) => (
                   <Link
                     key={l.href}
@@ -94,12 +102,12 @@ export function NavBar({
                     {l.label}
                   </Link>
                 ))}
-                <Button asChild className="mt-3">
+                <Button asChild className="mt-6 rounded-md shadow-md">
                   <Link
                     href={`${base}/reservation`}
                     onClick={() => setOpen(false)}
                   >
-                    Réserver une table
+                    Book a table
                   </Link>
                 </Button>
               </nav>
