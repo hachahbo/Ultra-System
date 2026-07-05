@@ -15,34 +15,32 @@ import { ItemDialog } from "./item-dialog";
 
 const listVariants: Variants = {
   hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
+  show: { transition: { staggerChildren: 0.07 } },
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 18 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] as const },
   },
-  exit: { opacity: 0, y: 15, transition: { duration: 0.18 } },
+  exit: { opacity: 0, y: 18, transition: { duration: 0.18 } },
 };
 
 const cartBarVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 24, scale: 0.96 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.22, ease: "easeOut" as const },
+    scale: 1,
+    transition: { duration: 0.26, ease: "easeOut" as const },
   },
   exit: {
     opacity: 0,
-    y: 20,
-    transition: { duration: 0.16 },
+    y: 24,
+    scale: 0.96,
+    transition: { duration: 0.18 },
   },
 };
 
@@ -60,6 +58,10 @@ export function MenuBrowser({
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const { setContext, add, lines } = useCart();
   const prefersReducedMotion = useReducedMotion();
+
+  // Defer motion styles until after hydration to avoid SSR mismatch.
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
 
   // Bind cart to this restaurant; ?table= marks dine-in.
   useEffect(() => {
@@ -93,10 +95,9 @@ export function MenuBrowser({
   return (
     <>
       {/* ── Category Tabs ─────────────────────────────────── */}
-      <div className="sticky top-16 z-30 -mx-4 mt-6 overflow-x-auto bg-background/90 px-4 py-3 backdrop-blur-md [scrollbar-width:none]">
+      <div className="sticky top-16 z-30 -mx-4 mt-4 overflow-x-auto bg-background/90 px-4 py-3 backdrop-blur-md [scrollbar-width:none]">
         <div className="flex gap-2 w-max">
           <CategoryPill
-            id="all"
             active={activeCategory === null}
             onClick={() => setActiveCategory(null)}
           >
@@ -105,7 +106,6 @@ export function MenuBrowser({
           {categories.map((c) => (
             <CategoryPill
               key={c.id}
-              id={c.id}
               active={activeCategory === c.id}
               onClick={() => setActiveCategory(c.id)}
             >
@@ -116,75 +116,82 @@ export function MenuBrowser({
       </div>
 
       {/* ── Item Grid ─────────────────────────────────────── */}
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="popLayout" initial={false}>
         <motion.ul
           key={activeCategory ?? "all"}
-          className="mt-5 space-y-3 pb-28"
-          variants={prefersReducedMotion ? {} : listVariants}
-          initial="hidden"
+          className="mt-4 space-y-3 pb-32"
+          variants={isHydrated && !prefersReducedMotion ? listVariants : undefined}
+          initial={isHydrated ? "hidden" : false}
           animate="show"
         >
           {visibleItems.map((item) => (
             <motion.li
               key={item.id}
-              variants={prefersReducedMotion ? {} : cardVariants}
+              variants={prefersReducedMotion ? undefined : cardVariants}
               layout
-              className={`group relative flex items-stretch gap-0 overflow-hidden rounded-2xl bg-card ring-1 ring-border/60 transition-shadow duration-200 hover:shadow-md hover:ring-border ${
-                item.in_stock ? "cursor-pointer" : "opacity-55"
+              className={`group relative overflow-hidden rounded-2xl bg-[#1C1C1E] shadow-lg ${
+                item.in_stock ? "cursor-pointer" : "opacity-50"
               }`}
               onClick={() => item.in_stock && handleAdd(item)}
             >
-              {/* ── Image ── */}
-              <div className="relative w-24 shrink-0 sm:w-28">
+              {/* ── Top: Hero Image ── */}
+              <div className="relative h-44 w-full overflow-hidden">
                 {item.image_url ? (
                   <Image
                     src={item.image_url}
                     alt={item.name_fr}
                     fill
-                    sizes="112px"
-                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-accent text-accent-foreground">
-                    <UtensilsCrossed className="size-6 opacity-50" />
+                  <div className="flex h-full w-full items-center justify-center bg-[#2C2C2E]">
+                    <UtensilsCrossed className="size-10 text-white/20" />
+                  </div>
+                )}
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] via-[#1C1C1E]/20 to-transparent" />
+                
+                {/* Out of stock badge */}
+                {!item.in_stock && (
+                  <div className="absolute left-3 top-3">
+                    <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white/70 backdrop-blur-sm">
+                      Épuisé
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* ── Content ── */}
-              <div className="flex flex-1 flex-col justify-between gap-1 px-4 py-3">
-                <div>
-                  <p className="font-semibold leading-snug tracking-tight text-foreground">
+              {/* ── Bottom: Content ── */}
+              <div className="flex items-end justify-between px-4 pb-4 pt-3">
+                <div className="flex-1 min-w-0 pr-3">
+                  <p className="font-semibold leading-snug tracking-tight text-white">
                     {item.name_fr}
                   </p>
                   {item.description_fr && (
-                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-white/50">
                       {item.description_fr}
                     </p>
                   )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-primary">
+                  <p className="mt-2 text-base font-bold text-[#FF6B35]">
                     {formatPrice(item.base_price, restaurant.currency)}
-                  </span>
-                  {item.in_stock ? (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform duration-150 group-hover:scale-110">
-                      <Plus className="size-4" aria-hidden />
-                    </div>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px]">
-                      Épuisé
-                    </Badge>
-                  )}
+                  </p>
                 </div>
+
+                {/* Add button */}
+                {item.in_stock && (
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#FF6B35] shadow-lg shadow-[#FF6B35]/30 transition-transform duration-150 group-active:scale-95">
+                    <Plus className="size-5 text-white" aria-hidden />
+                  </div>
+                )}
               </div>
             </motion.li>
           ))}
 
           {visibleItems.length === 0 && (
             <motion.li
-              variants={prefersReducedMotion ? {} : cardVariants}
-              className="py-16 text-center text-sm text-muted-foreground"
+              variants={prefersReducedMotion ? undefined : cardVariants}
+              className="rounded-2xl bg-[#1C1C1E] py-16 text-center text-sm text-white/40"
             >
               Aucun plat dans cette catégorie.
             </motion.li>
@@ -204,22 +211,25 @@ export function MenuBrowser({
       <AnimatePresence>
         {count > 0 && (
           <motion.div
-            variants={prefersReducedMotion ? {} : cartBarVariants}
+            variants={prefersReducedMotion ? undefined : cartBarVariants}
             initial="hidden"
             animate="show"
             exit="exit"
-            className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-lg"
+            className="fixed inset-x-4 bottom-5 z-40 mx-auto max-w-lg"
           >
             <Link
               href={`/${restaurant.slug}/checkout`}
-              className="flex w-full items-center justify-between rounded-2xl bg-foreground px-5 py-3.5 text-sm font-semibold text-background shadow-xl transition-opacity hover:opacity-90"
+              className="flex w-full items-center justify-between rounded-2xl bg-[#FF6B35] px-5 py-4 text-sm font-bold text-white shadow-2xl shadow-[#FF6B35]/40 transition-opacity hover:opacity-90"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
+                <span className="flex size-7 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
+                  {count}
+                </span>
                 <ShoppingBag className="size-4" />
-                {count} article{count > 1 ? "s" : ""}
+                <span>Voir le panier</span>
               </span>
-              <span>
-                {formatPrice(subtotal, restaurant.currency)} &rarr;
+              <span className="font-bold">
+                {formatPrice(subtotal, restaurant.currency)}
               </span>
             </Link>
           </motion.div>
@@ -232,12 +242,10 @@ export function MenuBrowser({
 // ─── Category Pill ──────────────────────────────────────────────────────────
 
 function CategoryPill({
-  id,
   active,
   onClick,
   children,
 }: {
-  id: string;
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
@@ -246,19 +254,19 @@ function CategoryPill({
     <button
       type="button"
       onClick={onClick}
-      className="relative shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 cursor-pointer"
+      className="relative shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
       {active && (
         <motion.span
           layoutId="category-pill-bg"
-          className="absolute inset-0 rounded-full bg-foreground"
-          transition={{ type: "spring", stiffness: 400, damping: 34 }}
+          className="absolute inset-0 rounded-full bg-[#1C1C1E]"
+          transition={{ type: "spring" as const, stiffness: 400, damping: 34 }}
         />
       )}
       <span
         className={`relative z-10 transition-colors duration-200 ${
-          active ? "text-background" : "text-muted-foreground hover:text-foreground"
+          active ? "text-white" : "text-muted-foreground hover:text-foreground"
         }`}
       >
         {children}
