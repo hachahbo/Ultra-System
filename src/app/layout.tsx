@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const display = Playfair_Display({
+const display = DM_Serif_Display({
+  weight: "400",
   variable: "--font-display",
   subsets: ["latin"],
 });
@@ -31,10 +33,18 @@ export default function RootLayout({
     <html
       lang="fr"
       className={`${display.variable} ${sans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans">
-        {children}
-        <Toaster position="top-center" richColors />
+      <body className="min-h-full flex flex-col font-sans transition-colors duration-500">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false} // Allow CSS transitions when switching themes
+        >
+          {children}
+          <Toaster position="top-center" richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

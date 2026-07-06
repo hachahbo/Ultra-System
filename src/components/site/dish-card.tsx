@@ -18,38 +18,38 @@ export function DishCard({
   return (
     <Link
       href={`/${slug}/menu`}
-      className="group relative mt-16 flex flex-col items-center rounded-3xl bg-background p-6 pt-20 text-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)]"
+      className="group relative mt-20 flex flex-col items-center rounded-3xl bg-white dark:bg-[#0f110e] p-6 pt-24 text-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)] dark:hover:shadow-[0_12px_40px_rgb(0,0,0,0.5)]"
     >
-      {/* Floating circular image */}
-      <div className="absolute -top-16 z-10 flex h-32 w-32 items-center justify-center">
-        <div className="relative size-full overflow-hidden rounded-full shadow-lg transition-transform duration-500 group-hover:scale-105">
+      {/* Floating image - transparent plates pop out naturally */}
+      <div className="absolute -top-20 z-10 flex h-40 w-40 items-center justify-center">
+        <div className="relative size-full transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl">
           {item.image_url ? (
             <Image
               src={item.image_url}
               alt={item.name_fr}
               fill
-              sizes="128px"
-              className="object-cover"
+              sizes="160px"
+              className="object-contain"
             />
           ) : (
-            <div className="grid size-full place-items-center bg-accent text-accent-foreground">
+            <div className="grid size-full place-items-center overflow-hidden rounded-full bg-accent text-accent-foreground shadow-lg">
               <UtensilsCrossed className="size-8" />
             </div>
           )}
         </div>
         
         {/* Floating price badge */}
-        <div className="absolute -right-2 top-4 z-20 flex size-12 items-center justify-center rounded-full bg-[#111827] text-sm font-bold text-white shadow-xl ring-4 ring-background">
+        <div className="absolute right-0 top-8 z-20 flex size-14 items-center justify-center rounded-full bg-[#111827] dark:bg-primary text-sm font-bold text-white shadow-xl ring-4 ring-white dark:ring-[#0f110e]">
           {formatPrice(item.base_price, currency).replace(".00", "")}
         </div>
       </div>
 
-      <h3 className="mt-2 font-display text-xl font-bold text-foreground">
+      <h3 className="mt-2 font-display text-xl font-bold text-[#111827] dark:text-white">
         {item.name_fr}
       </h3>
       
       {item.description_fr && (
-        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground/80">
+        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground dark:text-gray-300">
           {item.description_fr}
         </p>
       )}

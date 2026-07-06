@@ -128,7 +128,7 @@ export function MenuBrowser({
             <motion.li
               key={item.id}
               variants={prefersReducedMotion ? undefined : cardVariants}
-              layout
+              suppressHydrationWarning
               className={`group relative overflow-hidden rounded-2xl bg-[#1C1C1E] shadow-lg ${
                 item.in_stock ? "cursor-pointer" : "opacity-50"
               }`}

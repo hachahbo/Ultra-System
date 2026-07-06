@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Menu as MenuIcon, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
@@ -70,7 +71,8 @@ export function NavBar({
         </nav>
 
         {/* Right: CTA Button */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-4 md:flex">
+          <ThemeToggle />
           <Button asChild size="lg" className="rounded-md px-8 shadow-md">
             <Link href={`${base}/reservation`}>Book a table</Link>
           </Button>
@@ -78,6 +80,7 @@ export function NavBar({
 
         {/* Mobile Menu */}
         <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
           <Button asChild size="sm" className="rounded-md shadow-md">
             <Link href={`${base}/reservation`}>Book</Link>
           </Button>
