@@ -118,13 +118,11 @@ export default async function HomePage({
           <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-4 md:flex-row lg:px-8">
             {/* Left Image */}
             <div className="relative w-full md:w-1/2 flex justify-center">
-              <div className="aspect-square w-full max-w-[380px] overflow-hidden rounded-full shadow-2xl">
                 <img 
-                  src="/images/welcome-chicken.png" 
+                  src="/images/dish-2 1.png" 
                   alt="Chicken dish" 
-                  className="h-full w-full scale-[1.25] object-cover object-center"
+                  className="w-[80%] max-w-[400px] object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
                 />
-              </div>
             </div>
 
             {/* Right Content */}
