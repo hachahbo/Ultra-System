@@ -39,7 +39,7 @@ export function DishCard({
         </div>
         
         {/* Floating price badge */}
-        <div className="absolute right-0 top-8 z-20 flex size-14 items-center justify-center rounded-full bg-[#111827] dark:bg-primary text-sm font-bold text-white shadow-xl ring-4 ring-white dark:ring-[#0f110e]">
+        <div className="absolute right-0 top-8 z-20 flex size-14 items-center justify-center rounded-full bg-[#111827] dark:bg-black text-sm font-bold text-white shadow-xl p-2 ">
           {formatPrice(item.base_price, currency).replace(".00", "")}
         </div>
       </div>
