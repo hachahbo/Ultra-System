@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 export function HeroContent({ base }: { base: string }) {
-  const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+  const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
     <div className="flex w-full flex-col justify-center lg:w-1/2">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Menu as MenuIcon, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -35,7 +36,12 @@ export function NavBar({
   const base = `/${slug}`;
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4">
+    <motion.header 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 1.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Logo */}
         <Link href={base} className="flex items-center gap-2.5 min-w-0">
@@ -118,6 +124,6 @@ export function NavBar({
           </Sheet>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

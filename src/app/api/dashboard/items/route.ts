@@ -39,10 +39,12 @@ export async function POST(request: Request) {
       category_id: parsed.data.category_id,
       name_fr: parsed.data.name_fr,
       name_ar: parsed.data.name_ar || null,
+      name_es: parsed.data.name_es || null,
       description_fr: parsed.data.description_fr || null,
       base_price: parsed.data.base_price,
       in_stock: parsed.data.in_stock,
       image_url: parsed.data.image_url ?? null,
+      customization_groups: parsed.data.customization_groups ?? [],
     })
     .select("id")
     .single();

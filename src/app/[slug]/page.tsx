@@ -25,21 +25,6 @@ export default async function HomePage({
     <>
       {/* Hero Section Redesign */}
       <section className="relative w-full overflow-hidden bg-background">
-        {/* Subtle Background Rings (Left) */}
-        <div className="pointer-events-none absolute right-[30%] top-[10%]   w-full max-w-[400px]  dark:invert ">
-          <img src="/images/Group (3).svg" alt="" className="h-full w-full object-contain object-left-top" />
-        </div>
-        
-        {/* Subtle Background Botanical Leaves (Top Right) */}
-        <div className="pointer-events-none absolute right-[5%] top-[3%] w-48  dark:invert  sm:w-64">
-           <img src="/images/Group (1).svg" alt="" className="h-auto w-full" />
-        </div>
-
-        {/* Subtle Background Botanical Leaves (Bottom Right) */}
-        <div className="pointer-events-none absolute right-[-2%] bottom-[13%] w-32 dark:invert sm:w-64 z-0">
-           <img src="/images/Group (2).svg" alt="" className="h-auto w-full" />
-        </div>
-
         <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-4 py-16 sm:px-6 lg:flex-row lg:px-8 lg:py-24">
           
           {/* Left Content (Animated Client Component) */}

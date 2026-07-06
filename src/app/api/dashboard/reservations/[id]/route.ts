@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
-const patchSchema = z.object({
-  status: z.enum(["new", "confirmed", "declined"]),
-});
+const patchSchema = z
+  .object({
+    status: z.enum(["new", "confirmed", "declined"]),
+    assigned_table_number: z.string().trim().max(10).nullable(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "Aucune modification");
 
 export async function PATCH(
   request: Request,
@@ -26,7 +30,7 @@ export async function PATCH(
 
   const { data, error } = await supabase
     .from("reservations")
-    .update({ status: parsed.data.status })
+    .update(parsed.data)
     .eq("id", id)
     .select("id")
     .maybeSingle();

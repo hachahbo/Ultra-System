@@ -89,6 +89,12 @@ export async function POST(request: Request) {
     input.type === "delivery" ? Number(restaurant.base_delivery_fee) : 0;
   const total = subtotal + deliveryFee;
 
+  // Guard against a silent zero-revenue order (Overview/Analytics both sum
+  // `orders.total` directly — a bug here would hide real revenue for weeks).
+  if (total <= 0) {
+    return NextResponse.json({ error: "Commande invalide" }, { status: 400 });
+  }
+
   // The capture: upsert the customer so the phone lands in the DB (§2).
   let customerId: string | null = null;
   if (input.type === "delivery" && input.customer_phone) {

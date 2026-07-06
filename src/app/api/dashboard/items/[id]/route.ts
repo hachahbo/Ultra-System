@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { customizationGroupSchema } from "@/lib/schemas";
 
 const patchSchema = z
   .object({
     category_id: z.string().uuid(),
     name_fr: z.string().trim().min(1).max(120),
     name_ar: z.string().trim().max(120).nullable(),
+    name_es: z.string().trim().max(120).nullable(),
     description_fr: z.string().trim().max(300).nullable(),
-    base_price: z.coerce.number().min(0).max(10000),
+    base_price: z.number().min(0).max(10000),
     in_stock: z.boolean(),
     image_url: z.string().url().nullable(),
+    sort_order: z.number().int().min(0),
+    customization_groups: z.array(customizationGroupSchema).max(10),
   })
   .partial();
 

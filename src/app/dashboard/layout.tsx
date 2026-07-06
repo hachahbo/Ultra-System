@@ -17,6 +17,14 @@ export default async function DashboardLayout({
   // here, which would loop).
   if (!ctx) redirect("/");
 
+  // Forced password change takes over until done. This route lives OUTSIDE
+  // /dashboard on purpose — nesting it here would make this same layout
+  // redirect to itself on every render (infinite redirect loop). API routes
+  // re-check the flag server-side too (requireOwner/requireSession in
+  // src/lib/dashboard.ts), since this redirect alone can be bypassed by a
+  // direct fetch.
+  if (ctx.profile.must_change_password) redirect("/change-password");
+
   return (
     <DashboardProviders>
       <div className="flex min-h-dvh flex-col">

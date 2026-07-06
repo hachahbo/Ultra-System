@@ -18,14 +18,17 @@ export default async function MenuPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 pb-28">
-      <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-        Menu
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+        {menu.restaurant.name}
+      </p>
+      <h1 className="mt-1.5 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+        Notre carte
       </h1>
-      {table && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          Table {table} — commandez directement depuis votre téléphone.
-        </p>
-      )}
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {table
+          ? `Table ${table} — commandez directement depuis votre téléphone.`
+          : "Une sélection de plats préparés avec soin. Touchez un plat pour l’ajouter."}
+      </p>
       <MenuBrowser menu={menu} table={table ?? null} />
     </div>
   );

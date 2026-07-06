@@ -1,22 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BarChart3,
   CalendarDays,
   ChefHat,
+  LayoutDashboard,
+  LayoutGrid,
   LogOut,
+  MoreHorizontal,
+  Settings,
   Users,
   UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/client";
 
-const tabs = [
-  { href: "/dashboard", label: "Commandes", icon: ChefHat, exact: true },
+type Tab = {
+  href: string;
+  label: string;
+  icon: typeof ChefHat;
+  exact?: boolean;
+  ownerOnly?: boolean;
+};
+
+// Primary tabs — always inline, both in the bottom tab bar (mobile) and the
+// top nav (desktop). "Aperçu" and "Menu" are owner-only; staff only run
+// orders + reservations.
+const primaryTabs: Tab[] = [
+  { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true, ownerOnly: true },
+  { href: "/dashboard/orders", label: "Commandes", icon: ChefHat },
   { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays },
-  { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed },
-  { href: "/dashboard/customers", label: "Clients", icon: Users, ownerOnly: true },
+  { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, ownerOnly: true },
+];
+
+// Owner-only secondary links, tucked behind "Plus" so the bottom bar on a
+// 380px phone stays at 5 items max.
+const moreLinks: Tab[] = [
+  { href: "/dashboard/customers", label: "Clients", icon: Users },
+  { href: "/dashboard/analytics", label: "Statistiques", icon: BarChart3 },
+  { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid },
+  { href: "/dashboard/settings", label: "Réglages", icon: Settings },
 ];
 
 export function DashboardNav({
@@ -28,6 +61,8 @@ export function DashboardNav({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const isOwner = role === "owner";
 
   async function signOut() {
     await createClient().auth.signOut();
@@ -35,7 +70,8 @@ export function DashboardNav({
     router.refresh();
   }
 
-  const visible = tabs.filter((t) => !t.ownerOnly || role === "owner");
+  const tabs = primaryTabs.filter((t) => !t.ownerOnly || isOwner);
+  const moreActive = isOwner && moreLinks.some((l) => pathname.startsWith(l.href));
 
   return (
     <>
@@ -47,9 +83,13 @@ export function DashboardNav({
           </p>
           <div className="flex items-center gap-1">
             <nav className="mr-2 hidden gap-1 md:flex">
-              {visible.map((t) => (
+              {tabs.map((t) => (
                 <TabLink key={t.href} tab={t} pathname={pathname} />
               ))}
+              {isOwner &&
+                moreLinks.map((t) => (
+                  <TabLink key={t.href} tab={t} pathname={pathname} />
+                ))}
             </nav>
             <Button
               variant="ghost"
@@ -65,7 +105,7 @@ export function DashboardNav({
 
       {/* Bottom tab bar — the dashboard is used on a phone (plan.md §3E) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-flow-col border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {visible.map((t) => {
+        {tabs.map((t) => {
           const active = t.exact
             ? pathname === t.href
             : pathname.startsWith(t.href);
@@ -82,18 +122,49 @@ export function DashboardNav({
             </Link>
           );
         })}
+        {isOwner && (
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
+                  moreActive ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <MoreHorizontal className="size-5" />
+                Plus
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="pb-[env(safe-area-inset-bottom)]">
+              <SheetHeader>
+                <SheetTitle>Plus</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-2 gap-3 px-4 pb-6">
+                {moreLinks.map((t) => (
+                  <Link
+                    key={t.href}
+                    href={t.href}
+                    onClick={() => setSheetOpen(false)}
+                    className={`flex flex-col items-center gap-2 rounded-xl border py-5 text-sm font-medium transition-colors ${
+                      pathname.startsWith(t.href)
+                        ? "border-primary/60 bg-primary/5 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <t.icon className="size-5" />
+                    {t.label}
+                  </Link>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
       </nav>
     </>
   );
 }
 
-function TabLink({
-  tab,
-  pathname,
-}: {
-  tab: (typeof tabs)[number];
-  pathname: string;
-}) {
+function TabLink({ tab, pathname }: { tab: Tab; pathname: string }) {
   const active = tab.exact
     ? pathname === tab.href
     : pathname.startsWith(tab.href);

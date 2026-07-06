@@ -73,8 +73,9 @@ export type Order = {
   subtotal: number;
   delivery_fee: number;
   total: number;
-  status: "new" | "done";
+  status: "new" | "preparing" | "done";
   created_at: string;
+  updated_at: string;
 };
 
 export type Customer = {
@@ -96,6 +97,7 @@ export type Reservation = {
   time: string;
   party_size: number;
   note: string | null;
+  assigned_table_number: string | null;
   status: "new" | "confirmed" | "declined";
   created_at: string;
 };
@@ -110,4 +112,16 @@ export type Profile = {
   id: string;
   restaurant_id: string;
   role: "owner" | "staff";
+  must_change_password?: boolean;
+  consented_at?: string | null;
+};
+
+export type DiningTable = {
+  id: string;
+  restaurant_id: string;
+  number: string;
+  seats: number;
+  pos_x: number;
+  pos_y: number;
+  updated_at: string;
 };
