@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/client";
+import type { FeatureKey } from "@/lib/types";
 
 type Tab = {
   href: string;
@@ -31,6 +32,7 @@ type Tab = {
   icon: typeof ChefHat;
   exact?: boolean;
   ownerOnly?: boolean;
+  feature?: FeatureKey;
 };
 
 // Primary tabs — always inline, both in the bottom tab bar (mobile) and the
@@ -39,25 +41,27 @@ type Tab = {
 const primaryTabs: Tab[] = [
   { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true, ownerOnly: true },
   { href: "/dashboard/orders", label: "Commandes", icon: ChefHat },
-  { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays },
-  { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, ownerOnly: true },
+  { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays, feature: "reservations" },
+  { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, ownerOnly: true, feature: "menu_editor" },
 ];
 
 // Owner-only secondary links, tucked behind "Plus" so the bottom bar on a
 // 380px phone stays at 5 items max.
 const moreLinks: Tab[] = [
   { href: "/dashboard/customers", label: "Clients", icon: Users },
-  { href: "/dashboard/analytics", label: "Statistiques", icon: BarChart3 },
-  { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid },
+  { href: "/dashboard/analytics", label: "Statistiques", icon: BarChart3, feature: "analytics" },
+  { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid, feature: "floor_plan" },
   { href: "/dashboard/settings", label: "Réglages", icon: Settings },
 ];
 
 export function DashboardNav({
   restaurantName,
   role,
+  features,
 }: {
   restaurantName: string;
   role: "owner" | "staff";
+  features: Record<FeatureKey, boolean>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -70,8 +74,10 @@ export function DashboardNav({
     router.refresh();
   }
 
-  const tabs = primaryTabs.filter((t) => !t.ownerOnly || isOwner);
-  const moreActive = isOwner && moreLinks.some((l) => pathname.startsWith(l.href));
+  const visible = (t: Tab) => (!t.ownerOnly || isOwner) && (!t.feature || features[t.feature]);
+  const tabs = primaryTabs.filter(visible);
+  const visibleMoreLinks = moreLinks.filter(visible);
+  const moreActive = isOwner && visibleMoreLinks.some((l) => pathname.startsWith(l.href));
 
   return (
     <>
@@ -87,7 +93,7 @@ export function DashboardNav({
                 <TabLink key={t.href} tab={t} pathname={pathname} />
               ))}
               {isOwner &&
-                moreLinks.map((t) => (
+                visibleMoreLinks.map((t) => (
                   <TabLink key={t.href} tab={t} pathname={pathname} />
                 ))}
             </nav>
@@ -140,7 +146,7 @@ export function DashboardNav({
                 <SheetTitle>Plus</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-2 gap-3 px-4 pb-6">
-                {moreLinks.map((t) => (
+                {visibleMoreLinks.map((t) => (
                   <Link
                     key={t.href}
                     href={t.href}

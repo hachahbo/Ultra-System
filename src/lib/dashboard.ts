@@ -1,11 +1,13 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Restaurant } from "@/lib/types";
+import { resolveFeatures } from "@/lib/features";
+import type { FeatureKey, Profile, Restaurant, RestaurantFeature } from "@/lib/types";
 
 export type SessionContext = {
   profile: Profile;
   restaurant: Restaurant;
+  features: Record<FeatureKey, boolean>;
 };
 
 // Resolves the logged-in dashboard user and their tenant. RLS already keys
@@ -39,8 +41,27 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   }
   if (!restaurant) return null;
 
-  return { profile: profile as Profile, restaurant: restaurant as Restaurant };
+  const { data: overrides } = await supabase
+    .from("restaurant_features")
+    .select("*")
+    .eq("restaurant_id", profile.restaurant_id);
+
+  const restaurantRow = restaurant as Restaurant;
+  const features = resolveFeatures(restaurantRow.plan, (overrides ?? []) as RestaurantFeature[]);
+
+  return { profile: profile as Profile, restaurant: restaurantRow, features };
 }
+
+/** Suspended or expired-trial restaurants lose dashboard access entirely. */
+export function isSuspended(restaurant: Restaurant): boolean {
+  return restaurant.status === "suspended" || restaurant.status === "expired";
+}
+
+const SUSPENDED_RESPONSE = () =>
+  NextResponse.json(
+    { error: "Compte suspendu — contactez Darna" },
+    { status: 403 },
+  );
 
 /**
  * Guard for owner-only API routes, especially any route that also touches
@@ -58,6 +79,9 @@ export async function requireOwner(): Promise<
   if (!ctx) {
     return { response: NextResponse.json({ error: "Non autorisé" }, { status: 401 }) };
   }
+  if (isSuspended(ctx.restaurant)) {
+    return { response: SUSPENDED_RESPONSE() };
+  }
   if (ctx.profile.must_change_password) {
     return {
       response: NextResponse.json(
@@ -74,6 +98,19 @@ export async function requireOwner(): Promise<
   return { ctx };
 }
 
+/**
+ * Composes with requireOwner()/requireSession(): call after the auth guard
+ * passes, before touching the DB, to enforce a Super-Admin-set feature
+ * toggle. Returns null when the feature is enabled.
+ */
+export function assertFeature(ctx: SessionContext, key: FeatureKey): NextResponse | null {
+  if (ctx.features[key]) return null;
+  return NextResponse.json(
+    { error: "Fonctionnalité non incluse dans votre offre" },
+    { status: 403 },
+  );
+}
+
 /** Lighter guard for tenant routes any authenticated staff/owner may use. */
 export async function requireSession(): Promise<
   { ctx: SessionContext } | { response: NextResponse }
@@ -81,6 +118,9 @@ export async function requireSession(): Promise<
   const ctx = await getSessionContext();
   if (!ctx) {
     return { response: NextResponse.json({ error: "Non autorisé" }, { status: 401 }) };
+  }
+  if (isSuspended(ctx.restaurant)) {
+    return { response: SUSPENDED_RESPONSE() };
   }
   if (ctx.profile.must_change_password) {
     return {

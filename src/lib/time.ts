@@ -52,6 +52,15 @@ export function endOfTodayCasa(reference = new Date()): Date {
   return new Date(start.getTime() + 24 * 60 * 60_000 - 1);
 }
 
+/** Start of the current calendar month, Casablanca-local (admin "this month" metrics). */
+export function startOfMonthCasa(reference = new Date()): Date {
+  const shifted = toCasaShifted(reference);
+  const y = shifted.getUTCFullYear();
+  const m = shifted.getUTCMonth();
+  const startShifted = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
+  return new Date(startShifted.getTime() - casaOffsetMinutes(reference) * 60_000);
+}
+
 /** yyyy-mm-dd bucket key for `date`, in Casablanca local time. */
 export function dayBucket(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;

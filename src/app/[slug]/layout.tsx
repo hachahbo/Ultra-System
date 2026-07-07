@@ -31,6 +31,23 @@ export default async function RestaurantLayout({
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
 
+  // Suspended = the whole public site is down, not just ordering/reservations
+  // (unlike "expired", which still shows the menu — see applyStatusGate).
+  if (restaurant.status === "suspended") {
+    return (
+      <div className="grid min-h-dvh place-items-center px-4 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">
+            {restaurant.name}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ce site est momentanément indisponible.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <NavBar

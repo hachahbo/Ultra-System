@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireOwner } from "@/lib/dashboard";
 import { casaHour, dayBucket, startOfTodayCasa, weekBucket } from "@/lib/time";
 import type { Order } from "@/lib/types";
 
@@ -9,6 +9,8 @@ const RANGE_DAYS: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
 export async function GET(request: Request) {
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "analytics");
+  if (featureError) return featureError;
 
   const url = new URL(request.url);
   const range = url.searchParams.get("range") ?? "30d";

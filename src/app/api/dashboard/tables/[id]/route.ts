@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireOwner } from "@/lib/dashboard";
 
 const patchSchema = z
   .object({
@@ -23,6 +23,8 @@ export async function PATCH(
   const { id } = await params;
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "floor_plan");
+  if (featureError) return featureError;
 
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -77,6 +79,8 @@ export async function DELETE(
   const { id } = await params;
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "floor_plan");
+  if (featureError) return featureError;
 
   const supabase = await createClient();
   const { data, error } = await supabase

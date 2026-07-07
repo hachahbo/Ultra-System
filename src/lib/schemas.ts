@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FEATURE_KEYS } from "@/lib/types";
 
 // Moroccan numbers: accept 06/07 mobile or +2126/+2127, tolerant of spaces.
 export const phoneSchema = z
@@ -137,3 +138,62 @@ export const staffSchema = z.object({
 });
 
 export type StaffInput = z.infer<typeof staffSchema>;
+
+// ---------------------------------------------------------------------------
+// Super Admin
+// ---------------------------------------------------------------------------
+
+export const planSchema = z.enum(["free", "pro", "enterprise"]);
+export const restaurantStatusSchema = z.enum(["active", "trial", "suspended", "expired"]);
+export const featureKeySchema = z.enum(FEATURE_KEYS);
+
+export const adminRestaurantPatchSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120).optional(),
+  city: z.string().trim().max(120).nullable().optional(),
+  plan: planSchema.optional(),
+  status: restaurantStatusSchema.optional(),
+});
+export type AdminRestaurantPatchInput = z.infer<typeof adminRestaurantPatchSchema>;
+
+export const createRestaurantSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Slug requis")
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Lettres minuscules, chiffres et tirets uniquement"),
+  city: z.string().trim().max(120).optional(),
+  plan: planSchema.default("free"),
+  ownerEmail: z.string().trim().email("Email invalide"),
+  ownerPassword: z.string().min(8, "8 caractères minimum"),
+});
+// z.input, not z.infer: the form works with the pre-default shape (plan
+// optional client-side), matching what zodResolver expects for TFieldValues.
+export type CreateRestaurantInput = z.input<typeof createRestaurantSchema>;
+
+export const permissionToggleSchema = z.object({
+  featureKey: featureKeySchema,
+  enabled: z.boolean(),
+});
+export type PermissionToggleInput = z.infer<typeof permissionToggleSchema>;
+
+export const bulkPermissionsSchema = z.object({
+  restaurantIds: z.array(z.string().uuid()).min(1).max(100),
+  changes: z
+    .array(z.object({ featureKey: featureKeySchema, enabled: z.boolean() }))
+    .min(1)
+    .max(FEATURE_KEYS.length),
+});
+export type BulkPermissionsInput = z.infer<typeof bulkPermissionsSchema>;
+
+export const subscriptionPatchSchema = z.object({
+  plan_tier: planSchema.optional(),
+  status: z.enum(["active", "trialing", "past_due", "canceled"]).optional(),
+  billing_cycle: z.enum(["monthly", "yearly"]).optional(),
+  price_mad: z.number().min(0).max(1_000_000).optional(),
+  trial_ends_at: z.string().nullable().optional(),
+  current_period_end: z.string().nullable().optional(),
+  notes: z.string().trim().max(1000).nullable().optional(),
+});
+export type SubscriptionPatchInput = z.infer<typeof subscriptionPatchSchema>;

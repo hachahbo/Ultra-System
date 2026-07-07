@@ -39,14 +39,24 @@ function LoginForm() {
   async function onSubmit(values: LoginInput) {
     setSubmitting(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword(values);
-    if (error) {
+    const { data, error } = await supabase.auth.signInWithPassword(values);
+    if (error || !data.user) {
       toast.error("Email ou mot de passe incorrect");
       setSubmitting(false);
       return;
     }
+
+    // "platform_admins self read" RLS policy lets the signed-in user check
+    // their own membership directly.
+    const { data: membership } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+    const home = membership ? "/admin" : "/dashboard";
+
     const next = searchParams.get("next");
-    router.replace(next?.startsWith("/dashboard") ? next : "/dashboard");
+    router.replace(next?.startsWith(home) ? next : home);
     router.refresh();
   }
 

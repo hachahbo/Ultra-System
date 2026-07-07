@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireOwner, requireSession } from "@/lib/dashboard";
+import { assertFeature, requireOwner, requireSession } from "@/lib/dashboard";
 import { tableSchema } from "@/lib/schemas";
 
 // Tenant read — staff use this for the live orders map, not just owners.
 export async function GET() {
   const guard = await requireSession();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "floor_plan");
+  if (featureError) return featureError;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -23,6 +25,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "floor_plan");
+  if (featureError) return featureError;
 
   const parsed = tableSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

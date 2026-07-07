@@ -60,9 +60,11 @@ const cartBarVariants: Variants = {
 export function MenuBrowser({
   menu,
   table,
+  orderingEnabled = true,
 }: {
   menu: PublicMenu;
   table: string | null;
+  orderingEnabled?: boolean;
 }) {
   const { restaurant, categories, items } = menu;
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -104,6 +106,7 @@ export function MenuBrowser({
   }
 
   function handleAdd(item: Item) {
+    if (!orderingEnabled) return;
     if (item.customization_groups.length > 0) {
       setSelectedItem(item);
     } else {
@@ -217,7 +220,7 @@ export function MenuBrowser({
                   </div>
 
                   {/* ── Springy add FAB (Plus ⇄ Check) ── */}
-                  {item.in_stock && (
+                  {item.in_stock && orderingEnabled && (
                     <motion.div
                       className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FF6B35] shadow-lg shadow-[#FF6B35]/40 ring-1 ring-white/20"
                       animate={
@@ -279,7 +282,7 @@ export function MenuBrowser({
 
       {/* ── Floating cart bar ──────────────────────────────── */}
       <AnimatePresence>
-        {count > 0 && (
+        {orderingEnabled && count > 0 && (
           <motion.div
             variants={prefersReducedMotion ? undefined : cartBarVariants}
             initial="hidden"

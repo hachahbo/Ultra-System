@@ -12,6 +12,9 @@ export type CustomizationGroup = {
   options: CustomizationOption[];
 };
 
+export type Plan = "free" | "pro" | "enterprise";
+export type RestaurantStatus = "active" | "trial" | "suspended" | "expired";
+
 export type Restaurant = {
   id: string;
   slug: string;
@@ -26,6 +29,63 @@ export type Restaurant = {
   is_dine_in_enabled: boolean;
   is_delivery_enabled: boolean;
   about_text: string | null;
+  plan: Plan;
+  status: RestaurantStatus;
+  city: string | null;
+  updated_at: string;
+};
+
+// Single source of truth for feature keys — mirrored by the
+// restaurant_features.feature_key check constraint in 0003_super_admin.sql.
+export const FEATURE_KEYS = [
+  "online_ordering",
+  "reservations",
+  "analytics",
+  "staff_management",
+  "menu_editor",
+  "floor_plan",
+  "promotions",
+] as const;
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+export type Subscription = {
+  id: string;
+  restaurant_id: string;
+  plan_tier: Plan;
+  status: "active" | "trialing" | "past_due" | "canceled";
+  billing_cycle: "monthly" | "yearly";
+  price_mad: number;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+  provider: "manual" | "stripe";
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RestaurantFeature = {
+  id: string;
+  restaurant_id: string;
+  feature_key: FeatureKey;
+  enabled: boolean;
+  updated_at: string;
+};
+
+export type AdminRestaurantRow = Restaurant & {
+  monthlyRevenue: number;
+  monthlyOrders: number;
+  ownerLastActiveAt: string | null;
+};
+
+export type AuditLog = {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_restaurant_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 };
 
 export type Category = {

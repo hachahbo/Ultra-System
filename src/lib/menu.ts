@@ -1,7 +1,9 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import type { PublicMenu, Restaurant } from "@/lib/types";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveFeatures } from "@/lib/features";
+import type { FeatureKey, PublicMenu, Restaurant, RestaurantFeature } from "@/lib/types";
 
 // Public menu reads use the anon key (RLS allows public SELECT on
 // restaurants/categories/items) and are cached ~60s so a busy public page
@@ -58,5 +60,23 @@ export const getPublicMenu = unstable_cache(
     } as PublicMenu;
   },
   ["public-menu"],
+  { revalidate: 60, tags: ["menu"] },
+);
+
+// Feature toggles gate what the public site renders (cart/checkout,
+// reservation form). restaurant_features has no public RLS read policy —
+// this uses the service role read-only, scoped to a single restaurant's
+// plan + overrides, same cache/tag as the rest of the public menu data so a
+// Super Admin permission change is visible within the same ~60s window.
+export const getPublicFeatures = unstable_cache(
+  async (restaurantId: string, plan: Restaurant["plan"]): Promise<Record<FeatureKey, boolean>> => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("restaurant_features")
+      .select("*")
+      .eq("restaurant_id", restaurantId);
+    return resolveFeatures(plan, (data ?? []) as RestaurantFeature[]);
+  },
+  ["public-features"],
   { revalidate: 60, tags: ["menu"] },
 );

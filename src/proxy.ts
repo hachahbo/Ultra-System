@@ -32,7 +32,12 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && (pathname.startsWith("/dashboard") || pathname === "/change-password")) {
+  if (
+    !user &&
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
+      pathname === "/change-password")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
@@ -40,8 +45,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && pathname === "/login") {
+    // "platform_admins self read" RLS policy lets the session client check
+    // its own membership without the service-role key.
+    const { data: membership } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = membership ? "/admin" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -50,5 +62,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/change-password"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/change-password"],
 };

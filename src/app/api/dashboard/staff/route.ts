@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireOwner } from "@/lib/dashboard";
 import { staffSchema } from "@/lib/schemas";
 
 export async function GET() {
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "staff_management");
+  if (featureError) return featureError;
 
   const supabase = await createClient();
   // "profiles owner read tenant" RLS policy (0002 migration) allows this.
@@ -39,6 +41,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "staff_management");
+  if (featureError) return featureError;
 
   const parsed = staffSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

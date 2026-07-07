@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPublicFeatures } from "@/lib/menu";
+import { applyStatusGate } from "@/lib/features";
 import { reservationSchema } from "@/lib/schemas";
 
 // Public reservation intake — written to the DB (never WhatsApp-only, §2).
@@ -24,11 +26,18 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id")
+    .select("id, plan, status")
     .eq("slug", input.restaurant_slug)
     .maybeSingle();
   if (!restaurant) {
     return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
+  }
+  const features = applyStatusGate(
+    restaurant.status,
+    await getPublicFeatures(restaurant.id, restaurant.plan),
+  );
+  if (!features.reservations) {
+    return NextResponse.json({ error: "Réservations indisponibles" }, { status: 403 });
   }
 
   const { data: reservation, error } = await supabase

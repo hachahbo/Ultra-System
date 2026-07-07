@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireOwner } from "@/lib/dashboard";
 
 export async function DELETE(
   _request: Request,
@@ -9,6 +9,8 @@ export async function DELETE(
   const { id } = await params;
   const guard = await requireOwner();
   if ("response" in guard) return guard.response;
+  const featureError = assertFeature(guard.ctx, "staff_management");
+  if (featureError) return featureError;
 
   const admin = createAdminClient();
   // Service role bypasses RLS entirely — verify the target is staff of THIS

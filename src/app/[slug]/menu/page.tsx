@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getPublicMenu } from "@/lib/menu";
+import { getPublicMenu, getPublicFeatures } from "@/lib/menu";
+import { applyStatusGate } from "@/lib/features";
 import { MenuBrowser } from "@/components/menu/menu-browser";
 
 export const metadata: Metadata = { title: "Menu" };
@@ -15,6 +16,10 @@ export default async function MenuPage({
   const [{ slug }, { table }] = await Promise.all([params, searchParams]);
   const menu = await getPublicMenu(slug);
   if (!menu) notFound();
+  const features = applyStatusGate(
+    menu.restaurant.status,
+    await getPublicFeatures(menu.restaurant.id, menu.restaurant.plan),
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 pb-28">
@@ -29,7 +34,7 @@ export default async function MenuPage({
           ? `Table ${table} — commandez directement depuis votre téléphone.`
           : "Une sélection de plats préparés avec soin. Touchez un plat pour l’ajouter."}
       </p>
-      <MenuBrowser menu={menu} table={table ?? null} />
+      <MenuBrowser menu={menu} table={table ?? null} orderingEnabled={features.online_ordering} />
     </div>
   );
 }
