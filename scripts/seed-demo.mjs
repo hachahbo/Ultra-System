@@ -73,27 +73,39 @@ async function seedRestaurantsAndSubscriptions() {
   console.log("Restaurants + subscriptions (upsert):");
   const restaurants = [
     { id: TACOS, slug: "tacos-al-amin", name: "Tacos Al Amin", whatsapp_number: "212600000000",
-      phone: "+212 5 39 00 00 00", address: "Avenue Mohammed VI, Tanger", hours: "Lun–Dim · 11h00 – 23h00",
-      currency: "MAD", base_delivery_fee: 15, about_text: "Les meilleurs tacos de Tanger depuis 2015.",
+      phone: "+212 5 39 00 00 00", hours: "Lun–Dim · 11h00 – 23h00",
+      currency: "MAD", base_delivery_fee: 15,
       plan: "pro", status: "active", city: "Tanger" },
     { id: DAR_LAHWA, slug: "dar-lahwa", name: "Dar Lahwa", whatsapp_number: "212600000001",
-      phone: "+212 5 39 00 00 01", address: "Boulevard Pasteur, Tanger", hours: "Lun–Dim · 12h00 – 00h00",
-      currency: "MAD", base_delivery_fee: 12, about_text: "Cuisine marocaine traditionnelle.",
+      phone: "+212 5 39 00 00 01", hours: "Lun–Dim · 12h00 – 00h00",
+      currency: "MAD", base_delivery_fee: 12,
       plan: "free", status: "trial", city: "Tanger" },
     { id: PIZZA_RIF, slug: "pizza-rif", name: "Pizza Rif", whatsapp_number: "212600000002",
-      phone: "+212 5 39 00 00 02", address: "Avenue Hassan II, Tétouan", hours: "Lun–Dim · 11h00 – 23h30",
-      currency: "MAD", base_delivery_fee: 10, about_text: "Pizzas au feu de bois.",
+      phone: "+212 5 39 00 00 02", hours: "Lun–Dim · 11h00 – 23h30",
+      currency: "MAD", base_delivery_fee: 10,
       plan: "enterprise", status: "active", city: "Tétouan" },
     { id: SUSHI_BAY, slug: "sushi-bay", name: "Sushi Bay", whatsapp_number: "212600000003",
-      phone: "+212 5 39 00 00 03", address: "Marina, Tanger", hours: "Mar–Dim · 18h00 – 23h00",
-      currency: "MAD", base_delivery_fee: 20, about_text: "Sushi avec vue sur la baie.",
+      phone: "+212 5 39 00 00 03", hours: "Mar–Dim · 18h00 – 23h00",
+      currency: "MAD", base_delivery_fee: 20,
       plan: "pro", status: "suspended", city: "Tanger" },
     { id: CAFE_ATLAS, slug: "cafe-atlas", name: "Café Atlas", whatsapp_number: "212600000004",
-      phone: "+212 5 39 00 00 04", address: "Centre-ville, Rabat", hours: "Lun–Dim · 07h00 – 22h00",
-      currency: "MAD", base_delivery_fee: 0, about_text: "Café et petite restauration.",
+      phone: "+212 5 39 00 00 04", hours: "Lun–Dim · 07h00 – 22h00",
+      currency: "MAD", base_delivery_fee: 0,
       plan: "free", status: "expired", city: "Rabat" },
   ];
   await run(`${restaurants.length} restaurants`, db.from("restaurants").upsert(restaurants, { onConflict: "id" }));
+
+  // Branding lives on restaurant_theme now (0005_bespoke_website_model.sql) —
+  // seeded here purely so the demo public sites aren't blank; a real operator
+  // would set these via the Site Builder instead.
+  const themes = [
+    { restaurant_id: TACOS, address: "Avenue Mohammed VI, Tanger", about_body: "Les meilleurs tacos de Tanger depuis 2015." },
+    { restaurant_id: DAR_LAHWA, address: "Boulevard Pasteur, Tanger", about_body: "Cuisine marocaine traditionnelle." },
+    { restaurant_id: PIZZA_RIF, address: "Avenue Hassan II, Tétouan", about_body: "Pizzas au feu de bois." },
+    { restaurant_id: SUSHI_BAY, address: "Marina, Tanger", about_body: "Sushi avec vue sur la baie." },
+    { restaurant_id: CAFE_ATLAS, address: "Centre-ville, Rabat", about_body: "Café et petite restauration." },
+  ];
+  await run(`${themes.length} restaurant_theme rows`, db.from("restaurant_theme").upsert(themes, { onConflict: "restaurant_id" }));
 
   const subs = [
     { restaurant_id: TACOS, plan_tier: "pro", status: "active", billing_cycle: "monthly", price_mad: 499, current_period_end: iso(-20), provider: "manual", notes: "Payé en espèces — juillet 2026" },

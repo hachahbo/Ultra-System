@@ -3,17 +3,25 @@
 -- profile row (see README "Create the owner account").
 
 insert into public.restaurants
-  (id, slug, name, whatsapp_number, phone, address, hours, currency, base_delivery_fee, about_text)
+  (id, slug, name, whatsapp_number, phone, hours, currency, base_delivery_fee)
 values (
   '11111111-1111-1111-1111-111111111111',
   'tacos-al-amin',
   'Tacos Al Amin',
   '212600000000',
   '+212 5 39 00 00 00',
-  'Avenue Mohammed VI, Tanger',
   'Lun–Dim · 11h00 – 23h00',
   'MAD',
-  15.00,
+  15.00
+);
+
+-- Branding (moved off `restaurants` in 0005_bespoke_website_model.sql) lives
+-- on restaurant_theme now — operator-owned, but seeded here so the pilot
+-- restaurant's public site isn't blank out of the box.
+insert into public.restaurant_theme (restaurant_id, address, about_body)
+values (
+  '11111111-1111-1111-1111-111111111111',
+  'Avenue Mohammed VI, Tanger',
   'Depuis 2015, Tacos Al Amin sert les meilleurs tacos de Tanger. Des produits frais, des sauces maison et un accueil familial.'
 );
 
@@ -47,20 +55,23 @@ update public.restaurants set plan = 'pro', status = 'active', city = 'Tanger'
   where id = '11111111-1111-1111-1111-111111111111';
 
 insert into public.restaurants
-  (id, slug, name, whatsapp_number, phone, address, hours, currency, base_delivery_fee, about_text, plan, status, city)
+  (id, slug, name, whatsapp_number, phone, hours, currency, base_delivery_fee, plan, status, city)
 values
   ('11111111-1111-1111-1111-111111111112', 'dar-lahwa', 'Dar Lahwa', '212600000001', '+212 5 39 00 00 01',
-   'Boulevard Pasteur, Tanger', 'Lun–Dim · 12h00 – 00h00', 'MAD', 12.00,
-   'Cuisine marocaine traditionnelle au cœur de Tanger.', 'free', 'trial', 'Tanger'),
+   'Lun–Dim · 12h00 – 00h00', 'MAD', 12.00, 'free', 'trial', 'Tanger'),
   ('11111111-1111-1111-1111-111111111113', 'pizza-rif', 'Pizza Rif', '212600000002', '+212 5 39 00 00 02',
-   'Avenue Hassan II, Tétouan', 'Lun–Dim · 11h00 – 23h30', 'MAD', 10.00,
-   'Pizzas au feu de bois, ingrédients locaux.', 'enterprise', 'active', 'Tétouan'),
+   'Lun–Dim · 11h00 – 23h30', 'MAD', 10.00, 'enterprise', 'active', 'Tétouan'),
   ('11111111-1111-1111-1111-111111111114', 'sushi-bay', 'Sushi Bay', '212600000003', '+212 5 39 00 00 03',
-   'Marina, Tanger', 'Mar–Dim · 18h00 – 23h00', 'MAD', 20.00,
-   'Sushi et cuisine japonaise avec vue sur la baie.', 'pro', 'suspended', 'Tanger'),
+   'Mar–Dim · 18h00 – 23h00', 'MAD', 20.00, 'pro', 'suspended', 'Tanger'),
   ('11111111-1111-1111-1111-111111111115', 'cafe-atlas', 'Café Atlas', '212600000004', '+212 5 39 00 00 04',
-   'Centre-ville, Rabat', 'Lun–Dim · 07h00 – 22h00', 'MAD', 0.00,
-   'Café et petite restauration, ambiance conviviale.', 'free', 'expired', 'Rabat');
+   'Lun–Dim · 07h00 – 22h00', 'MAD', 0.00, 'free', 'expired', 'Rabat');
+
+insert into public.restaurant_theme (restaurant_id, address, about_body)
+values
+  ('11111111-1111-1111-1111-111111111112', 'Boulevard Pasteur, Tanger', 'Cuisine marocaine traditionnelle au cœur de Tanger.'),
+  ('11111111-1111-1111-1111-111111111113', 'Avenue Hassan II, Tétouan', 'Pizzas au feu de bois, ingrédients locaux.'),
+  ('11111111-1111-1111-1111-111111111114', 'Marina, Tanger', 'Sushi et cuisine japonaise avec vue sur la baie.'),
+  ('11111111-1111-1111-1111-111111111115', 'Centre-ville, Rabat', 'Café et petite restauration, ambiance conviviale.');
 
 insert into public.subscriptions
   (restaurant_id, plan_tier, status, billing_cycle, price_mad, trial_ends_at, current_period_end, provider, notes)

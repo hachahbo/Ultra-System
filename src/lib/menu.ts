@@ -3,7 +3,14 @@ import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveFeatures } from "@/lib/features";
-import type { FeatureKey, PublicMenu, Restaurant, RestaurantFeature } from "@/lib/types";
+import { resolveTheme } from "@/lib/theme";
+import type {
+  FeatureKey,
+  PublicMenu,
+  ResolvedTheme,
+  Restaurant,
+  RestaurantFeature,
+} from "@/lib/types";
 
 // Public menu reads use the anon key (RLS allows public SELECT on
 // restaurants/categories/items) and are cached ~60s so a busy public page
@@ -78,5 +85,28 @@ export const getPublicFeatures = unstable_cache(
     return resolveFeatures(plan, (data ?? []) as RestaurantFeature[]);
   },
   ["public-features"],
+  { revalidate: 60, tags: ["menu"] },
+);
+
+// Theme (branding) read for the public site. restaurant_theme has RLS enabled
+// with zero policies (service-role only, like restaurant_features), so this
+// uses the admin client — same pattern as getPublicFeatures above. The
+// `draft` column is explicitly excluded from the select: this is the one
+// read path a non-admin visitor can reach, so a draft-in-progress must never
+// leak here. Same "menu" tag/revalidate window as the rest of the public
+// data — a theme publish calls revalidateTag("menu","max") too.
+export const getPublicTheme = unstable_cache(
+  async (restaurantId: string): Promise<ResolvedTheme> => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("restaurant_theme")
+      .select(
+        "restaurant_id, color_primary, color_secondary, color_background, color_text, font_pair, logo_url, hero_image_urls, about_title, about_body, address, sections, custom_copy, updated_at",
+      )
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+    return resolveTheme(data as ResolvedTheme | null, restaurantId);
+  },
+  ["public-theme"],
   { revalidate: 60, tags: ["menu"] },
 );

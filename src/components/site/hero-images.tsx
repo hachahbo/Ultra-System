@@ -2,7 +2,10 @@
 
 import { motion } from "framer-motion";
 
-export function HeroImages() {
+export function HeroImages({ images }: { images?: string[] }) {
+  const main = images?.[0] ?? "/images/orendezvous.tanger_1777049699_3882496730852669917_73557593345.jpg";
+  const pop = images?.[1] ?? "/images/Gemini_Generated_Image_izo3jjizo3jjizo3.png";
+
   return (
     <div className="relative mt-12 flex w-full justify-center lg:mt-0 lg:w-1/2">
       <div className="relative flex h-[500px] w-full max-w-[400px] items-center justify-center sm:h-[600px]">
@@ -54,11 +57,7 @@ export function HeroImages() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <img
-            src="/images/orendezvous.tanger_1777049699_3882496730852669917_73557593345.jpg"
-            alt="Restaurant interior"
-            className="h-full w-full object-cover"
-          />
+          <img src={main} alt="Restaurant interior" className="h-full w-full object-cover" />
         </motion.div>
 
         {/* === Phase 3: Foreground Layer (z-index: 20) Pop === */}
@@ -70,7 +69,7 @@ export function HeroImages() {
         >
           <div className="aspect-square w-full overflow-hidden rounded-full shadow-2xl ring-4 ring-background">
             <img
-              src="/images/Gemini_Generated_Image_izo3jjizo3jjizo3.png"
+              src={pop}
               alt="Delicious food plate"
               className="h-full w-full scale-[1.25] object-cover object-center"
             />

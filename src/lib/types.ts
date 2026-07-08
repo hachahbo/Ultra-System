@@ -19,21 +19,87 @@ export type Restaurant = {
   id: string;
   slug: string;
   name: string;
-  logo_url: string | null;
   whatsapp_number: string | null;
   phone: string | null;
-  address: string | null;
   hours: string | null;
   currency: string;
   base_delivery_fee: number;
   is_dine_in_enabled: boolean;
   is_delivery_enabled: boolean;
-  about_text: string | null;
   plan: Plan;
   status: RestaurantStatus;
   city: string | null;
   updated_at: string;
 };
+
+// ---------------------------------------------------------------------------
+// Bespoke Website Model — restaurant_theme (0005_bespoke_website_model.sql)
+// The operator (Super Admin) owns everything here; owners never touch it.
+// ---------------------------------------------------------------------------
+
+export const FONT_PAIR_KEYS = [
+  "darna-classic",
+  "playfair-inter",
+  "fraunces-work-sans",
+  "cormorant-karla",
+  "libre-source",
+  "marcellus-nunito",
+  "lora-open-sans",
+  "bebas-barlow",
+  "josefin-lato",
+] as const;
+export type FontPairKey = (typeof FONT_PAIR_KEYS)[number];
+
+// The 3 sections that actually render today. Additional keys (chef,
+// testimonials, gallery) are reserved so the builder's toggle/reorder
+// machinery is future-proof — they simply have no renderer yet.
+export const SECTION_KEYS = [
+  "hero",
+  "specials",
+  "welcome",
+  "chef",
+  "testimonials",
+  "gallery",
+] as const;
+export type SectionKey = (typeof SECTION_KEYS)[number];
+
+export const COPY_KEYS = [
+  "hero_headline",
+  "hero_sub",
+  "hero_cta",
+  "specials_heading",
+  "specials_sub",
+  "welcome_heading",
+] as const;
+export type CopyKey = (typeof COPY_KEYS)[number];
+
+export type ThemeSection = { key: SectionKey; enabled: boolean };
+
+// Raw DB row (service-role reads only — draft is never exposed publicly).
+export type RestaurantTheme = {
+  restaurant_id: string;
+  color_primary: string | null;
+  color_secondary: string | null;
+  color_background: string | null;
+  color_text: string | null;
+  font_pair: FontPairKey;
+  logo_url: string | null;
+  hero_image_urls: string[];
+  about_title: string | null;
+  about_body: string | null;
+  address: string | null;
+  sections: ThemeSection[];
+  custom_copy: Partial<Record<CopyKey, string>>;
+  draft: Partial<ThemeDraftFields> | null;
+  updated_at: string;
+};
+
+// The subset of restaurant_theme columns the draft/publish flow writes.
+export type ThemeDraftFields = Omit<RestaurantTheme, "restaurant_id" | "draft" | "updated_at">;
+
+// A theme with every default applied and no draft — what the public site
+// (non-preview) renders.
+export type ResolvedTheme = Omit<RestaurantTheme, "draft">;
 
 // Single source of truth for feature keys — mirrored by the
 // restaurant_features.feature_key check constraint in 0003_super_admin.sql.

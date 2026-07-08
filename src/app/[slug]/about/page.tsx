@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { getRestaurantBySlug } from "@/lib/menu";
+import { getSiteTheme } from "@/lib/site-theme";
 
 export const metadata: Metadata = { title: "Qui sommes-nous" };
 
@@ -14,15 +15,16 @@ export default async function AboutPage({
   const { slug } = await params;
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
+  const { theme } = await getSiteTheme(restaurant);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display text-3xl font-semibold tracking-tight">
-        Qui sommes-nous
+        {theme.about_title ?? "Qui sommes-nous"}
       </h1>
-      <div className="mt-6 space-y-4 text-muted-foreground md:text-lg">
+      <div className="mt-6 space-y-4 text-muted-foreground md:text-lg whitespace-pre-line">
         <p>
-          {restaurant.about_text ??
+          {theme.about_body ??
             `${restaurant.name} vous accueille tous les jours dans une ambiance chaleureuse et familiale.`}
         </p>
       </div>

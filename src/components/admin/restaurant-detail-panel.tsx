@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { RotateCcw } from "lucide-react";
@@ -233,6 +234,11 @@ export function RestaurantDetailPanel({
               </div>
 
               <div className="flex flex-col gap-2">
+                <Button variant="outline" asChild>
+                  <Link href={`/admin/restaurants/${data.restaurant.id}/site`}>
+                    Éditeur du site
+                  </Link>
+                </Button>
                 {data.restaurant.status === "suspended" ? (
                   <Button onClick={() => setStatus("active")}>Réactiver</Button>
                 ) : (

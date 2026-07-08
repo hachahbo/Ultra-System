@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { fontVariableClassNames } from "@/lib/fonts";
 import "./globals.css";
-
-const display = DM_Serif_Display({
-  weight: "400",
-  variable: "--font-display",
-  subsets: ["latin"],
-});
-
-const sans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +21,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${display.variable} ${sans.variable} h-full antialiased`}
+      className={`${fontVariableClassNames} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans transition-colors duration-500">

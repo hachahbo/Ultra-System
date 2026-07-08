@@ -109,11 +109,23 @@ export async function POST(request: Request) {
       slug: input.slug,
       city: input.city ?? null,
       plan: input.plan,
+      currency: input.currency,
     })
     .select("*")
     .single();
   if (restaurantError || !restaurant) {
     return apiError("create_failed", restaurantError?.message ?? "Création impossible", 400);
+  }
+
+  // Every restaurant needs a theme row (Site Builder reads/writes it, and
+  // resolveTheme(null) is only a defensive fallback). Insert right after the
+  // restaurant so the FK cascade covers it in every rollback below.
+  const { error: themeError } = await admin
+    .from("restaurant_theme")
+    .insert({ restaurant_id: restaurant.id });
+  if (themeError) {
+    await admin.from("restaurants").delete().eq("id", restaurant.id);
+    return apiError("create_failed", "Création impossible", 500);
   }
 
   const { error: subscriptionError } = await admin.from("subscriptions").insert({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -180,6 +181,9 @@ export function RestaurantsView() {
                     <div className="flex justify-end gap-1.5">
                       <Button variant="ghost" size="sm" onClick={() => openPanel(r.id)}>
                         Voir
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/restaurants/${r.id}/site`}>Site</Link>
                       </Button>
                       <Button
                         variant="ghost"

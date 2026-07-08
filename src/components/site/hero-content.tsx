@@ -4,7 +4,17 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
-export function HeroContent({ base }: { base: string }) {
+export function HeroContent({
+  base,
+  headline,
+  sub,
+  ctaLabel,
+}: {
+  base: string;
+  headline?: string;
+  sub?: string;
+  ctaLabel?: string;
+}) {
   const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
@@ -16,7 +26,11 @@ export function HeroContent({ base }: { base: string }) {
         transition={{ ...transition, delay: 0 }}
         className="font-display text-5xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl"
       >
-        We provide the <br /> best food for you
+        {headline ?? (
+          <>
+            We provide the <br /> best food for you
+          </>
+        )}
       </motion.h1>
 
       {/* 4. Description (Last in sequence as requested) */}
@@ -26,8 +40,8 @@ export function HeroContent({ base }: { base: string }) {
         transition={{ ...transition, delay: 0.45 }}
         className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
       >
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua.
+        {sub ??
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."}
       </motion.p>
 
       {/* 2. Buttons */}
@@ -42,7 +56,7 @@ export function HeroContent({ base }: { base: string }) {
           size="lg"
           className="rounded-md bg-foreground px-8 text-background hover:bg-foreground/90 shadow-lg"
         >
-          <Link href={`${base}/menu`}>Menu</Link>
+          <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
         <Button asChild size="lg" className="rounded-md px-8 shadow-lg">
           <Link href={`${base}/reservation`}>Book a table</Link>

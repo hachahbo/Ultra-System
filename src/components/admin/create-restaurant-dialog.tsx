@@ -32,7 +32,15 @@ export function CreateRestaurantDialog({ onCreated }: { onCreated: () => void })
 
   const form = useForm<CreateRestaurantInput>({
     resolver: zodResolver(createRestaurantSchema),
-    defaultValues: { name: "", slug: "", city: "", plan: "free", ownerEmail: "", ownerPassword: "" },
+    defaultValues: {
+      name: "",
+      slug: "",
+      city: "",
+      plan: "free",
+      currency: "MAD",
+      ownerEmail: "",
+      ownerPassword: "",
+    },
   });
   const errors = form.formState.errors;
   const plan = form.watch("plan");
@@ -102,6 +110,13 @@ export function CreateRestaurantDialog({ onCreated }: { onCreated: () => void })
                 <SelectItem value="enterprise">Enterprise</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="currency">Devise</Label>
+            <Input id="currency" placeholder="MAD" {...form.register("currency")} />
+            {errors.currency && (
+              <p className="text-sm text-destructive">{errors.currency.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ownerEmail">Email du propriétaire</Label>
