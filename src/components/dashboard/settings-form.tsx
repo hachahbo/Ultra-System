@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { restaurantSettingsSchema, type RestaurantSettingsInput } from "@/lib/schemas";
 import type { Restaurant } from "@/lib/types";
 
@@ -56,6 +57,8 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
         </p>
       </div>
 
+      <Separator />
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Contact</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="phone">Téléphone</Label>
@@ -67,11 +70,15 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
         </div>
       </div>
 
+      <Separator />
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Horaires</p>
       <div className="space-y-2">
-        <Label htmlFor="hours">Horaires</Label>
+        <Label htmlFor="hours">Horaires d&apos;ouverture</Label>
         <Input id="hours" placeholder="Lun–Dim, 11h–23h" {...form.register("hours")} />
       </div>
 
+      <Separator />
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Livraison</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="currency-display">Devise</Label>

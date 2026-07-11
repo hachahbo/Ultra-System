@@ -115,6 +115,7 @@ export function MenuBrowser({
         name: item.name_fr,
         unit_price: Number(item.base_price),
         options: [],
+        image_url: item.image_url,
       });
       flashAdded(item.id);
     }
@@ -163,95 +164,104 @@ export function MenuBrowser({
               <motion.li
                 key={item.id}
                 variants={prefersReducedMotion ? undefined : cardVariants}
-                whileHover={animate ? { y: -5 } : undefined}
+                whileHover={animate ? { y: -2 } : undefined}
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative isolate flex h-72 flex-col justify-end overflow-hidden rounded-[1.75rem] shadow-[0_10px_40px_-12px_rgba(0,0,0,0.5)] ring-1 ring-white/10 sm:h-80 ${
+                className={`group relative bg-card flex flex-row p-4 min-h-[140px] rounded-[20px] border border-border shadow-sm transition-all hover:shadow-md ${
                   item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
                 }`}
-                onClick={() => item.in_stock && handleAdd(item)}
+                onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
-                {/* ── Full-bleed dish photography ── */}
-                <div className="absolute inset-0 -z-10 bg-[#141416]">
-                  <Image
-                    src={src}
-                    alt={item.name_fr}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 336px"
-                    className="object-cover transition-transform duration-[900ms] ease-out will-change-transform group-hover:scale-[1.08]"
-                  />
-                  {/* Cinematic legibility gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/5" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30" />
-                </div>
-
-                {/* ── Top row: signature / stock badges ── */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-3.5">
-                  {isSignature && item.in_stock ? (
-                    <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90 backdrop-blur-md ring-1 ring-white/20">
-                      <Sparkles className="size-3 text-[#FFB347]" />
-                      Signature
-                    </span>
-                  ) : (
-                    <span />
-                  )}
-                  {!item.in_stock && (
-                    <span className="rounded-full bg-black/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/70 backdrop-blur-sm">
-                      Épuisé
-                    </span>
-                  )}
-                </div>
-
-                {/* ── Bottom: editorial content over the image ── */}
-                <div className="relative flex items-end justify-between gap-3 p-4">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-lg font-semibold leading-tight tracking-tight text-white drop-shadow-sm">
+                {/* ── Left Column: Text & Price ── */}
+                <div className="flex flex-1 flex-col pr-4">
+                  <div className="flex flex-wrap items-start gap-2">
+                    <h3 className="font-display text-lg font-bold text-card-foreground leading-tight">
                       {item.name_fr}
                     </h3>
-                    {item.description_fr && (
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/60">
-                        {item.description_fr}
-                      </p>
+                    {isSignature && item.in_stock && (
+                      <span className="shrink-0 flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 mt-0.5">
+                        <Sparkles className="size-3" />
+                        Signature
+                      </span>
                     )}
-                    <p className="mt-2.5 text-lg font-bold tracking-tight text-[#FF8A5B]">
+                    {!item.in_stock && (
+                      <span className="shrink-0 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive mt-0.5">
+                        Épuisé
+                      </span>
+                    )}
+                  </div>
+                  
+                  {item.description_fr && (
+                    <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+                      {item.description_fr}
+                    </p>
+                  )}
+                  
+                  <div className="mt-auto pt-4">
+                    <p className="text-[22px] font-black tracking-tight text-card-foreground">
                       {formatPrice(item.base_price, restaurant.currency)}
                     </p>
                   </div>
+                </div>
 
-                  {/* ── Springy add FAB (Plus ⇄ Check) ── */}
+                {/* ── Right Column: Image & Add Button ── */}
+                <div className="flex flex-col items-end justify-between ml-2 shrink-0">
+                  <div className="relative size-[84px] shrink-0">
+                    {src ? (
+                      <Image
+                        src={src}
+                        alt={item.name_fr}
+                        fill
+                        sizes="84px"
+                        className="object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
+                      />
+                    ) : (
+                      <div className="grid size-full place-items-center rounded-full bg-muted border border-border">
+                        <UtensilsCrossed className="size-8 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Button */}
                   {item.in_stock && orderingEnabled && (
-                    <motion.div
-                      className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#FF6B35] shadow-lg shadow-[#FF6B35]/40 ring-1 ring-white/20"
-                      animate={
-                        animate && wasAdded ? { scale: [1, 1.18, 1] } : { scale: 1 }
-                      }
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                    >
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        {wasAdded ? (
-                          <motion.span
-                            key="check"
-                            initial={animate ? { scale: 0, rotate: -30 } : false}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={animate ? { scale: 0 } : undefined}
-                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                          >
-                            <Check className="size-5 text-white" strokeWidth={3} />
-                          </motion.span>
-                        ) : (
-                          <motion.span
-                            key="plus"
-                            initial={animate ? { scale: 0 } : false}
-                            animate={{ scale: 1 }}
-                            exit={animate ? { scale: 0 } : undefined}
-                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                          >
-                            <Plus className="size-5 text-white" aria-hidden />
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
+                    <div className="mt-4">
+                      <motion.div
+                        className="relative flex size-9 items-center justify-center rounded-full border-2 border-foreground bg-background text-foreground transition-colors group-hover:bg-foreground group-hover:text-background"
+                        animate={
+                          animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
+                        }
+                        transition={{ duration: 0.3 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAdd(item);
+                        }}
+                      >
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          {wasAdded ? (
+                            <motion.span
+                              key="check"
+                              initial={animate ? { scale: 0, rotate: -30 } : false}
+                              animate={{ scale: 1, rotate: 0 }}
+                              exit={animate ? { scale: 0 } : undefined}
+                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                            >
+                              <Check className="size-4" strokeWidth={3} />
+                            </motion.span>
+                          ) : (
+                            <motion.span
+                              key="plus"
+                              initial={animate ? { scale: 0 } : false}
+                              animate={{ scale: 1 }}
+                              exit={animate ? { scale: 0 } : undefined}
+                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                            >
+                              <Plus className="size-5" strokeWidth={2.5} />
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    </div>
                   )}
                 </div>
               </motion.li>

@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { DashboardNav } from "@/components/dashboard/nav";
+import { cookies } from "next/headers";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashboardProviders } from "@/components/dashboard/providers";
 import { SuspendedNotice } from "@/components/dashboard/suspended-notice";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { getSessionContext, isSuspended } from "@/lib/dashboard";
 import { getAdminContext } from "@/lib/admin-auth";
 
@@ -37,18 +39,29 @@ export default async function DashboardLayout({
     return <SuspendedNotice status={ctx.restaurant.status} />;
   }
 
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
   return (
     <DashboardProviders>
-      <div className="flex min-h-dvh flex-col">
-        <DashboardNav
+      <SidebarProvider defaultOpen={sidebarOpen}>
+        <AppSidebar
           restaurantName={ctx.restaurant.name}
           role={ctx.profile.role}
           features={ctx.features}
         />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-6 md:pb-10">
-          {children}
-        </main>
-      </div>
+        <SidebarInset>
+          <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur md:hidden">
+            <SidebarTrigger />
+            <p className="truncate font-display text-base font-semibold">
+              {ctx.restaurant.name}
+            </p>
+          </header>
+          <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-6 md:px-8 md:py-10">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     </DashboardProviders>
   );
 }

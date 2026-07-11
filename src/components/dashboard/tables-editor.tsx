@@ -147,7 +147,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
         </Dialog>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 rounded-2xl bg-neutral-50 p-2 shadow-inner dark:bg-neutral-900">
         <FloorPlanMap
           tables={list}
           mode="edit"

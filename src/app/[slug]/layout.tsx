@@ -6,6 +6,7 @@ import { getPublicTheme, getRestaurantBySlug } from "@/lib/menu";
 import { getSiteTheme } from "@/lib/site-theme";
 import { buildThemeCss } from "@/lib/theme";
 import { FONT_PAIRS } from "@/lib/fonts";
+import { siteFontClassNames } from "@/lib/fonts-site";
 
 export async function generateMetadata({
   params,
@@ -66,7 +67,7 @@ export default async function RestaurantLayout({
       <div
         data-site-theme
         style={fontStyle}
-        className="flex min-h-dvh flex-col bg-background text-foreground font-sans"
+        className={`${siteFontClassNames} flex min-h-dvh flex-col bg-background text-foreground font-sans`}
       >
         {preview && (
           <div className="sticky top-0 z-50 bg-amber-500 py-1 text-center text-xs font-medium text-black">

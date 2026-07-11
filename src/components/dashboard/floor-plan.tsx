@@ -99,12 +99,13 @@ export function FloorPlanMap({
         const pos = dragPos[table.id] ?? { x: table.pos_x, y: table.pos_y };
         const status = getStatus?.(table) ?? "default";
         const isPulsing = pulse?.(table) ?? false;
+        const isDragging = dragPos[table.id] !== undefined;
         const size = Math.min(64, 40 + table.seats * 2.5);
 
         return (
           <div
             key={table.id}
-            className="absolute"
+            className={`absolute ${isDragging ? "" : "transition-[left,top] duration-150 ease-out"}`}
             style={{
               left: `${pos.x * 100}%`,
               top: `${pos.y * 100}%`,

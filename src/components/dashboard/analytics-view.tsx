@@ -24,6 +24,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatPrice } from "@/lib/format";
+import { chartMargin } from "@/components/dashboard/chart-theme";
 
 type AnalyticsData = {
   revenueSeries: { date: string; revenue: number; orders: number }[];
@@ -104,8 +105,8 @@ export function AnalyticsView() {
 
           <ChartCard title="Revenu">
             <ChartContainer config={revenueConfig} className="w-full">
-              <AreaChart data={data.revenueSeries}>
-                <CartesianGrid vertical={false} />
+              <AreaChart data={data.revenueSeries} margin={chartMargin}>
+                <CartesianGrid vertical={false} strokeOpacity={0.3} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis hide />
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -122,8 +123,8 @@ export function AnalyticsView() {
 
           <ChartCard title="Commandes par jour">
             <ChartContainer config={ordersConfig} className="w-full">
-              <BarChart data={data.revenueSeries}>
-                <CartesianGrid vertical={false} />
+              <BarChart data={data.revenueSeries} margin={chartMargin}>
+                <CartesianGrid vertical={false} strokeOpacity={0.3} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis hide />
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -134,8 +135,8 @@ export function AnalyticsView() {
 
           <ChartCard title="Meilleures ventes">
             <ChartContainer config={itemsConfig} className="w-full">
-              <BarChart data={data.topItems} layout="vertical" margin={{ left: 16 }}>
-                <CartesianGrid horizontal={false} />
+              <BarChart data={data.topItems} layout="vertical" margin={{ ...chartMargin, left: 16 }}>
+                <CartesianGrid horizontal={false} strokeOpacity={0.3} />
                 <XAxis type="number" hide />
                 <YAxis
                   dataKey="name"
@@ -195,8 +196,8 @@ export function AnalyticsView() {
 
           <ChartCard title="Commandes par heure">
             <ChartContainer config={ordersConfig} className="w-full">
-              <BarChart data={data.byHour}>
-                <CartesianGrid vertical={false} />
+              <BarChart data={data.byHour} margin={chartMargin}>
+                <CartesianGrid vertical={false} strokeOpacity={0.3} />
                 <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis hide />
                 <ChartTooltip content={<ChartTooltipContent />} />

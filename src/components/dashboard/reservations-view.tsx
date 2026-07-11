@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  CalendarDays,
   Check,
   LayoutGrid,
   List,
@@ -18,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   Select,
   SelectContent,
@@ -188,7 +191,7 @@ export function ReservationsView() {
       ) : (
         <>
           <Tabs value={dayFilter} onValueChange={(v) => setDayFilter(v as DayFilter)} className="mt-4">
-            <TabsList>
+            <TabsList variant="line">
               <TabsTrigger value="today">Aujourd&apos;hui</TabsTrigger>
               <TabsTrigger value="upcoming">À venir</TabsTrigger>
               <TabsTrigger value="past">Passées</TabsTrigger>
@@ -201,14 +204,17 @@ export function ReservationsView() {
             </h2>
             <div className="mt-2 space-y-3">
               {isPending && (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Chargement…
-                </p>
+                <div className="space-y-3">
+                  <Skeleton className="h-24 w-full rounded-xl" aria-busy="true" />
+                  <Skeleton className="h-24 w-full rounded-xl" aria-busy="true" />
+                </div>
               )}
               {!isPending && pending.length === 0 && (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  Aucune demande en attente.
-                </p>
+                <EmptyState
+                  icon={CalendarDays}
+                  title="Aucune demande en attente"
+                  hint="Les nouvelles réservations apparaîtront ici."
+                />
               )}
               {pending.map((r) => (
                 <ReservationCard

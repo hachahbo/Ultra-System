@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
 import type { CustomizationGroup, Item } from "@/lib/types";
@@ -118,6 +120,7 @@ export function ItemDialog({
   // Removed base ingredients
   const [removed, setRemoved] = useState<RemovedIngredients>(new Set());
   const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
 
   // Split groups into standard vs ingredient composition
   const { standardGroups, ingredientGroup } = useMemo(() => {
@@ -182,12 +185,17 @@ export function ItemDialog({
       ...[...removed].map((i) => `Sans ${i}`),
     ];
 
+    if (note.trim()) {
+      allOptions.push(`Note: ${note.trim()}`);
+    }
+
     add(
       {
         item_id: item!.id,
         name: item!.name_fr,
         unit_price: unitPrice,
         options: allOptions,
+        image_url: item!.image_url,
       },
       quantity,
     );
@@ -414,6 +422,27 @@ export function ItemDialog({
                   )}
                 </motion.section>
               )}
+
+              {/* ── Section 3: Special Instructions (Note) ── */}
+              <div className="mt-6 mb-4">
+                <Label htmlFor="item-note" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Instructions spéciales
+                </Label>
+                <Textarea
+                  id="item-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onFocus={(e) => {
+                    // Give the virtual keyboard time to animate up, then scroll into view
+                    setTimeout(() => {
+                      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 300);
+                  }}
+                  placeholder="Ex: Pas d'oignons, sauce à part..."
+                  className="mt-2 resize-none rounded-xl text-base sm:text-sm"
+                  rows={2}
+                />
+              </div>
 
               {/* spacer for footer */}
               <div className="h-4" />

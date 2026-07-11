@@ -8,6 +8,7 @@ import {
   ChefHat,
   LayoutGrid,
   List,
+  ShoppingBag,
   UtensilsCrossed,
   Volume2,
   VolumeX,
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Sheet,
@@ -24,6 +26,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { FloorPlanMap, type TableStatus } from "@/components/dashboard/floor-plan";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { ORDER_STATUS_DOT } from "@/components/dashboard/status-dot";
 import { fetchTables, tablesQueryKey } from "@/lib/tables-query";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { ensureAudioUnlocked, isAudioUnlocked, playNewOrderBeep } from "@/lib/sound";
@@ -219,23 +223,26 @@ export function KitchenView() {
         </div>
       ) : (
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="mt-4">
-          <TabsList className="flex-wrap">
+          <TabsList variant="line" className="flex-wrap">
             {filters.map((f) => (
               <TabsTrigger key={f.value} value={f.value}>
-                {f.label}
+                {f.label} · <span className="tabular-nums">{allOrders.filter((o) => matchesFilter(o, f.value)).length}</span>
               </TabsTrigger>
             ))}
           </TabsList>
           <TabsContent value={filter} className="mt-4 space-y-3">
             {isPending && (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                Chargement…
-              </p>
+              <div className="space-y-3">
+                <Skeleton className="h-32 w-full rounded-xl" aria-busy="true" />
+                <Skeleton className="h-32 w-full rounded-xl" aria-busy="true" />
+              </div>
             )}
             {!isPending && filtered.length === 0 && (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                Aucune commande ici pour le moment.
-              </p>
+              <EmptyState
+                icon={ShoppingBag}
+                title="Aucune commande ici pour le moment"
+                hint="Les nouvelles commandes apparaîtront automatiquement."
+              />
             )}
             {filtered.map((order) => (
               <OrderCard
@@ -301,6 +308,10 @@ function OrderCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`size-2 shrink-0 rounded-full ${ORDER_STATUS_DOT[order.status]}`}
+              aria-hidden="true"
+            />
             {order.type === "dine_in" ? (
               <Badge variant="secondary">
                 <UtensilsCrossed className="size-3.5" /> Table{" "}

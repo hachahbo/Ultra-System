@@ -7,8 +7,8 @@ export function HeroImages({ images }: { images?: string[] }) {
   const pop = images?.[1] ?? "/images/Gemini_Generated_Image_izo3jjizo3jjizo3.png";
 
   return (
-    <div className="relative mt-12 flex w-full justify-center lg:mt-0 lg:w-1/2">
-      <div className="relative flex h-[500px] w-full max-w-[400px] items-center justify-center sm:h-[600px]">
+    <div className="absolute inset-0 z-0 flex w-full items-center justify-center opacity-20 lg:relative lg:mt-0 lg:w-1/2 lg:opacity-100">
+      <div className="relative flex h-full min-h-[500px] w-full max-w-[400px] items-center justify-center lg:h-[600px]">
         {/* === Phase 1: Background Layer (z-index: 0) The SVGs === */}
 
         {/* Left Plant (Item 4) */}
@@ -62,7 +62,7 @@ export function HeroImages({ images }: { images?: string[] }) {
 
         {/* === Phase 3: Foreground Layer (z-index: 20) Pop === */}
         <motion.div
-          className="absolute -left-12 bottom-[15%] z-20 w-[65%] sm:-left-20"
+          className="hidden lg:block absolute -left-12 bottom-[15%] z-20 w-[65%] sm:-left-20"
           initial={{ opacity: 0, scale: 0, rotate: -15 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.4 }}

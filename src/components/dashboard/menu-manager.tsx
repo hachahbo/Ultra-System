@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { formatPrice } from "@/lib/format";
 import type { Category, Item } from "@/lib/types";
@@ -115,9 +116,11 @@ export function MenuManager() {
 
   if (isPending || !data) {
     return (
-      <p className="py-12 text-center text-sm text-muted-foreground">
-        Chargement…
-      </p>
+      <div className="mt-6 space-y-2" aria-busy="true">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
     );
   }
 
@@ -233,7 +236,7 @@ export function MenuManager() {
               {items.map((item, itemIndex) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60"
+                  className={`flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60 transition-all hover:shadow-md ${item.in_stock ? "opacity-100" : "opacity-60"}`}
                 >
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
                     {item.image_url ? (

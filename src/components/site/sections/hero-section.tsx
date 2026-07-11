@@ -16,7 +16,7 @@ export function HeroSection({
 }) {
   return (
     <section className="relative w-full overflow-hidden bg-background">
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-4 py-16 sm:px-6 lg:flex-row lg:px-8 lg:py-24">
+      <div className="relative mx-auto flex min-h-[85dvh] max-w-7xl flex-col items-start justify-end gap-12 px-4 pb-12 pt-32 sm:px-6 lg:min-h-0 lg:flex-row lg:items-center lg:justify-center lg:px-8 lg:py-24">
         <HeroContent base={base} headline={headline} sub={sub} ctaLabel={ctaLabel} />
         <HeroImages images={images} />
       </div>

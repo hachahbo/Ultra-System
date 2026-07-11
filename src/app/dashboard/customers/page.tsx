@@ -30,7 +30,7 @@ export default async function CustomersPage() {
             Cette liste vous appartient.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild variant="outline">
           <a href="/api/dashboard/customers/export" download>
             <Download className="size-4" /> Exporter CSV
           </a>

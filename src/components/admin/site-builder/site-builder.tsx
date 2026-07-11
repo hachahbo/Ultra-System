@@ -28,6 +28,7 @@ import { PanelImages } from "@/components/admin/site-builder/panel-images";
 import { PanelContent } from "@/components/admin/site-builder/panel-content";
 import { PanelSections } from "@/components/admin/site-builder/panel-sections";
 import { PreviewFrame } from "@/components/admin/site-builder/preview-frame";
+import { siteFontClassNames } from "@/lib/fonts-site";
 
 async function fetchTheme(restaurantId: string): Promise<RestaurantTheme> {
   const res = await fetch(`/api/admin/restaurants/${restaurantId}/theme`);
@@ -153,7 +154,7 @@ export function SiteBuilder({
   }
 
   return (
-    <div>
+    <div className={siteFontClassNames}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Button variant="ghost" size="sm" asChild className="-ml-2 mb-1">

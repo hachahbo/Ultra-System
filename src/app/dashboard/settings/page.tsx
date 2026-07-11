@@ -4,6 +4,7 @@ import { SettingsForm } from "@/components/dashboard/settings-form";
 import { StaffManagement } from "@/components/dashboard/staff-management";
 import { SubscriptionCard } from "@/components/dashboard/subscription-card";
 import { FeatureLocked } from "@/components/dashboard/feature-locked";
+import { Separator } from "@/components/ui/separator";
 import { getSessionContext } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
 import type { Subscription } from "@/lib/types";
@@ -37,7 +38,9 @@ export default async function SettingsPage() {
         <SettingsForm restaurant={ctx.restaurant} />
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-3">
+        <Separator />
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Équipe</p>
         {ctx.features.staff_management ? (
           <StaffManagement />
         ) : (

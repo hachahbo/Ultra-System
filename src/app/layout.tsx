@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { fontVariableClassNames } from "@/lib/fonts";
+import { rootFontClassNames } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${fontVariableClassNames} h-full antialiased`}
+      className={`${rootFontClassNames} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans transition-colors duration-500">
