@@ -18,41 +18,45 @@ export function DishCard({
   return (
     <Link
       href={`/${slug}/menu`}
-      className="group relative mt-20 flex flex-col items-center rounded-3xl bg-card p-6 pt-24 text-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)] dark:hover:shadow-[0_12px_40px_rgb(0,0,0,0.5)]"
+      className="group relative mt-14 flex min-h-[180px] w-full flex-col justify-between overflow-visible rounded-2xl border border-border/50 bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md dark:shadow-none"
     >
-      {/* Floating image - transparent plates pop out naturally */}
-      <div className="absolute -top-20 z-10 flex h-40 w-40 items-center justify-center">
-        <div className="relative size-full transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl">
+      {/* Floating Image Top Right */}
+      <div className="absolute -right-6 -top-12 z-10 flex size-[150px] items-center justify-center sm:-right-8 sm:-top-16 sm:size-[180px]">
+        <div className="relative size-full transition-transform duration-500 group-hover:scale-105 drop-shadow-md">
           {item.image_url ? (
             <Image
               src={item.image_url}
               alt={item.name_fr}
               fill
-              sizes="160px"
+              sizes="180px"
               className="object-contain"
             />
           ) : (
-            <div className="grid size-full place-items-center overflow-hidden rounded-full bg-accent text-accent-foreground shadow-lg">
-              <UtensilsCrossed className="size-8" />
+            <div className="grid size-full place-items-center overflow-hidden rounded-full bg-accent text-accent-foreground shadow-sm">
+              <UtensilsCrossed className="size-6" />
             </div>
           )}
         </div>
-        
-        {/* Floating price badge */}
-        <div className="absolute right-0 top-8 z-20 flex size-14 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background shadow-xl p-2 ">
-          {formatPrice(item.base_price, currency).replace(".00", "")}
-        </div>
       </div>
 
-      <h3 className="mt-2 font-display text-xl font-bold text-card-foreground">
-        {item.name_fr}
-      </h3>
+      {/* Text Content (Left side, bounded width) */}
+      <div className="relative z-20 w-[60%] sm:w-[65%]">
+        <h3 className="font-display text-xl font-bold leading-tight text-card-foreground">
+          {item.name_fr}
+        </h3>
+        {item.description_fr && (
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+            {item.description_fr}
+          </p>
+        )}
+      </div>
 
-      {item.description_fr && (
-        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-          {item.description_fr}
-        </p>
-      )}
+      {/* Bottom Right Price */}
+      <div className="mt-2 flex w-full justify-end z-20">
+        <span className="font-display text-xl font-black text-foreground">
+          {formatPrice(item.base_price, currency).replace(".00", "")}
+        </span>
+      </div>
     </Link>
   );
 }
