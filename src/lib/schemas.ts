@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COPY_KEYS, FEATURE_KEYS, FONT_PAIR_KEYS, SECTION_KEYS } from "@/lib/types";
 
 // Moroccan numbers: accept 06/07 mobile or +2126/+2127, tolerant of spaces.
 export const phoneSchema = z
@@ -64,13 +65,183 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const customizationOptionSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(100),
+  price_modifier: z.number({ message: "Prix invalide" }).min(-1000).max(1000),
+});
+
+export const customizationGroupSchema = z.object({
+  title: z.object({
+    fr: z.string().trim().min(1, "Titre requis").max(120),
+    ar: z.string().trim().max(120).nullable().optional(),
+    es: z.string().trim().max(120).nullable().optional(),
+  }),
+  required: z.boolean(),
+  max_selections: z.number().int().min(1).max(10),
+  options: z.array(customizationOptionSchema).min(1).max(20),
+});
+
 export const itemSchema = z.object({
   category_id: z.string().uuid("Catégorie requise"),
   name_fr: z.string().trim().min(1, "Nom requis").max(120),
   name_ar: z.string().trim().max(120).optional(),
+  name_es: z.string().trim().max(120).optional(),
   description_fr: z.string().trim().max(300).optional(),
   base_price: z.number({ message: "Prix invalide" }).min(0, "Prix invalide").max(10000),
   in_stock: z.boolean(),
+  sort_order: z.number().int().min(0).optional(),
+  customization_groups: z.array(customizationGroupSchema).max(10).optional(),
 });
 
 export type ItemInput = z.infer<typeof itemSchema>;
+
+export const categorySchema = z.object({
+  name_fr: z.string().trim().min(1, "Nom requis").max(120),
+  name_ar: z.string().trim().max(120).nullable().optional(),
+  name_es: z.string().trim().max(120).nullable().optional(),
+  sort_order: z.number().int().min(0).optional(),
+});
+
+export type CategoryInput = z.infer<typeof categorySchema>;
+
+export const tableSchema = z.object({
+  number: z.string().trim().min(1, "Numéro requis").max(10),
+  seats: z.number({ message: "Nombre de places invalide" }).int().min(1).max(30),
+  pos_x: z.number().min(0).max(1).optional(),
+  pos_y: z.number().min(0).max(1).optional(),
+});
+
+export type TableInput = z.infer<typeof tableSchema>;
+
+// Operational-only — branding (name/logo/address/about) and currency moved to
+// the Super Admin Site Builder (restaurant_theme / restaurants.currency are
+// operator-owned now, see 0005_bespoke_website_model.sql). Zod strips unknown
+// keys by default, so a request that also includes e.g. {name} still parses;
+// the empty-body guard in the PATCH route (api/dashboard/restaurant/route.ts)
+// is what turns a branding-only payload into a 400.
+export const restaurantSettingsSchema = z.object({
+  hours: z.string().trim().max(200).nullable().optional(),
+  phone: z.string().trim().max(30).nullable().optional(),
+  whatsapp_number: z.string().trim().max(30).nullable().optional(),
+  base_delivery_fee: z.number({ message: "Montant invalide" }).min(0).max(1000),
+  is_dine_in_enabled: z.boolean(),
+  is_delivery_enabled: z.boolean(),
+});
+
+export type RestaurantSettingsInput = z.infer<typeof restaurantSettingsSchema>;
+
+export const staffSchema = z.object({
+  email: z.string().trim().email("Email invalide"),
+  password: z.string().min(8, "8 caractères minimum"),
+  consent: z
+    .boolean()
+    .refine((v) => v === true, "Le consentement du membre du personnel est requis"),
+});
+
+export type StaffInput = z.infer<typeof staffSchema>;
+
+// ---------------------------------------------------------------------------
+// Super Admin
+// ---------------------------------------------------------------------------
+
+export const planSchema = z.enum(["free", "pro", "enterprise"]);
+export const restaurantStatusSchema = z.enum(["active", "trial", "suspended", "expired"]);
+export const featureKeySchema = z.enum(FEATURE_KEYS);
+
+export const adminRestaurantPatchSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120).optional(),
+  city: z.string().trim().max(120).nullable().optional(),
+  plan: planSchema.optional(),
+  status: restaurantStatusSchema.optional(),
+});
+export type AdminRestaurantPatchInput = z.infer<typeof adminRestaurantPatchSchema>;
+
+export const createRestaurantSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Slug requis")
+    .max(60)
+    .regex(/^[a-z0-9-]+$/, "Lettres minuscules, chiffres et tirets uniquement"),
+  city: z.string().trim().max(120).optional(),
+  plan: planSchema.default("free"),
+  currency: z.string().trim().min(1).max(10).default("MAD"),
+  ownerEmail: z.string().trim().email("Email invalide"),
+  ownerPassword: z.string().min(8, "8 caractères minimum"),
+});
+// z.input, not z.infer: the form works with the pre-default shape (plan
+// optional client-side), matching what zodResolver expects for TFieldValues.
+export type CreateRestaurantInput = z.input<typeof createRestaurantSchema>;
+
+export const permissionToggleSchema = z.object({
+  featureKey: featureKeySchema,
+  enabled: z.boolean(),
+});
+export type PermissionToggleInput = z.infer<typeof permissionToggleSchema>;
+
+export const bulkPermissionsSchema = z.object({
+  restaurantIds: z.array(z.string().uuid()).min(1).max(100),
+  changes: z
+    .array(z.object({ featureKey: featureKeySchema, enabled: z.boolean() }))
+    .min(1)
+    .max(FEATURE_KEYS.length),
+});
+export type BulkPermissionsInput = z.infer<typeof bulkPermissionsSchema>;
+
+// ---------------------------------------------------------------------------
+// Site Builder (restaurant_theme) — operator-only, see admin-auth.ts
+// requireSuperAdmin() and 0005_bespoke_website_model.sql.
+// ---------------------------------------------------------------------------
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide");
+
+export const themeSectionSchema = z.object({
+  key: z.enum(SECTION_KEYS),
+  enabled: z.boolean(),
+});
+
+// All fields optional: a draft save is a partial patch (the builder only
+// sends the panel being edited), but every key it DOES send is fully
+// validated — including duplicate-section detection and per-key copy length.
+export const themeDraftSchema = z.object({
+  color_primary: hexColor.nullable().optional(),
+  color_secondary: hexColor.nullable().optional(),
+  color_background: hexColor.nullable().optional(),
+  color_text: hexColor.nullable().optional(),
+  font_pair: z.enum(FONT_PAIR_KEYS).optional(),
+  logo_url: z.string().url().nullable().optional(),
+  hero_image_urls: z.array(z.string().url()).max(5).optional(),
+  about_title: z.string().trim().max(120).nullable().optional(),
+  about_body: z.string().trim().max(2000).nullable().optional(),
+  address: z.string().trim().max(300).nullable().optional(),
+  sections: z
+    .array(themeSectionSchema)
+    .max(SECTION_KEYS.length)
+    .refine((s) => new Set(s.map((x) => x.key)).size === s.length, "Sections dupliquées")
+    .optional(),
+  custom_copy: z.partialRecord(z.enum(COPY_KEYS), z.string().trim().max(300)).optional(),
+});
+export type ThemeDraftInput = z.infer<typeof themeDraftSchema>;
+
+export const themePatchSchema = z.object({
+  draft: themeDraftSchema,
+  expected_updated_at: z.string(),
+});
+export type ThemePatchInput = z.infer<typeof themePatchSchema>;
+
+export const themePublishSchema = z.object({
+  expected_updated_at: z.string(),
+});
+export type ThemePublishInput = z.infer<typeof themePublishSchema>;
+
+export const subscriptionPatchSchema = z.object({
+  plan_tier: planSchema.optional(),
+  status: z.enum(["active", "trialing", "past_due", "canceled"]).optional(),
+  billing_cycle: z.enum(["monthly", "yearly"]).optional(),
+  price_mad: z.number().min(0).max(1_000_000).optional(),
+  trial_ends_at: z.string().nullable().optional(),
+  current_period_end: z.string().nullable().optional(),
+  notes: z.string().trim().max(1000).nullable().optional(),
+});
+export type SubscriptionPatchInput = z.infer<typeof subscriptionPatchSchema>;

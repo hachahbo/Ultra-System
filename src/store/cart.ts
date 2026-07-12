@@ -10,6 +10,7 @@ export type CartLine = {
   unit_price: number;
   quantity: number;
   options: string[];
+  image_url?: string | null;
 };
 
 type CartState = {

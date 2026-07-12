@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getRestaurantBySlug } from "@/lib/menu";
+import { getRestaurantBySlug, getPublicFeatures } from "@/lib/menu";
+import { applyStatusGate } from "@/lib/features";
 import { ReservationForm } from "@/components/site/reservation-form";
+import { FeatureUnavailable } from "@/components/site/feature-unavailable";
 
 export const metadata: Metadata = { title: "Réserver une table" };
 
@@ -13,6 +15,15 @@ export default async function ReservationPage({
   const { slug } = await params;
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
+  const features = applyStatusGate(
+    restaurant.status,
+    await getPublicFeatures(restaurant.id, restaurant.plan),
+  );
+  if (!features.reservations) {
+    return (
+      <FeatureUnavailable message="Les réservations en ligne ne sont pas disponibles pour ce restaurant." />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">

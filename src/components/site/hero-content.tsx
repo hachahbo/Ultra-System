@@ -4,19 +4,33 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
-export function HeroContent({ base }: { base: string }) {
-  const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+export function HeroContent({
+  base,
+  headline,
+  sub,
+  ctaLabel,
+}: {
+  base: string;
+  headline?: string;
+  sub?: string;
+  ctaLabel?: string;
+}) {
+  const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
-    <div className="flex w-full flex-col justify-center lg:w-1/2">
+    <div className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full">
       {/* 1. Title */}
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0 }}
-        className="font-display text-5xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl"
+        className="font-display text-4xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl"
       >
-        We provide the <br /> best food for you
+        {headline ?? (
+          <>
+            We provide the <br /> best food for you
+          </>
+        )}
       </motion.h1>
 
       {/* 4. Description (Last in sequence as requested) */}
@@ -24,10 +38,10 @@ export function HeroContent({ base }: { base: string }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0.45 }}
-        className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
+        className="mt-4 md:mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
       >
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua.
+        {sub ??
+          " consectetur adipiscing  dolore magna aliqua."}
       </motion.p>
 
       {/* 2. Buttons */}
@@ -35,18 +49,18 @@ export function HeroContent({ base }: { base: string }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0.15 }}
-        className="mt-10 flex flex-wrap gap-4"
+        className="mt-6 md:mt-10 flex flex-wrap gap-4"
       >
         <Button
           asChild
           size="lg"
           className="rounded-md bg-foreground px-8 text-background hover:bg-foreground/90 shadow-lg"
         >
-          <Link href={`${base}/menu`}>Menu</Link>
+          <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
-        <Button asChild size="lg" className="rounded-md px-8 shadow-lg">
+        {/* <Button asChild size="lg" className="rounded-md px-8 shadow-lg">
           <Link href={`${base}/reservation`}>Book a table</Link>
-        </Button>
+        </Button> */}
       </motion.div>
 
       {/* 3. Socials */}
@@ -54,7 +68,7 @@ export function HeroContent({ base }: { base: string }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0.3 }}
-        className="mt-20 flex items-center gap-4"
+        className="mt-5 md:mt-20 flex items-center gap-4"
       >
         <div className="flex gap-3">
           <a

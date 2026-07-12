@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle2, Minus, Plus } from "lucide-react";
+import { CheckCircle2, Minus, Plus, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,15 +120,30 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       {/* Lines */}
       <ul className="space-y-3">
         {lines.map((l) => (
-          <li key={l.key} className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60">
+          <li key={l.key} className="flex items-center gap-4 rounded-xl bg-card p-3 ring-1 ring-border/60">
+            <div className="relative size-16 shrink-0 rounded-lg overflow-hidden bg-muted border border-border">
+              {l.image_url ? (
+                <Image
+                  src={l.image_url}
+                  alt={l.name}
+                  fill
+                  sizes="64px"
+                  className="object-contain drop-shadow-sm"
+                />
+              ) : (
+                <div className="grid size-full place-items-center">
+                  <UtensilsCrossed className="size-5 text-muted-foreground/40" />
+                </div>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{l.name}</p>
               {l.options.length > 0 && (
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="line-clamp-2 text-xs text-muted-foreground mt-0.5">
                   {l.options.join(" · ")}
                 </p>
               )}
-              <p className="mt-0.5 text-sm font-semibold text-primary">
+              <p className="mt-1 text-sm font-semibold text-primary">
                 {formatPrice(l.unit_price * l.quantity, restaurant.currency)}
               </p>
             </div>

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRestaurantBySlug } from "@/lib/menu";
+import { getSiteTheme } from "@/lib/site-theme";
 
 export const metadata: Metadata = { title: "Contact" };
 
@@ -14,6 +15,7 @@ export default async function ContactPage({
   const { slug } = await params;
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
+  const { theme } = await getSiteTheme(restaurant);
 
   const whatsappHref = restaurant.whatsapp_number
     ? `https://wa.me/${restaurant.whatsapp_number.replace(/\D/g, "")}`
@@ -26,13 +28,13 @@ export default async function ContactPage({
       </h1>
 
       <div className="mt-8 space-y-5">
-        {restaurant.address && (
+        {theme.address && (
           <div className="flex items-start gap-3">
             <MapPin className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
               <p className="font-medium">Adresse</p>
               <p className="text-sm text-muted-foreground">
-                {restaurant.address}
+                {theme.address}
               </p>
             </div>
           </div>
@@ -81,12 +83,12 @@ export default async function ContactPage({
         )}
       </div>
 
-      {restaurant.address && (
+      {theme.address && (
         <div className="mt-10 overflow-hidden rounded-xl ring-1 ring-border">
           <iframe
             title={`Carte — ${restaurant.name}`}
             src={`https://www.google.com/maps?q=${encodeURIComponent(
-              `${restaurant.name} ${restaurant.address}`,
+              `${restaurant.name} ${theme.address}`,
             )}&output=embed`}
             className="h-72 w-full border-0"
             loading="lazy"

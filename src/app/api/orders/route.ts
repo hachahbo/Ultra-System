@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPublicFeatures } from "@/lib/menu";
+import { applyStatusGate } from "@/lib/features";
 import { orderSchema } from "@/lib/schemas";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 
@@ -27,11 +29,18 @@ export async function POST(request: Request) {
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, currency, base_delivery_fee, is_dine_in_enabled, is_delivery_enabled")
+    .select("id, plan, status, currency, base_delivery_fee, is_dine_in_enabled, is_delivery_enabled")
     .eq("slug", input.restaurant_slug)
     .maybeSingle();
   if (!restaurant) {
     return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
+  }
+  const features = applyStatusGate(
+    restaurant.status,
+    await getPublicFeatures(restaurant.id, restaurant.plan),
+  );
+  if (!features.online_ordering) {
+    return NextResponse.json({ error: "Commande en ligne indisponible" }, { status: 403 });
   }
   if (input.type === "dine_in" && !restaurant.is_dine_in_enabled) {
     return NextResponse.json({ error: "Commande sur place indisponible" }, { status: 400 });
@@ -88,6 +97,12 @@ export async function POST(request: Request) {
   const deliveryFee =
     input.type === "delivery" ? Number(restaurant.base_delivery_fee) : 0;
   const total = subtotal + deliveryFee;
+
+  // Guard against a silent zero-revenue order (Overview/Analytics both sum
+  // `orders.total` directly — a bug here would hide real revenue for weeks).
+  if (total <= 0) {
+    return NextResponse.json({ error: "Commande invalide" }, { status: 400 });
+  }
 
   // The capture: upsert the customer so the phone lands in the DB (§2).
   let customerId: string | null = null;

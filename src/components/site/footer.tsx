@@ -1,23 +1,29 @@
 import Link from "next/link";
 import { UtensilsCrossed } from "lucide-react";
-import type { Restaurant } from "@/lib/types";
+import type { Restaurant, ResolvedTheme } from "@/lib/types";
 
-export function Footer({ restaurant }: { restaurant: Restaurant }) {
+export function Footer({
+  restaurant,
+  theme,
+}: {
+  restaurant: Restaurant;
+  theme: ResolvedTheme;
+}) {
   const base = `/${restaurant.slug}`;
-  
+
   return (
     <div className="mt-auto pt-24 sm:pt-32 lg:pt-40">
-      <footer className="relative bg-white pt-24 pb-8 text-sm text-gray-600 sm:pt-32">
+      <footer className="relative bg-card pt-24 pb-8 text-sm text-muted-foreground sm:pt-32">
         {/* Newsletter Box */}
         <div className="absolute left-4 right-4 top-0 -translate-y-1/2 mx-auto max-w-5xl z-10">
           <div className="relative overflow-hidden rounded-3xl shadow-xl">
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: "url('/images/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg')" }}
             />
           <div className="absolute inset-0 bg-black/60 mix-blend-multiply" />
           <div className="relative z-10 px-6 py-12 text-center sm:px-12 sm:py-16">
-            <h2 className="mx-auto max-w-xl font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h2 className="mx-auto max-w-xl font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Get Our Promo Code by Subscribing To our Newsletter
             </h2>
             <form className="mx-auto mt-6 flex max-w-md rounded-full bg-white p-1.5 shadow-sm">
@@ -29,7 +35,7 @@ export function Footer({ restaurant }: { restaurant: Restaurant }) {
               />
               <button
                 type="submit"
-                className="rounded-full bg-[#f16925] px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#d95c1d]"
+                className="rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
                 Subscribe
               </button>
@@ -54,35 +60,35 @@ export function Footer({ restaurant }: { restaurant: Restaurant }) {
           {/* Column 1: Logo, Text, Hours */}
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f16925]/10 text-[#f16925]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                  <UtensilsCrossed className="h-5 w-5" />
               </div>
-              <span className="font-bold text-gray-900 text-xl">{restaurant.name}</span>
+              <span className="font-bold text-card-foreground text-xl">{restaurant.name}</span>
             </div>
-            <p className="text-gray-500 line-clamp-3 leading-relaxed">
-              {restaurant.about_text || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
+            <p className="text-muted-foreground line-clamp-3 leading-relaxed">
+              {theme.about_body || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
               {" "}
-              <Link href={`${base}/about`} className="text-gray-900 underline hover:text-[#f16925] font-medium text-xs ml-1">
+              <Link href={`${base}/about`} className="text-card-foreground underline hover:text-primary font-medium text-xs ml-1">
                 Learn more
               </Link>
             </p>
             <div>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-900 mb-3">Opening Hours</h3>
-              <div className="space-y-1.5 text-xs text-gray-500">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-3">Opening Hours</h3>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
                 {restaurant.hours ? (
                   <p>{restaurant.hours}</p>
                 ) : (
                   <>
                     <div className="flex justify-between max-w-[240px]">
-                      <span className="font-medium text-gray-700">Monday - Friday</span> 
+                      <span className="font-medium text-card-foreground/80">Monday - Friday</span>
                       <span>8:00 am to 9:00 pm</span>
                     </div>
                     <div className="flex justify-between max-w-[240px]">
-                      <span className="font-medium text-gray-700">Saturday</span> 
+                      <span className="font-medium text-card-foreground/80">Saturday</span>
                       <span>8:00 am to 9:00 pm</span>
                     </div>
                     <div className="flex justify-between max-w-[240px]">
-                      <span className="font-medium text-gray-700">Sunday</span> 
+                      <span className="font-medium text-card-foreground/80">Sunday</span>
                       <span>CLOSED</span>
                     </div>
                   </>
@@ -93,37 +99,37 @@ export function Footer({ restaurant }: { restaurant: Restaurant }) {
 
           {/* Column 2: Navigation */}
           <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-900 mb-6 mt-1">Navigation</h3>
-            <ul className="space-y-4 text-xs font-medium text-gray-500">
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Menu</Link></li>
-              <li><Link href={`${base}/about`} className="hover:text-[#f16925] transition-colors">About us</Link></li>
-              <li><Link href={`${base}/contact`} className="hover:text-[#f16925] transition-colors">Contact us</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Main dishes</Link></li>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Navigation</h3>
+            <ul className="space-y-4 text-xs font-medium text-muted-foreground">
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Menu</Link></li>
+              <li><Link href={`${base}/about`} className="hover:text-primary transition-colors">About us</Link></li>
+              <li><Link href={`${base}/contact`} className="hover:text-primary transition-colors">Contact us</Link></li>
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Main dishes</Link></li>
             </ul>
           </div>
 
           {/* Column 3: Dishes */}
           <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-900 mb-6 mt-1">Dishes</h3>
-            <ul className="space-y-4 text-xs font-medium text-gray-500">
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Fish & Viggies</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Tofu Chili</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Egg & Cocumber</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-[#f16925] transition-colors">Lumpia w/Suace</Link></li>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Dishes</h3>
+            <ul className="space-y-4 text-xs font-medium text-muted-foreground">
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Fish & Viggies</Link></li>
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Tofu Chili</Link></li>
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Egg & Cocumber</Link></li>
+              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Lumpia w/Suace</Link></li>
             </ul>
           </div>
 
           {/* Column 4: Follow Us */}
           <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-900 mb-6 mt-1">Follow Us</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Follow Us</h3>
             <div className="flex gap-4">
-              <a href="#" aria-label="Facebook" className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-[#f16925] hover:text-[#f16925] transition-all bg-white">
+              <a href="#" aria-label="Facebook" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
               </a>
-              <a href="#" aria-label="Instagram" className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-[#f16925] hover:text-[#f16925] transition-all bg-white">
+              <a href="#" aria-label="Instagram" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               </a>
-              <a href="#" aria-label="Twitter" className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-[#f16925] hover:text-[#f16925] transition-all bg-white">
+              <a href="#" aria-label="Twitter" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
               </a>
             </div>
@@ -131,13 +137,13 @@ export function Footer({ restaurant }: { restaurant: Restaurant }) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-20 flex flex-col items-center justify-between border-t border-gray-100 pt-8 pb-4 sm:flex-row relative z-10">
-          <p className="text-[11px] text-gray-400 font-medium tracking-wide">
+        <div className="mt-20 flex flex-col items-center justify-between border-t border-border pt-8 pb-4 sm:flex-row relative z-10">
+          <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
             © {new Date().getFullYear()} {restaurant.name}. All Right Reserved. Designed by Isaac
           </p>
-          <div className="mt-4 flex gap-6 text-[11px] font-medium text-gray-400 sm:mt-0">
-            <a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
+          <div className="mt-4 flex gap-6 text-[11px] font-medium text-muted-foreground sm:mt-0">
+            <a href="#" className="hover:text-card-foreground transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-card-foreground transition-colors">Privacy Policy</a>
           </div>
         </div>
       </div>

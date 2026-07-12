@@ -3,9 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ImagePlus, Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+  UtensilsCrossed,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,20 +20,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { createClient } from "@/lib/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { formatPrice } from "@/lib/format";
-import { itemSchema, type ItemInput } from "@/lib/schemas";
 import type { Category, Item } from "@/lib/types";
 
 type MenuData = {
@@ -42,6 +50,15 @@ async function fetchMenu(): Promise<MenuData> {
   const res = await fetch("/api/dashboard/menu");
   if (!res.ok) throw new Error("fetch failed");
   return res.json();
+}
+
+async function patchJson(url: string, body: unknown) {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res;
 }
 
 export function MenuManager() {
@@ -58,11 +75,7 @@ export function MenuManager() {
 
   const toggleStock = useMutation({
     mutationFn: async ({ id, in_stock }: { id: string; in_stock: boolean }) => {
-      const res = await fetch(`/api/dashboard/items/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ in_stock }),
-      });
+      const res = await patchJson(`/api/dashboard/items/${id}`, { in_stock });
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: refresh,
@@ -71,24 +84,70 @@ export function MenuManager() {
 
   const deleteItem = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/dashboard/items/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/dashboard/items/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
     },
     onSuccess: refresh,
     onError: () => toast.error("Suppression impossible"),
   });
 
+  const deleteCategory = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/dashboard/categories/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "delete failed");
+      }
+    },
+    onSuccess: refresh,
+    onError: (err: Error) =>
+      toast.error(err.message || "Suppression impossible"),
+  });
+
+  const reorder = useMutation({
+    mutationFn: async (pairs: { url: string; sort_order: number }[]) => {
+      await Promise.all(
+        pairs.map((p) => patchJson(p.url, { sort_order: p.sort_order })),
+      );
+    },
+    onSuccess: refresh,
+    onError: () => toast.error("Réorganisation impossible"),
+  });
+
   if (isPending || !data) {
     return (
-      <p className="py-12 text-center text-sm text-muted-foreground">
-        Chargement…
-      </p>
+      <div className="mt-6 space-y-2" aria-busy="true">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
     );
   }
 
   const isOwner = data.role === "owner";
+  const sortedCategories = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
+
+  function moveCategory(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= sortedCategories.length) return;
+    const a = sortedCategories[index];
+    const b = sortedCategories[target];
+    reorder.mutate([
+      { url: `/api/dashboard/categories/${a.id}`, sort_order: b.sort_order },
+      { url: `/api/dashboard/categories/${b.id}`, sort_order: a.sort_order },
+    ]);
+  }
+
+  function moveItem(items: Item[], index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= items.length) return;
+    const a = items[index];
+    const b = items[target];
+    reorder.mutate([
+      { url: `/api/dashboard/items/${a.id}`, sort_order: b.sort_order },
+      { url: `/api/dashboard/items/${b.id}`, sort_order: a.sort_order },
+    ]);
+  }
 
   return (
     <div>
@@ -109,16 +168,75 @@ export function MenuManager() {
         </p>
       )}
 
-      {data.categories.map((cat) => {
-        const items = data.items.filter((i) => i.category_id === cat.id);
+      {sortedCategories.map((cat, catIndex) => {
+        const items = data.items
+          .filter((i) => i.category_id === cat.id)
+          .sort((a, b) => a.sort_order - b.sort_order);
         return (
           <section key={cat.id} className="mt-8">
-            <h2 className="font-medium text-muted-foreground">{cat.name_fr}</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-medium text-muted-foreground">{cat.name_fr}</h2>
+              {isOwner && (
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Monter la catégorie"
+                    disabled={catIndex === 0}
+                    onClick={() => moveCategory(catIndex, -1)}
+                  >
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Descendre la catégorie"
+                    disabled={catIndex === sortedCategories.length - 1}
+                    onClick={() => moveCategory(catIndex, 1)}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                  <EditCategoryDialog category={cat} onSaved={refresh} />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Supprimer ${cat.name_fr}`}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Supprimer « {cat.name_fr} » ?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {items.length > 0
+                            ? "Déplacez d'abord les articles de cette catégorie."
+                            : "Cette action est irréversible."}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={items.length > 0}
+                          onClick={() => deleteCategory.mutate(cat.id)}
+                        >
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
             <ul className="mt-2 space-y-2">
-              {items.map((item) => (
+              {items.map((item, itemIndex) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60"
+                  className={`flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60 transition-all hover:shadow-md ${item.in_stock ? "opacity-100" : "opacity-60"}`}
                 >
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
                     {item.image_url ? (
@@ -145,6 +263,26 @@ export function MenuManager() {
                   </div>
                   {isOwner && (
                     <>
+                      <div className="flex flex-col">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Monter l'article"
+                          disabled={itemIndex === 0}
+                          onClick={() => moveItem(items, itemIndex, -1)}
+                        >
+                          <ChevronUp className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Descendre l'article"
+                          disabled={itemIndex === items.length - 1}
+                          onClick={() => moveItem(items, itemIndex, 1)}
+                        >
+                          <ChevronDown className="size-3.5" />
+                        </Button>
+                      </div>
                       <Switch
                         checked={item.in_stock}
                         aria-label={`${item.name_fr} en stock`}
@@ -189,7 +327,7 @@ export function MenuManager() {
       {(creating || editing) && (
         <ItemFormDialog
           item={editing}
-          categories={data.categories}
+          categories={sortedCategories}
           restaurantId={data.restaurant_id}
           onClose={() => {
             setCreating(false);
@@ -257,178 +395,54 @@ function AddCategoryDialog({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function ItemFormDialog({
-  item,
-  categories,
-  restaurantId,
-  onClose,
+function EditCategoryDialog({
+  category,
   onSaved,
 }: {
-  item: Item | null;
-  categories: Category[];
-  restaurantId: string;
-  onClose: () => void;
+  category: Category;
   onSaved: () => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(category.name_fr);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
 
-  const form = useForm<ItemInput>({
-    resolver: zodResolver(itemSchema),
-    defaultValues: {
-      category_id: item?.category_id ?? categories[0]?.id ?? "",
-      name_fr: item?.name_fr ?? "",
-      name_ar: item?.name_ar ?? "",
-      description_fr: item?.description_fr ?? "",
-      base_price: item ? Number(item.base_price) : 0,
-      in_stock: item?.in_stock ?? true,
-    },
-  });
-
-  // Photo upload goes straight to Supabase Storage (RLS: only the owner's
-  // restaurant folder is writable), then the public URL is saved on the item.
-  async function uploadPhoto(file: File) {
-    setUploading(true);
-    try {
-      const supabase = createClient();
-      const path = `${restaurantId}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      const { error } = await supabase.storage
-        .from("menu-images")
-        .upload(path, file, { cacheControl: "3600" });
-      if (error) throw error;
-      const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
-      setImageUrl(data.publicUrl);
-    } catch {
-      toast.error("Échec de l'envoi de la photo");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function onSubmit(values: ItemInput) {
+  async function save() {
+    if (!name.trim()) return;
     setSaving(true);
-    try {
-      const payload = { ...values, image_url: imageUrl };
-      const res = await fetch(
-        item ? `/api/dashboard/items/${item.id}` : "/api/dashboard/items",
-        {
-          method: item ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (!res.ok) {
-        toast.error("Enregistrement impossible");
-        return;
-      }
-      onSaved();
-    } finally {
-      setSaving(false);
+    const res = await patchJson(`/api/dashboard/categories/${category.id}`, {
+      name_fr: name.trim(),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      toast.error("Modification impossible");
+      return;
     }
+    setOpen(false);
+    onSaved();
   }
-
-  const errors = form.formState.errors;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Renommer ${category.name_fr}`}>
+          <Pencil className="size-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>
-            {item ? `Modifier « ${item.name_fr} »` : "Nouvel article"}
-          </DialogTitle>
+          <DialogTitle>Renommer la catégorie</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <div className="space-y-2">
-            <Label>Catégorie</Label>
-            <Select
-              value={form.watch("category_id")}
-              onValueChange={(v) => form.setValue("category_id", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choisir…" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name_fr}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name_fr">Nom (français)</Label>
-            <Input id="name_fr" {...form.register("name_fr")} />
-            {errors.name_fr && (
-              <p className="text-sm text-destructive">{errors.name_fr.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name_ar">Nom (arabe, optionnel)</Label>
-            <Input id="name_ar" dir="rtl" {...form.register("name_ar")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description_fr">Description (optionnel)</Label>
-            <Textarea id="description_fr" {...form.register("description_fr")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="base_price">Prix (MAD)</Label>
-            <Input
-              id="base_price"
-              type="number"
-              step="0.5"
-              min="0"
-              inputMode="decimal"
-              {...form.register("base_price", { valueAsNumber: true })}
-            />
-            {errors.base_price && (
-              <p className="text-sm text-destructive">
-                {errors.base_price.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="photo">Photo</Label>
-            <div className="flex items-center gap-3">
-              {imageUrl && (
-                <Image
-                  src={imageUrl}
-                  alt=""
-                  width={48}
-                  height={48}
-                  className="size-12 rounded-lg object-cover"
-                />
-              )}
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
-                <ImagePlus className="size-4" />
-                {uploading ? "Envoi…" : imageUrl ? "Changer" : "Ajouter"}
-                <input
-                  id="photo"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadPhoto(file);
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border px-3 py-2.5">
-            <Label htmlFor="in_stock">En stock</Label>
-            <Switch
-              id="in_stock"
-              checked={form.watch("in_stock")}
-              onCheckedChange={(v) => form.setValue("in_stock", v)}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={saving || uploading}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
-          </Button>
-        </form>
+        <div className="space-y-2">
+          <Label htmlFor="cat-edit-name">Nom</Label>
+          <Input
+            id="cat-edit-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <Button onClick={save} disabled={saving || !name.trim()}>
+          {saving ? "Enregistrement…" : "Enregistrer"}
+        </Button>
       </DialogContent>
     </Dialog>
   );
