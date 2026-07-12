@@ -55,6 +55,8 @@
      per-restaurant wrapper (data-site-theme); everywhere else keeps this. */
   --font-display: var(--f-darna-classic-display);
   --font-sans: var(--f-darna-classic-sans);
+  /* Force Roboto as the primary body font */
+  font-family: var(--f-darna-classic-sans, 'Roboto', sans-serif);
 
   /* Darna theme — from .claude/Design/HomePage Palette.png:
      cream paper, near-black ink, burnt-orange CTA, tan/brown/slate accents */
@@ -135,8 +137,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), 'Roboto', sans-serif;
   }
   html {
-    @apply font-sans;
+    font-family: var(--font-sans), 'Roboto', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), var(--font-sans), 'Roboto', sans-serif;
   }
 }

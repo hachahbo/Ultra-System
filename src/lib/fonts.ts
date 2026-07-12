@@ -1,4 +1,4 @@
-import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Roboto } from "next/font/google";
 import type { FontPairKey } from "@/lib/types";
 
 // This file is imported by the ROOT layout (every route, incl. /dashboard
@@ -7,12 +7,13 @@ import type { FontPairKey } from "@/lib/types";
 // used, under [slug] — keeping them out of this module graph so the root
 // layout's cold compile stays cheap.
 
-const darnaClassicDisplay = DM_Serif_Display({
-  weight: "400",
+const darnaClassicDisplay = Roboto({
+  weight: ["400", "500", "700", "900"],
   variable: "--f-darna-classic-display",
   subsets: ["latin"],
 });
-const darnaClassicSans = Plus_Jakarta_Sans({
+const darnaClassicSans = Roboto({
+  weight: ["400", "500", "700"],
   variable: "--f-darna-classic-sans",
   subsets: ["latin"],
 });
@@ -27,7 +28,7 @@ export const FONT_PAIRS: Record<
   { label: string; displayVar: string; sansVar: string }
 > = {
   "darna-classic": {
-    label: "Darna Classic (DM Serif + Plus Jakarta)",
+    label: "Darna Classic (Roboto)",
     displayVar: "var(--f-darna-classic-display)",
     sansVar: "var(--f-darna-classic-sans)",
   },
