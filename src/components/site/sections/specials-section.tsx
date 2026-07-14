@@ -2,10 +2,10 @@ import { DishCard } from "@/components/site/dish-card";
 import type { Item } from "@/lib/types";
 
 const FALLBACK_DISH_IMAGES = [
-  "/images/dish-1 1.png",
-  "/images/dish-2 1.png",
-  "/images/dish-3 1.png",
-  "/images/dish-4.png",
+  "/images/Gemini_Generated_Image_izo3jjizo3jjizo3.png",
+  "/images/Gemini_Generated_Image_hs7cwmhs7cwmhs7c.png",
+  "/images/Gemini_Generated_Image_igfco9igfco9igfc.png",
+  "/images/Gemini_Generated_Image_izo3jjizo3jjizo3.png",
 ];
 
 export function SpecialsSection({
@@ -22,7 +22,7 @@ export function SpecialsSection({
   sub?: string;
 }) {
   return (
-    <section className="relative overflow-hidden bg-muted py-20 md:py-28">
+    <section className="relative overflow-hidden bg-background py-20 md:py-28">
       {/* Decorative Botanicals */}
       <div className="pointer-events-none absolute left-[2%] top-[5%] w-42 opacity-10 dark:invert dark:opacity-20 sm:w-80">
         <img src="/images/Group (5).svg" alt="" className="h-auto w-full" />
@@ -34,7 +34,7 @@ export function SpecialsSection({
         <img src="/images/Group (6).svg" alt="" className="h-auto w-full" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4">
+      <div className="relative mx-auto max-w-[1400px] px-4 xl:px-8">
         <div className="mx-auto mb-16 max-w-xl text-center">
           <h2 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
             {heading ?? "Our Special Dishes"}
@@ -45,18 +45,32 @@ export function SpecialsSection({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-8 gap-y-8 pt-8 sm:grid-cols-2 lg:grid-cols-4">
-          {items.map((item, index) => {
-            // Override item image if it doesn't exist to use the specific dish images requested
-            const itemWithImage = {
-              ...item,
-              image_url: item.image_url || FALLBACK_DISH_IMAGES[index] || null,
-            };
+        <div className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] shadow-2xl">
+          {/* Left Side: Featured Image */}
+          <div className="w-full lg:w-[45%] p-4 sm:p-8 lg:p-12">
+            <div className="w-full h-full min-h-[400px] overflow-hidden rounded-[32px] shadow-xl">
+              <img
+                src="/images/orendezvous.tanger_1777049699_3882496730961703431_73557593345.jpg"
+                className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+                alt="Featured dishes collage"
+              />
+            </div>
+          </div>
 
-            return (
-              <DishCard key={item.id} item={itemWithImage} slug={slug} currency={currency} />
-            );
-          })}
+          {/* Right Side: 2x2 Grid of Dishes */}
+          <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
+            <div className="grid grid-cols-1 gap-x-12 gap-y-20 xl:gap-x-12 xl:gap-y-24 sm:grid-cols-2 mt-8">
+              {items.map((item, index) => {
+                const itemWithImage = {
+                  ...item,
+                  image_url: item.image_url || FALLBACK_DISH_IMAGES[index] || null,
+                };
+                return (
+                  <DishCard key={item.id} item={itemWithImage} slug={slug} currency={currency} />
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>

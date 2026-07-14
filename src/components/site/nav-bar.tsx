@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Menu as MenuIcon, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LogoIcon } from "@/components/site/logo-icon";
 import {
   Sheet,
   SheetContent,
@@ -44,23 +45,8 @@ export function NavBar({
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Logo */}
-        <Link href={base} className="flex items-center gap-2.5 min-w-0">
-          {logoUrl ? (
-            <Image
-              src={logoUrl}
-              alt=""
-              width={36}
-              height={36}
-              className="size-9 rounded-full object-cover"
-            />
-          ) : (
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-lg font-bold text-primary-foreground">
-              <UtensilsCrossed className="size-5" />
-            </span>
-          )}
-          <span className="truncate font-display text-xl font-bold tracking-tight text-foreground">
-            {name}
-          </span>
+        <Link href={base} className="flex items-center min-w-0">
+          <LogoIcon className="w-32 sm:w-40 md:w-48 h-auto" />
         </Link>
 
         {/* Center: Navigation Links */}
@@ -79,7 +65,7 @@ export function NavBar({
         {/* Right: CTA Button */}
         <div className="hidden items-center gap-4 md:flex">
           <ThemeToggle />
-          <Button asChild size="lg" className="rounded-md px-8 shadow-md">
+          <Button asChild className="rounded-full px-8 py-6 text-base font-semibold shadow-md">
             <Link href={`${base}/reservation`}>Book a table</Link>
           </Button>
         </div>

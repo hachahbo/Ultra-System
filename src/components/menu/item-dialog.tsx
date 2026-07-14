@@ -228,7 +228,7 @@ export function ItemDialog({
             animate="show"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`relative flex w-full flex-col overflow-hidden p-4 bg-card shadow-2xl ${isDesktop
+            className={`relative flex w-full flex-col overflow-visible p-4 bg-card shadow-2xl ${isDesktop
                 ? "max-h-[88vh] max-w-md rounded-3xl ring-1 ring-border/60"
                 : "max-h-[92dvh] rounded-t-3xl"
               }`}
@@ -240,35 +240,36 @@ export function ItemDialog({
               </div>
             )}
 
-            {/* ── Header image ── */}
-            {item.image_url && (
-              <div className="relative mx-4 mt-2 h-44 shrink-0 overflow-hidden rounded-2xl">
-                <Image
-                  src={item.image_url}
-                  alt={item.name_fr}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 640px"
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              </div>
-            )}
-
-            {/* ── Close button ── */}
+            {/* ── Close button (Moved to left) ── */}
             <button
               type="button"
               onClick={onClose}
               aria-label="Fermer"
-              className="absolute right-4 top-4 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/80 text-foreground backdrop-blur-sm transition-colors hover:bg-muted"
+              className="absolute left-4 top-4 z-20 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/80 border border-border/50 text-foreground backdrop-blur-sm transition-colors hover:bg-muted"
             >
               <X className="size-4" />
             </button>
 
+            {/* ── Floating Image Top Right ── */}
+            {item.image_url && (
+              <div className="absolute -right-2 -top-12 z-30 flex size-[150px] pointer-events-none items-center justify-center sm:-right-8 sm:-top-16 sm:size-[200px]">
+                <div className="relative size-full drop-shadow-2xl transition-transform duration-500 hover:scale-105">
+                  <Image
+                    src={item.image_url}
+                    alt={item.name_fr}
+                    fill
+                    sizes="200px"
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+            )}
+
             {/* ── Scrollable body ── */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-6 py-6 pt-12">
               {/* Item title + description */}
-              <div className="mb-5">
+              <div className="mb-5 pr-24 sm:pr-32">
                 <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
                   {item.name_fr}
                 </h2>

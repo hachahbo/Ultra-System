@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function HeroContent({
@@ -33,35 +34,62 @@ export function HeroContent({
         )}
       </motion.h1>
 
-      {/* 4. Description (Last in sequence as requested) */}
-      <motion.p
+      {/* 4. Description & Opening Hours */}
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0.45 }}
-        className="mt-4 md:mt-6 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
+        className="mt-4 md:mt-6 max-w-md"
       >
-        {sub ??
-          " consectetur adipiscing  dolore magna aliqua."}
-      </motion.p>
+        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg mb-8">
+          {sub ??
+            "consectetur adipiscing dolore magna aliqua Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
+        </p>
+
+      </motion.div>
 
       {/* 2. Buttons */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transition, delay: 0.15 }}
-        className="mt-6 md:mt-10 flex flex-wrap gap-4"
+        className="mt-8 md:mt-10 flex flex-wrap gap-4"
       >
         <Button
           asChild
-          size="lg"
-          className="rounded-md bg-foreground px-8 text-background hover:bg-foreground/90 shadow-lg"
+          className="rounded-full bg-foreground px-8 py-6 text-base font-semibold text-background hover:bg-foreground/90 shadow-lg"
         >
           <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
-        {/* <Button asChild size="lg" className="rounded-md px-8 shadow-lg">
+        <Button
+          asChild
+          className="rounded-full bg-[oklch(0.685_0.165_45)] px-8 py-6 text-base font-semibold text-white hover:opacity-90 shadow-lg"
+        >
           <Link href={`${base}/reservation`}>Book a table</Link>
-        </Button> */}
+        </Button>
       </motion.div>
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
+          <div className="flex flex-col gap-2">
+            <h4 className="text-sm font-semobold tracking-[0.2em] text-foreground">
+              Opening hours
+            </h4>
+            <p className="text-muted-foreground text-base sm:text-md">
+              lun–dim · 11h00 – 23h00
+            </p>
+          </div>
+          
+          <div className="hidden sm:block w-[1px] bg-border/80 self-stretch" />
+          
+          <div className="flex flex-col gap-2">
+            <h4 className="text-sm font-bold tracking-[0.2em] text-foreground ">
+              Location
+            </h4>
+            <p className="text-muted-foreground text-md sm:text-md flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Rue Lafayette, Tanger
+            </p>
+          </div>
+        </div>
 
       {/* 3. Socials */}
       <motion.div

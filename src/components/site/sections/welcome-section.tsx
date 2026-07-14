@@ -42,10 +42,10 @@ export function WelcomeSection({
           </p>
 
           <div className="mt-10 flex flex-wrap gap-4">
-            <Button asChild size="lg" className="rounded-md bg-foreground px-8 text-background hover:bg-foreground/90 shadow-lg">
+            <Button asChild size="lg" className="rounded-md bg-foreground px-8 p-5 text-background hover:bg-foreground/90 shadow-lg">
               <Link href={`${base}/menu`}>Menu</Link>
             </Button>
-            <Button asChild size="lg" className="rounded-md px-8 shadow-lg">
+            <Button asChild size="lg" className="rounded-md px-8 p-5 shadow-lg">
               <Link href={`${base}/reservation`}>Book a table</Link>
             </Button>
           </div>

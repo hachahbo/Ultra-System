@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UtensilsCrossed } from "lucide-react";
+import { LogoIcon } from "@/components/site/logo-icon";
 import type { Restaurant, ResolvedTheme } from "@/lib/types";
 
 export function Footer({
@@ -13,7 +13,7 @@ export function Footer({
 
   return (
     <div className="mt-auto pt-24 sm:pt-32 lg:pt-40">
-      <footer className="relative bg-card pt-24 pb-8 text-sm text-muted-foreground sm:pt-32">
+      <footer className="relative pt-24 pb-8 text-sm text-muted-foreground sm:pt-32">
         {/* Newsletter Box */}
         <div className="absolute left-4 right-4 top-0 -translate-y-1/2 mx-auto max-w-5xl z-10">
           <div className="relative overflow-hidden rounded-3xl shadow-xl">
@@ -21,7 +21,7 @@ export function Footer({
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: "url('/images/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg')" }}
             />
-          <div className="absolute inset-0 bg-black/60 mix-blend-multiply" />
+          {/* Dark overlay removed */}
           <div className="relative z-10 px-6 py-12 text-center sm:px-12 sm:py-16">
             <h2 className="mx-auto max-w-xl font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
               Get Our Promo Code by Subscribing To our Newsletter
@@ -59,11 +59,8 @@ export function Footer({
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-4 lg:gap-8 relative z-10">
           {/* Column 1: Logo, Text, Hours */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                 <UtensilsCrossed className="h-5 w-5" />
-              </div>
-              <span className="font-bold text-card-foreground text-xl">{restaurant.name}</span>
+            <div className="flex items-center min-w-0 mb-2">
+              <LogoIcon className="w-32 sm:w-40 h-auto" />
             </div>
             <p className="text-muted-foreground line-clamp-3 leading-relaxed">
               {theme.about_body || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}

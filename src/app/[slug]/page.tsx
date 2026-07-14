@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { HeroSection } from "@/components/site/sections/hero-section";
 import { SpecialsSection } from "@/components/site/sections/specials-section";
 import { WelcomeSection } from "@/components/site/sections/welcome-section";
+import { ValuesSection } from "@/components/site/sections/values-section";
 import { TestimonialsSection } from "@/components/site/sections/testimonials-section";
 import { getPublicMenu } from "@/lib/menu";
 import { getSiteTheme } from "@/lib/site-theme";
@@ -59,6 +60,7 @@ export default async function HomePage({
           const node = renderers[s.key];
           return node ? <Fragment key={s.key}>{node}</Fragment> : null;
         })}
+      <ValuesSection />
       <TestimonialsSection />
     </>
   );
