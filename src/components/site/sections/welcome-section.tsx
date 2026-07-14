@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import Image from "next/image";
 
 export function WelcomeSection({
   base,
@@ -11,43 +11,74 @@ export function WelcomeSection({
   body: string;
 }) {
   return (
-    <section className="relative overflow-hidden bg-muted py-16 md:py-32">
-      {/* Decorative Botanicals */}
-      <div className="pointer-events-none absolute right-[5%] top-[10%] w-64 dark:invert  sm:w-80">
-        <img src="/images/Group (4).svg" alt="" className="h-auto w-full" />
-      </div>
-      <div className="pointer-events-none absolute bottom-[10%] right-[30%] w-48 dark:invert  sm:w-64">
-        <img src="/images/Group.svg" alt="" className="h-auto w-full" />
-      </div>
+    <section className="bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        {/* Text Content */}
+        <div className="flex flex-col md:flex-row gap-8 md:gap-16 lg:gap-24">
+          {/* Title */}
+          <div className="w-full md:w-5/12">
+            <h2 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-foreground">
+              {heading ?? (
+                <>
+                  Bienvenue chez
+                  <br />
+                  rendez-vous.
+                </>
+              )}
+            </h2>
+          </div>
 
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-12 px-4 md:flex-row lg:px-8">
-        {/* Left Image */}
-        <div className="relative w-full md:w-1/2 flex justify-center">
-          <div className="aspect-square w-full max-w-[380px] overflow-hidden rounded-full shadow-2xl">
-            <img
-              src="/images/welcome-chicken.png"
-              alt="Chicken dish"
-              className="h-full w-full scale-[1.25] object-cover object-center"
-            />
+          {/* Description */}
+          <div className="w-full md:w-7/12 flex flex-col justify-start pt-2">
+            <h3 className="text-xl md:text-2xl font-bold text-foreground mb-6 leading-snug">
+              Un lieu pensé comme une maison pour que vous vous y sentiez bien à tout moment.
+            </h3>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {body ?? (
+                <>
+                  À vous de décider où vous préférez vous installer pour vous restaurer : dans notre
+                  salon, notre jardin d'hiver, sous notre verrière, ou sur notre terrasse, nous vous
+                  accueillons toute la journée pour partager avec vous notre passion du bien manger.
+                  <br />
+                  <br />
+                  Dans notre épicerie pensée et menuisée comme une bibliothèque, vous pouvez retrouver
+                  tous les produits que vous avez dégustés, ainsi que ceux réalisés par les
+                  producteurs et artisans avec lesquels nous collaborons.
+                </>
+              )}
+            </p>
           </div>
         </div>
 
-        {/* Right Content */}
-        <div className="flex w-full flex-col justify-center md:w-1/2">
-          <h2 className="font-display text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl">
-            {heading ?? "Welcome to Our Restaurant"}
-          </h2>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">
-            {body}
-          </p>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Button asChild size="lg" className="rounded-md bg-foreground px-8 p-5 text-background hover:bg-foreground/90 shadow-lg">
-              <Link href={`${base}/menu`}>Menu</Link>
-            </Button>
-            <Button asChild size="lg" className="rounded-md px-8 p-5 shadow-lg">
-              <Link href={`${base}/reservation`}>Book a table</Link>
-            </Button>
+        {/* Image Grid placeholders */}
+        <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <img
+              src="/images/orendezvous.tanger_1754944082_highlight18054770264426605.jpg"
+              alt="Restaurant ambiance 1"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <img
+              src="/images/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg"
+              alt="Restaurant ambiance 2"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <img
+              src="/images/orendezvous.tanger_1777049699_3882496730852669917_73557593345.jpg"
+              alt="Restaurant ambiance 3"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <img
+              src="/images/orendezvous.tanger_1777049699_3882496732303853455_73557593345.jpg"
+              alt="Restaurant ambiance 4"
+              className="h-full w-full object-cover"
+            />
           </div>
         </div>
       </div>

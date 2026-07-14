@@ -21,38 +21,33 @@ export function HeroContent({
   return (
     <div className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full">
       {/* 1. Title */}
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...transition, delay: 0 }}
-        className="font-display text-4xl font-bold leading-[1.1] tracking-tight text-foreground md:text-7xl"
+      <h1
+        className="font-display text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-foreground md:text-7xl"
       >
         {headline ?? (
           <>
-            We provide the <br /> best food for you
+            We provide the <br />{" "}
+            <span className="text-[oklch(0.685_0.165_45)] lg:text-inherit">
+              best food
+            </span>{" "}
+            for you
           </>
         )}
-      </motion.h1>
+      </h1>
 
       {/* 4. Description & Opening Hours */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...transition, delay: 0.45 }}
-        className="mt-4 md:mt-6 max-w-md"
+      <div
+        className="hidden lg:block mt-4 md:mt-6 max-w-md"
       >
         <p className="text-base leading-relaxed text-muted-foreground sm:text-lg mb-8">
           {sub ??
             "consectetur adipiscing dolore magna aliqua Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
         </p>
 
-      </motion.div>
+      </div>
 
       {/* 2. Buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...transition, delay: 0.15 }}
+      <div
         className="mt-8 md:mt-10 flex flex-wrap gap-4"
       >
         <Button
@@ -67,8 +62,8 @@ export function HeroContent({
         >
           <Link href={`${base}/reservation`}>Book a table</Link>
         </Button>
-      </motion.div>
-        <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
+      </div>
+        <div className="hidden lg:flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
           <div className="flex flex-col gap-2">
             <h4 className="text-sm font-semobold tracking-[0.2em] text-foreground">
               Opening hours
@@ -92,11 +87,8 @@ export function HeroContent({
         </div>
 
       {/* 3. Socials */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...transition, delay: 0.3 }}
-        className="mt-5 md:mt-20 flex items-center gap-4"
+      <div
+        className="hidden lg:flex mt-5 md:mt-20 items-center gap-4"
       >
         <div className="flex gap-3">
           <a
@@ -157,7 +149,7 @@ export function HeroContent({
           </a>
         </div>
         <div className="h-[2px] w-16 bg-border/80"></div>
-      </motion.div>
+      </div>
     </div>
   );
 }

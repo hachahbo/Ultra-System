@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Menu as MenuIcon, UtensilsCrossed, CalendarDays, ImageIcon, Info, Phone } from "lucide-react";
+import { Menu as MenuIcon, UtensilsCrossed, CalendarDays, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoIcon } from "@/components/site/logo-icon";
@@ -20,7 +20,6 @@ import {
 const links = [
   { href: "/menu", label: "Menu", icon: UtensilsCrossed },
   { href: "/events", label: "Events", icon: CalendarDays },
-  { href: "/gallery", label: "Gallery", icon: ImageIcon },
   { href: "/about", label: "About", icon: Info },
   { href: "/contact", label: "Contact", icon: Phone },
 ];
@@ -43,10 +42,7 @@ export function NavBar({
   }, [pathname]);
 
   return (
-    <motion.header 
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 1.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    <header 
       className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 relative">
@@ -144,6 +140,6 @@ export function NavBar({
 
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }
