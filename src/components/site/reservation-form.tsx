@@ -382,7 +382,7 @@ function TimeSelector({
             hasError && "border-destructive focus-visible:ring-destructive text-destructive"
           )}
         >
-          <Clock className="mr-3 h-5 w-5 text-indigo-400" />
+          <Clock className="mr-3 h-5 w-5 text-[#FF6B35]" />
           {value || <span>Choisir une heure</span>}
         </Button>
       </PopoverTrigger>
