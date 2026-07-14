@@ -147,14 +147,13 @@ export function MenuBrowser({
       </div>
 
       {/* ── Item Grid ─────────────────────────────────────── */}
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.ul
-          key={activeCategory ?? "all"}
-          className="mt-8 grid grid-cols-1 gap-x-12 gap-y-20 sm:grid-cols-2 pb-36"
-          variants={animate ? listVariants : undefined}
-          initial={isHydrated ? "hidden" : false}
-          animate="show"
-        >
+      <motion.ul
+        className="mt-8 grid grid-cols-1 gap-x-12 gap-y-1 sm:grid-cols-2 pb-36"
+        variants={animate ? listVariants : undefined}
+        initial={isHydrated ? "hidden" : false}
+        animate="show"
+      >
+        <AnimatePresence mode="popLayout">
           {visibleItems.map((item, index) => {
             const src = item.image_url || fallbackImage(item.id);
             const wasAdded = justAdded === item.id;
@@ -163,18 +162,22 @@ export function MenuBrowser({
             return (
               <motion.li
                 key={item.id}
+                layout="position"
+                initial="hidden"
+                animate="show"
+                exit="exit"
                 variants={prefersReducedMotion ? undefined : cardVariants}
                 whileHover={animate ? { y: -2 } : undefined}
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-16 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none ${
+                className={`group relative mt-6 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white to-[#FF6B35]/15 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-[#FF6B35]/10 dark:border-[#FF6B35]/20 dark:from-black/60 dark:to-[#FF6B35]/15 dark:shadow-none ${
                   item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
                 }`}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right ── */}
-                <div className="absolute -right-6 -top-12 z-10 flex size-[150px] items-center justify-center sm:-right-8 sm:-top-16 sm:size-[180px]">
+                <div className="absolute right-2 -top-6 z-10 flex size-[150px] items-center justify-center sm:right-4 sm:-top-8 sm:size-[180px]">
                   <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
                     <div className="relative size-full overflow-hidden rounded-full">
                       {src ? (
@@ -197,7 +200,7 @@ export function MenuBrowser({
                 {/* ── Left Column: Text ── */}
                 <div className="relative z-20 w-[65%] pr-6 sm:pr-8">
                   <div className="flex flex-col items-start gap-2">
-                    <h3 className="font-display text-xl font-bold leading-tight text-white line-clamp-2">
+                    <h3 className="font-display text-xl font-bold leading-tight text-foreground dark:text-white line-clamp-2">
                       {item.name_fr}
                     </h3>
                     {isSignature && item.in_stock && (
@@ -214,7 +217,7 @@ export function MenuBrowser({
                   </div>
                   
                   {item.description_fr && (
-                    <p className="mt-2 line-clamp-2 text-sm text-white/80">
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground dark:text-white/80">
                       {item.description_fr}
                     </p>
                   )}
@@ -222,13 +225,13 @@ export function MenuBrowser({
 
                 {/* ── Bottom Actions (Price Left, Add Right) ── */}
                 <div className="mt-4 flex w-full items-center justify-between z-20">
-                  <span className="font-display text-xl font-black text-[oklch(0.685_0.165_45)]">
+                  <span className="font-display text-xl font-black text-[#FF6B35]">
                     {formatPrice(item.base_price, restaurant.currency).replace(".00", "")}
                   </span>
                   
                   {item.in_stock && orderingEnabled && (
                     <motion.div
-                      className="relative flex size-10 items-center justify-center rounded-full border-2 border-white bg-transparent text-white transition-colors group-hover:bg-white group-hover:text-black"
+                      className="relative flex size-10 items-center justify-center rounded-full border-2 border-[#FF6B35] bg-transparent text-[#FF6B35] transition-colors group-hover:bg-[#FF6B35] group-hover:text-white"
                       animate={
                         animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
                       }
@@ -270,6 +273,11 @@ export function MenuBrowser({
 
           {visibleItems.length === 0 && (
             <motion.li
+              key="empty"
+              layout="position"
+              initial="hidden"
+              animate="show"
+              exit="exit"
               variants={prefersReducedMotion ? undefined : cardVariants}
               className="col-span-full flex flex-col items-center gap-3 rounded-[1.75rem] bg-card py-20 text-center ring-1 ring-border"
             >
@@ -279,8 +287,8 @@ export function MenuBrowser({
               </p>
             </motion.li>
           )}
-        </motion.ul>
-      </AnimatePresence>
+        </AnimatePresence>
+      </motion.ul>
 
       {/* ── Customization bottom sheet ─────────────────────── */}
       <ItemDialog

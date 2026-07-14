@@ -62,22 +62,20 @@ export default async function RestaurantLayout({
       : ({ "--font-display": pair.displayVar, "--font-sans": pair.sansVar } as React.CSSProperties);
 
   return (
-    <>
+    <div
+      data-site-theme
+      style={fontStyle}
+      className={`${siteFontClassNames} flex min-h-dvh flex-col bg-background text-foreground font-sans`}
+    >
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
-      <div
-        data-site-theme
-        style={fontStyle}
-        className={`${siteFontClassNames} flex min-h-dvh flex-col bg-background text-foreground font-sans`}
-      >
-        {preview && (
-          <div className="sticky top-0 z-50 bg-amber-500 py-1 text-center text-xs font-medium text-black">
-            Prévisualisation — brouillon non publié
-          </div>
-        )}
-        <NavBar slug={restaurant.slug} name={restaurant.name} logoUrl={theme.logo_url} />
-        <main className="flex-1">{children}</main>
-        <Footer restaurant={restaurant} theme={theme} />
-      </div>
-    </>
+      {preview && (
+        <div className="sticky top-0 z-50 bg-amber-500 py-1 text-center text-xs font-medium text-black">
+          Prévisualisation — brouillon non publié
+        </div>
+      )}
+      <NavBar slug={restaurant.slug} name={restaurant.name} logoUrl={theme.logo_url} />
+      <main className="flex-1">{children}</main>
+      <Footer restaurant={restaurant} theme={theme} />
+    </div>
   );
 }

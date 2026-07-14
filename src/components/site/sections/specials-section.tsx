@@ -59,7 +59,7 @@ export function SpecialsSection({
 
           {/* Right Side: 2x2 Grid of Dishes */}
           <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
-            <div className="grid grid-cols-1 gap-x-12 gap-y-20 xl:gap-x-12 xl:gap-y-24 sm:grid-cols-2 mt-8">
+            <div className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-14 sm:grid-cols-2 mt-8">
               {items.map((item, index) => {
                 const itemWithImage = {
                   ...item,

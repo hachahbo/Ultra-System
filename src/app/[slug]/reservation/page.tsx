@@ -26,7 +26,7 @@ export default async function ReservationPage({
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-8">
+    <div className="mx-auto max-w-lg px-4 pt-8 pb-32 lg:pb-48">
       <h1 className="font-display text-3xl font-semibold tracking-tight">
         Réserver une table
       </h1>
