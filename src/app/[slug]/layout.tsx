@@ -65,7 +65,7 @@ export default async function RestaurantLayout({
     <div
       data-site-theme
       style={fontStyle}
-      className={`${siteFontClassNames} flex min-h-dvh flex-col bg-background text-foreground font-sans`}
+      className={`${siteFontClassNames} flex min-h-dvh flex-col bg-background text-foreground font-sans overflow-x-hidden`}
     >
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       {preview && (

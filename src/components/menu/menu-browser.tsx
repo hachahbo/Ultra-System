@@ -34,7 +34,7 @@ const listVariants: Variants = {
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.98 },
+  hidden: { opacity: 1, y: 24, scale: 0.98 },
   show: {
     opacity: 1,
     y: 0,
@@ -177,7 +177,7 @@ export function MenuBrowser({
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right ── */}
-                <div className="absolute right-2 -top-6 z-10 flex size-[150px] items-center justify-center sm:right-4 sm:-top-8 sm:size-[180px]">
+                <div className="absolute right-2 -top-8 z-10 flex size-[140px] items-center justify-center sm:right-4 sm:-top-8 sm:size-[140px] lg:-top-10 lg:size-[140px]">
                   <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
                     <div className="relative size-full overflow-hidden rounded-full">
                       {src ? (

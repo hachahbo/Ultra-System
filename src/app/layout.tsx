@@ -21,10 +21,10 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${rootFontClassNames} h-full antialiased`}
+      className={`${rootFontClassNames} h-full antialiased overflow-x-hidden`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans transition-colors duration-500">
+      <body className="min-h-full flex flex-col font-sans transition-colors duration-500 overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

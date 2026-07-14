@@ -46,7 +46,7 @@ export function NavBar({
       className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 relative">
-        {/* Left: Menu & Navigation */}
+        {/* Left: Mobile Burger & Desktop Logo */}
         <div className="flex flex-1 items-center justify-start gap-2">
           {/* Mobile Menu */}
           <div className="md:hidden">
@@ -100,6 +100,23 @@ export function NavBar({
             </Sheet>
           </div>
 
+          {/* Desktop Logo */}
+          <div className="hidden md:flex items-center min-w-0">
+            <Link href={base} className="flex items-center min-w-0">
+              <LogoIcon className="w-28 sm:w-36 md:w-40 h-auto" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Center: Mobile Logo & Desktop Menu */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto flex items-center justify-center">
+          {/* Mobile Logo */}
+          <div className="md:hidden">
+            <Link href={base} className="flex items-center min-w-0">
+              <LogoIcon className="w-28 sm:w-36 h-auto" />
+            </Link>
+          </div>
+
           {/* Desktop Nav */}
           <nav className="hidden items-center gap-8 md:flex">
             {links.map((l) => (
@@ -112,13 +129,6 @@ export function NavBar({
               </Link>
             ))}
           </nav>
-        </div>
-
-        {/* Center: Logo */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
-          <Link href={base} className="flex items-center min-w-0">
-            <LogoIcon className="w-28 sm:w-36 md:w-40 h-auto" />
-          </Link>
         </div>
 
         {/* Right: Actions */}
@@ -136,8 +146,6 @@ export function NavBar({
           <Button asChild size="sm" className="md:hidden rounded-md shadow-md">
             <Link href={`${base}/reservation`}>Book</Link>
           </Button>
-
-
         </div>
       </div>
     </header>

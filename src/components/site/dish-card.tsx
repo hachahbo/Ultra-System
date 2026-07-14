@@ -21,7 +21,7 @@ export function DishCard({
       className="group relative mt-16 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none"
     >
       {/* Floating Image Top Right */}
-      <div className="absolute -right-2 -top-12 z-10 flex size-[150px] items-center justify-center sm:-right-8 sm:-top-16 sm:size-[180px]">
+      <div className="absolute -right-2 -top-8 z-10 flex size-[150px] md:size-[90px] items-center justify-center sm:-right-4 sm:-top-12 sm:size-[140px]">
         <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
           <div className="relative size-full overflow-hidden rounded-full">
             {item.image_url ? (
