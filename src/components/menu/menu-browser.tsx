@@ -150,7 +150,7 @@ export function MenuBrowser({
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.ul
           key={activeCategory ?? "all"}
-          className="mt-5 grid grid-cols-1 gap-4 pb-36 sm:grid-cols-2"
+          className="mt-8 grid grid-cols-1 gap-x-12 gap-y-20 sm:grid-cols-2 pb-36"
           variants={animate ? listVariants : undefined}
           initial={isHydrated ? "hidden" : false}
           animate="show"
@@ -168,100 +168,100 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative bg-card flex flex-row p-4 min-h-[140px] rounded-[20px] border border-border shadow-sm transition-all hover:shadow-md ${
+                className={`group relative mt-16 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none ${
                   item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
                 }`}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
-                {/* ── Left Column: Text & Price ── */}
-                <div className="flex flex-1 flex-col pr-4">
-                  <div className="flex flex-wrap items-start gap-2">
-                    <h3 className="font-display text-lg font-bold text-card-foreground leading-tight">
+                {/* ── Floating Image Top Right ── */}
+                <div className="absolute -right-6 -top-12 z-10 flex size-[150px] items-center justify-center sm:-right-8 sm:-top-16 sm:size-[180px]">
+                  <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
+                    <div className="relative size-full overflow-hidden rounded-full">
+                      {src ? (
+                        <Image
+                          src={src}
+                          alt={item.name_fr}
+                          fill
+                          sizes="200px"
+                          className="object-cover scale-[1.30]"
+                        />
+                      ) : (
+                        <div className="grid size-full place-items-center bg-accent text-accent-foreground shadow-sm">
+                          <UtensilsCrossed className="size-6" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Left Column: Text ── */}
+                <div className="relative z-20 w-[65%] pr-6 sm:pr-8">
+                  <div className="flex flex-col items-start gap-2">
+                    <h3 className="font-display text-xl font-bold leading-tight text-white line-clamp-2">
                       {item.name_fr}
                     </h3>
                     {isSignature && item.in_stock && (
-                      <span className="shrink-0 flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 mt-0.5">
+                      <span className="shrink-0 flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-900/30 dark:text-amber-500">
                         <Sparkles className="size-3" />
                         Signature
                       </span>
                     )}
                     {!item.in_stock && (
-                      <span className="shrink-0 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive mt-0.5">
+                      <span className="shrink-0 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive">
                         Épuisé
                       </span>
                     )}
                   </div>
                   
                   {item.description_fr && (
-                    <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+                    <p className="mt-2 line-clamp-2 text-sm text-white/80">
                       {item.description_fr}
                     </p>
                   )}
-                  
-                  <div className="mt-auto pt-4">
-                    <p className="text-[22px] font-black tracking-tight text-card-foreground">
-                      {formatPrice(item.base_price, restaurant.currency)}
-                    </p>
-                  </div>
                 </div>
 
-                {/* ── Right Column: Image & Add Button ── */}
-                <div className="flex flex-col items-end justify-between ml-2 shrink-0">
-                  <div className="relative size-[84px] shrink-0">
-                    {src ? (
-                      <Image
-                        src={src}
-                        alt={item.name_fr}
-                        fill
-                        sizes="84px"
-                        className="object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
-                      />
-                    ) : (
-                      <div className="grid size-full place-items-center rounded-full bg-muted border border-border">
-                        <UtensilsCrossed className="size-8 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Add Button */}
+                {/* ── Bottom Actions (Price Left, Add Right) ── */}
+                <div className="mt-4 flex w-full items-center justify-between z-20">
+                  <span className="font-display text-xl font-black text-[oklch(0.685_0.165_45)]">
+                    {formatPrice(item.base_price, restaurant.currency).replace(".00", "")}
+                  </span>
+                  
                   {item.in_stock && orderingEnabled && (
-                    <div className="mt-4">
-                      <motion.div
-                        className="relative flex size-9 items-center justify-center rounded-full border-2 border-foreground bg-background text-foreground transition-colors group-hover:bg-foreground group-hover:text-background"
-                        animate={
-                          animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
-                        }
-                        transition={{ duration: 0.3 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAdd(item);
-                        }}
-                      >
-                        <AnimatePresence mode="popLayout" initial={false}>
-                          {wasAdded ? (
-                            <motion.span
-                              key="check"
-                              initial={animate ? { scale: 0, rotate: -30 } : false}
-                              animate={{ scale: 1, rotate: 0 }}
-                              exit={animate ? { scale: 0 } : undefined}
-                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                            >
-                              <Check className="size-4" strokeWidth={3} />
-                            </motion.span>
-                          ) : (
-                            <motion.span
-                              key="plus"
-                              initial={animate ? { scale: 0 } : false}
-                              animate={{ scale: 1 }}
-                              exit={animate ? { scale: 0 } : undefined}
-                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                            >
-                              <Plus className="size-5" strokeWidth={2.5} />
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    </div>
+                    <motion.div
+                      className="relative flex size-10 items-center justify-center rounded-full border-2 border-white bg-transparent text-white transition-colors group-hover:bg-white group-hover:text-black"
+                      animate={
+                        animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
+                      }
+                      transition={{ duration: 0.3 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdd(item);
+                      }}
+                    >
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {wasAdded ? (
+                          <motion.span
+                            key="check"
+                            initial={animate ? { scale: 0, rotate: -30 } : false}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={animate ? { scale: 0 } : undefined}
+                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                          >
+                            <Check className="size-4" strokeWidth={3} />
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="plus"
+                            initial={animate ? { scale: 0 } : false}
+                            animate={{ scale: 1 }}
+                            exit={animate ? { scale: 0 } : undefined}
+                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                          >
+                            <Plus className="size-5" strokeWidth={2.5} />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   )}
                 </div>
               </motion.li>
