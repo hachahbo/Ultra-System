@@ -22,7 +22,7 @@ export function HeroContent({
     <div className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full">
       {/* 1. Title */}
       <h1
-        className="font-display text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-foreground md:text-7xl"
+        className="font-display ml-3 text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-foreground md:text-7xl"
       >
         {headline ?? (
           <>
@@ -48,7 +48,7 @@ export function HeroContent({
 
       {/* 2. Buttons */}
       <div
-        className="mt-8 md:mt-10 flex flex-wrap gap-4"
+        className="mt-8 md:mt-10 ml-3 flex flex-wrap gap-4"
       >
         <Button
           asChild

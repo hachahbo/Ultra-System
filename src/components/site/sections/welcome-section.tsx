@@ -11,7 +11,7 @@ export function WelcomeSection({
   body: string;
 }) {
   return (
-    <section className="bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
+    <section className="hidden md:block bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Text Content */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-16 lg:gap-24">
