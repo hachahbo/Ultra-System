@@ -22,22 +22,6 @@ export default async function CustomersPage() {
   const customers = (data ?? []) as Customer[];
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Clients</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Cette liste vous appartient.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <a href="/api/dashboard/customers/export" download>
-            <Download className="size-4" /> Exporter CSV
-          </a>
-        </Button>
-      </div>
-
-      <CustomersView customers={customers} />
-    </div>
+    <CustomersView customers={customers} />
   );
 }

@@ -108,15 +108,16 @@ export function ItemFormDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-xl bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[88vh] flex flex-col">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+          <DialogTitle className="font-display text-xl font-bold tracking-tight">
             {item ? `Modifier « ${item.name_fr} »` : "Nouvel article"}
           </DialogTitle>
         </DialogHeader>
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            <div className="space-y-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden" noValidate>
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+              <div className="space-y-2">
               <Label>Catégorie</Label>
               <Select
                 value={form.watch("category_id")}
@@ -209,9 +210,16 @@ export function ItemFormDialog({
 
             <CustomizationEditor />
 
-            <Button type="submit" className="w-full" disabled={saving || uploading}>
-              {saving ? "Enregistrement…" : "Enregistrer"}
-            </Button>
+            </div>
+            
+            <div className="shrink-0 border-t border-border/40 bg-card/95 px-6 pb-6 pt-4 backdrop-blur-md flex justify-end gap-3">
+              <Button type="button" variant="ghost" className="rounded-full font-bold hover:bg-muted" onClick={onClose}>
+                Annuler
+              </Button>
+              <Button type="submit" className="rounded-full font-bold px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]" disabled={saving || uploading}>
+                {saving ? "Enregistrement…" : "Enregistrer"}
+              </Button>
+            </div>
           </form>
         </FormProvider>
       </DialogContent>

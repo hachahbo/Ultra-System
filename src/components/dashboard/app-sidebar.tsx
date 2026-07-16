@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
 import type { FeatureKey } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type Item = {
   href: string;
@@ -103,24 +104,24 @@ export function AppSidebar({
     .filter((g) => g.items.length > 0);
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+    <Sidebar collapsible="icon" className="border-r-border dark:border-r-0 rounded-r-lg overflow-hidden dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+      <SidebarHeader className="p-4 pb-2">
+        <div className="flex items-center gap-3">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground">
             {restaurantName.charAt(0).toUpperCase()}
           </div>
           {!collapsed && (
-            <p className="truncate font-display text-lg font-semibold">
+            <p className="truncate font-display text-[16px] font-extrabold tracking-tight">
               {restaurantName}
             </p>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2 pt-2">
         {visibleGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          <SidebarGroup key={group.label} className="pt-2 pb-1">
+            <SidebarGroupLabel className="px-3 text-[10px] font-bold tracking-[1.2px] text-muted-foreground uppercase">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -135,11 +136,16 @@ export function AppSidebar({
                         asChild
                         isActive={active}
                         tooltip={item.label}
-                        className="relative min-h-11 data-[active=true]:before:absolute data-[active=true]:before:inset-y-1 data-[active=true]:before:start-0 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-full data-[active=true]:before:bg-primary"
+                        className={cn(
+                          "min-h-[44px] rounded-[14px] px-3.5 transition-all duration-300",
+                          active
+                            ? "bg-primary text-primary-foreground font-bold shadow-[0_6px_16px_rgba(var(--primary-rgb),0.4)] dark:bg-white/10 dark:text-white dark:shadow-none hover:bg-primary/90 hover:text-primary-foreground dark:hover:bg-white/15 dark:hover:text-white"
+                            : "text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground"
+                        )}
                       >
-                        <Link href={item.href}>
-                          <item.icon />
-                          <span>{item.label}</span>
+                        <Link href={item.href} className="flex items-center gap-3">
+                          <item.icon className="size-[18px]" />
+                          <span className="text-[13.5px]">{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -151,16 +157,16 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={signOut}
               tooltip="Déconnexion"
-              className="min-h-11 text-muted-foreground"
+              className="min-h-[44px] rounded-[14px] px-3.5 text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground transition-all duration-300"
             >
-              <LogOut />
-              <span>Déconnexion</span>
+              <LogOut className="size-[18px] mr-1.5" />
+              <span className="text-[13.5px]">Déconnexion</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -170,9 +176,9 @@ export function AppSidebar({
             onClick={toggleSidebar}
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
-            className="flex min-h-11 w-full items-center gap-2 rounded-md p-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden"
+            className="flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3.5 text-[13.5px] font-semibold text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden mt-1"
           >
-            {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
+            {collapsed ? <ChevronRight className="size-4 shrink-0" /> : <ChevronLeft className="size-4 shrink-0" />}
             {!collapsed && <span>Réduire le menu</span>}
           </button>
         )}

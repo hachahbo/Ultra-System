@@ -7,6 +7,7 @@ import { getSessionContext } from "@/lib/dashboard";
 import { dayBucket, casaHour, startOfTodayCasa } from "@/lib/time";
 import { dailyBuckets, last7Keys, keyDaysAgo, deltaPct } from "@/lib/dashboard-stats";
 import { OverviewView } from "@/components/dashboard/overview-view";
+import { DashboardToolbar } from "@/components/dashboard/dashboard-toolbar";
 import type { Item, Order, Reservation } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Aperçu" };
@@ -113,11 +114,28 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold md:text-3xl">Aperçu</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Un coup d&apos;œil rapide sur la journée.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-semibold md:text-3xl">Aperçu</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Un coup d&apos;œil rapide sur la journée.
+          </p>
+        </div>
+
+        <div className="hidden sm:flex items-center gap-3">
+          <DashboardToolbar />
+          <div className="flex items-center gap-2.5 rounded-full border bg-card p-1.5 pr-4 shadow-sm">
+            <div className="flex size-[30px] items-center justify-center rounded-full bg-primary text-[13px] font-extrabold text-primary-foreground">
+              {ctx.restaurant.name.charAt(0).toUpperCase()}
+            </div>
+            <p className="font-display text-[13.5px] font-bold leading-tight">
+              {ctx.restaurant.name}
+              <span className="block text-[11px] font-semibold text-muted-foreground">
+                Gérant
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
 
       {outOfStockItems.length > 0 && (

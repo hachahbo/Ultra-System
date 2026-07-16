@@ -1,4 +1,4 @@
-import { Roboto } from "next/font/google";
+import { Roboto, Plus_Jakarta_Sans } from "next/font/google";
 import type { FontPairKey } from "@/lib/types";
 
 // This file is imported by the ROOT layout (every route, incl. /dashboard
@@ -12,8 +12,8 @@ const darnaClassicDisplay = Roboto({
   variable: "--f-darna-classic-display",
   subsets: ["latin"],
 });
-const darnaClassicSans = Roboto({
-  weight: ["400", "500", "700"],
+const darnaClassicSans = Plus_Jakarta_Sans({
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--f-darna-classic-sans",
   subsets: ["latin"],
 });

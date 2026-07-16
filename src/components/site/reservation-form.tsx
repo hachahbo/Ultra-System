@@ -23,8 +23,16 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { phoneSchema } from "@/lib/schemas";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const formSchema = z.object({
   customer_name: z.string().trim().min(1, "Nom requis").max(100),
@@ -229,6 +237,106 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-destructive">{message}</p>;
 }
 
+// ── Shared table definitions ─────────────────────────────────
+const TABLE_DEFS_FORM = [
+  { id: 1, span: 1, reserved: false },
+  { id: 2, span: 2, reserved: false },
+  { id: 3, span: 1, reserved: false },
+  { id: 4, span: 1, reserved: false },
+  { id: 5, span: 1, reserved: true  },
+  { id: 6, span: 2, reserved: false },
+  { id: 7, span: 1, reserved: false },
+  { id: 8, span: 2, reserved: false },
+  { id: 9, span: 1, reserved: false },
+];
+
+// ── Legend ────────────────────────────────────────────────────
+function TableLegendForm() {
+  return (
+    <div className="flex items-center gap-4 text-[11px] mt-2 font-medium">
+      <div className="flex items-center gap-1.5">
+        <div className="size-3 rounded-sm bg-primary dark:bg-[#DF6C32]" />
+        <span className="text-muted-foreground">Selected</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="size-3 rounded-sm bg-muted/80" />
+        <span className="text-muted-foreground">Reserved</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="size-3 rounded-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
+        <span className="text-muted-foreground">Available</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Grid ──────────────────────────────────────────────────────
+function TableGridForm({ value, onSelect }: { value?: number; onSelect: (id: number) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-3 md:gap-4 mx-auto">
+      {TABLE_DEFS_FORM.map((t) => {
+        const isSelected = value === t.id;
+        const spanCol = t.span === 2 ? "col-span-2" : "col-span-1";
+        return (
+          <button
+            key={t.id}
+            type="button"
+            disabled={t.reserved}
+            onClick={() => onSelect(t.id)}
+            className={cn(
+              "relative flex items-center justify-center rounded-2xl border-2 border-transparent py-7 font-bold text-lg transition-all",
+              spanCol,
+              isSelected
+                ? "bg-primary text-primary-foreground scale-95 shadow-md border-primary/20 dark:bg-[#DF6C32] dark:text-white dark:border-[#DF6C32]/20"
+                : t.reserved
+                ? "bg-muted/40 text-muted-foreground opacity-50 cursor-not-allowed"
+                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+            )}
+          >
+            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-foreground/10 rounded-full" />
+            <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-foreground/10 rounded-full" />
+            {t.span === 2 && (
+              <>
+                <div className="absolute top-0 left-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
+                <div className="absolute top-0 right-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
+                <div className="absolute bottom-0 left-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
+                <div className="absolute bottom-0 right-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
+              </>
+            )}
+            {t.span === 1 && (
+              <>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1.5 bg-foreground/10 rounded-full" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1.5 bg-foreground/10 rounded-full" />
+              </>
+            )}
+            {t.id}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Confirm button ────────────────────────────────────────────
+function ConfirmTableButton({ value, onConfirm }: { value?: number; onConfirm?: () => void }) {
+  return (
+    <Button
+      size="lg"
+      type="button"
+      onClick={onConfirm}
+      className={cn(
+        "w-full font-bold shadow-md transition-colors",
+        !value
+          ? "bg-muted text-muted-foreground hover:bg-muted"
+          : "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-[#DF6C32] dark:text-white dark:hover:bg-[#C95A26]"
+      )}
+    >
+      {value ? `Confirmer — Table ${value}` : "Sélectionnez une table"}
+    </Button>
+  );
+}
+
+// ── TableSelector: Drawer on mobile, Dialog on desktop ────────
 function TableSelector({
   value,
   onChange,
@@ -237,122 +345,103 @@ function TableSelector({
   onChange: (val: number) => void;
 }) {
   const [open, setOpen] = useState(false);
-  
-  // Custom mock layout based on the design requested
-  const tables = [
-    { id: 1, shape: "square", status: "available", span: 1 },
-    { id: 2, shape: "rect", status: "available", span: 2 },
-    { id: 3, shape: "square", status: "available", span: 1 },
-    { id: 4, shape: "square", status: "available", span: 1 },
-    { id: 5, shape: "square", status: "reserved", span: 1 },
-    { id: 6, shape: "rect", status: "available", span: 2 },
-    { id: 7, shape: "square", status: "available", span: 1 },
-    { id: 8, shape: "rect", status: "available", span: 2 },
-    { id: 9, shape: "square", status: "available", span: 1 },
-  ];
+  const isMobile = useIsMobile();
 
+  function handleSelect(id: number) {
+    onChange(id);
+  }
+
+  function handleConfirm() {
+    if (value) setOpen(false);
+  }
+
+  // Shared trigger button
+  const triggerButton = (
+    <Button
+      variant="outline"
+      className={cn(
+        "w-full justify-between font-normal bg-white dark:bg-[#18181A] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-[#202024] hover:text-foreground dark:hover:text-white rounded-xl h-12 text-foreground dark:text-white px-4",
+        !value && "text-muted-foreground"
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Armchair className="size-5 text-[#a16246]" />
+        <span className="text-foreground dark:text-white font-medium">
+          {value ? `Table ${value} sélectionnée` : "Choisir une table"}
+        </span>
+      </div>
+      <span className="text-muted-foreground">&rsaquo;</span>
+    </Button>
+  );
+
+  // ── Mobile → Drawer ──────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
+        <DrawerContent className="dark:bg-[#0a0a0c] dark:border-border max-h-[85vh]">
+          <div className="mx-auto w-full max-w-sm">
+            <DrawerHeader className="text-left px-4">
+              <DrawerTitle className="text-lg">Choisir une table</DrawerTitle>
+              <TableLegendForm />
+            </DrawerHeader>
+            <div className="p-4 overflow-y-auto max-h-[50vh]">
+              <TableGridForm value={value} onSelect={handleSelect} />
+            </div>
+            <DrawerFooter className="pt-2 px-4 pb-6">
+              <DrawerClose asChild>
+                <ConfirmTableButton value={value} onConfirm={handleConfirm} />
+              </DrawerClose>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // ── Desktop → Dialog / Modal ──────────────────────────────────
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-between font-normal bg-white dark:bg-[#18181A] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-[#202024] hover:text-foreground dark:hover:text-white rounded-xl h-12 text-foreground dark:text-white px-4",
-            !value && "text-muted-foreground",
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Armchair className="size-5 text-[#a16246]" />
-            <span className="text-foreground dark:text-white font-medium">
-              {value ? `Table ${value} sélectionnée` : "Choisir une table"}
-            </span>
-          </div>
-          <span className="text-muted-foreground">&rsaquo;</span>
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent className="dark:bg-[#0a0a0c] dark:border-border max-h-[85vh]">
-        <div className="mx-auto w-full max-w-sm">
-          <DrawerHeader className="text-left px-4">
-            <DrawerTitle className="text-lg">Choisir une table</DrawerTitle>
-            <div className="flex items-center gap-4 text-[11px] mt-2 font-medium">
-              <div className="flex items-center gap-1.5">
-                <div className="size-3 rounded-sm bg-primary dark:bg-[#DF6C32]"></div>
-                <span className="text-muted-foreground">Selected</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="size-3 rounded-sm bg-muted/80"></div>
-                <span className="text-muted-foreground">Reserved</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="size-3 rounded-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"></div>
-                <span className="text-muted-foreground">Available</span>
-              </div>
-            </div>
-          </DrawerHeader>
-          <div className="p-4 overflow-y-auto max-h-[50vh]">
-            <div className="grid grid-cols-3 gap-3 md:gap-4 mx-auto">
-              {tables.map((t) => {
-                const isSelected = value === t.id;
-                const isReserved = t.status === "reserved";
-                const spanCol = t.span === 2 ? "col-span-2" : "col-span-1";
-
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    disabled={isReserved}
-                    onClick={() => onChange(t.id)}
-                    className={cn(
-                      "relative flex items-center justify-center rounded-2xl border-2 border-transparent py-7 font-bold text-lg transition-all",
-                      spanCol,
-                      isSelected
-                        ? "bg-primary text-primary-foreground scale-95 shadow-md border-primary/20 dark:bg-[#DF6C32] dark:text-white dark:border-[#DF6C32]/20"
-                        : isReserved
-                        ? "bg-muted/40 text-muted-foreground opacity-50 cursor-not-allowed"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                    )}
-                  >
-                    {/* Tiny "chairs" details */}
-                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-foreground/10 rounded-full" />
-                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-foreground/10 rounded-full" />
-                    {t.span === 2 && (
-                      <>
-                        <div className="absolute top-0 left-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                        <div className="absolute top-0 right-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                        <div className="absolute bottom-0 left-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                        <div className="absolute bottom-0 right-1/4 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                      </>
-                    )}
-                    {t.span === 1 && (
-                      <>
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1.5 bg-foreground/10 rounded-full" />
-                      </>
-                    )}
-                    {t.id}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <DrawerFooter className="pt-2 px-4 pb-6">
-            <DrawerClose asChild>
-              <Button 
-                size="lg" 
-                className={cn(
-                  "w-full font-bold shadow-md transition-colors", 
-                  !value 
-                    ? "bg-muted text-muted-foreground hover:bg-muted" 
-                    : "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-[#DF6C32] dark:text-white dark:hover:bg-[#C95A26]"
-                )}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button type="button" className="w-full" onClick={() => setOpen(true)}>
+        {triggerButton}
+      </button>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          "sm:max-w-[460px] rounded-2xl p-0 overflow-hidden gap-0",
+          "dark:bg-[#0a0a0c] dark:border-border"
+        )}
+      >
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-lg font-bold">Choisir une table</DialogTitle>
+            <DialogClose asChild>
+              <button
+                type="button"
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full grid place-items-center bg-white/[0.08] border border-white/[0.1] text-white/50 hover:bg-white/[0.14] hover:text-white transition-all"
               >
-                Sélectionnez une table
-              </Button>
-            </DrawerClose>
-          </DrawerFooter>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+                  <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+                </svg>
+              </button>
+            </DialogClose>
+          </div>
+          <TableLegendForm />
+        </DialogHeader>
+
+        {/* Grid */}
+        <div className="p-5 pt-4">
+          <TableGridForm value={value} onSelect={handleSelect} />
         </div>
-      </DrawerContent>
-    </Drawer>
+
+        {/* Confirm */}
+        <div className="px-5 pb-6 pt-1">
+          <ConfirmTableButton value={value} onConfirm={handleConfirm} />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

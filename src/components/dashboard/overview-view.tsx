@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -15,7 +16,6 @@ import {
   Users
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { HourlyChart } from "@/components/dashboard/hourly-chart";
 import { FadeUp } from "@/components/dashboard/motion";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,43 @@ export function OverviewView({
   todaysReservations: Pick<Reservation, "id" | "customer_name" | "party_size" | "time" | "status">[];
 }) {
   const panierMoyen = ordersToday > 0 ? revenueToday / ordersToday : 0;
+  const [timeRange, setTimeRange] = useState<"today" | "week">("today");
+  const [hoveredSegment, setHoveredSegment] = useState<"sur_place" | "livraison" | "a_emporter" | null>(null);
+
+  const dataToday = [
+    { time: "11h", value: 30, orders: 12 },
+    { time: "12h", value: 45, orders: 18 },
+    { time: "13h", value: 85, orders: 34 },
+    { time: "14h", value: 65, orders: 26 },
+    { time: "15h", value: 35, orders: 14 },
+    { time: "16h", value: 40, orders: 16 },
+    { time: "17h", value: 50, orders: 20 },
+    { time: "18h", value: 60, orders: 24 },
+    { time: "19h", value: 70, orders: 28 },
+    { time: "20h", value: 80, orders: 32 },
+    { time: "21h", value: 95, orders: 38 },
+    { time: "22h", value: 75, orders: 30 },
+    { time: "23h", value: 45, orders: 18 },
+  ];
+
+  const dataWeek = [
+    { time: "11h", value: 50, orders: 150 },
+    { time: "12h", value: 65, orders: 195 },
+    { time: "13h", value: 95, orders: 285 },
+    { time: "14h", value: 85, orders: 255 },
+    { time: "15h", value: 45, orders: 135 },
+    { time: "16h", value: 55, orders: 165 },
+    { time: "17h", value: 70, orders: 210 },
+    { time: "18h", value: 80, orders: 240 },
+    { time: "19h", value: 90, orders: 270 },
+    { time: "20h", value: 100, orders: 300 },
+    { time: "21h", value: 85, orders: 255 },
+    { time: "22h", value: 60, orders: 180 },
+    { time: "23h", value: 40, orders: 120 },
+  ];
+
+  const currentData = timeRange === "today" ? dataToday : dataWeek;
+  const maxVal = Math.max(...currentData.map(d => d.value));
 
   return (
     <motion.div layout className="space-y-4 md:space-y-6">
@@ -70,8 +107,8 @@ export function OverviewView({
             label="Commandes aujourd'hui"
             value={ordersToday}
             deltaPct={ordersDeltaPct}
-            icon={ChefHat}
-            iconTone="brand"
+            iconUrl="/images/Group (5).svg"
+            variant="solid-dark"
           />
         </FadeUp>
         <FadeUp delay={0.04}>
@@ -80,8 +117,8 @@ export function OverviewView({
             value={revenueToday}
             unit={currency}
             deltaPct={revenueDeltaPct}
-            icon={Coins}
-            iconTone="green"
+            iconUrl="/images/Group (2).svg"
+            variant="solid-orange"
           />
         </FadeUp>
         <FadeUp delay={0.08}>
@@ -89,8 +126,8 @@ export function OverviewView({
             label="Réservations en attente"
             value={pendingReservations}
             deltaPct={reservationsDeltaPct}
-            icon={CalendarClock}
-            iconTone="amber"
+            iconUrl="/images/Group (6).svg"
+            variant="solid-black"
           />
         </FadeUp>
         <FadeUp delay={0.12}>
@@ -98,45 +135,155 @@ export function OverviewView({
             label="Nouveaux clients"
             value={newCustomers}
             deltaPct={customersDeltaPct}
-            icon={UserPlus}
-            iconTone="purple"
+            iconUrl="/images/Group (1).svg"
+            variant="solid-black"
           />
         </FadeUp>
       </div>
 
-      {/* MIDDLE ROW: Chart + Pie Chart Placeholder */}
+      {/* MIDDLE ROW: Custom Charts matching the new design */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-6">
         <FadeUp delay={0.16} className="lg:col-span-2">
-          <div className="flex h-full flex-col rounded-2xl border bg-card p-5 shadow-sm md:p-6">
-            <div className="mb-6 flex items-center justify-between">
+          <div className="flex h-full flex-col rounded-[24px] border bg-card p-6 shadow-sm">
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="font-display text-lg font-semibold">Rythme de la journée</h2>
-                <p className="text-sm text-muted-foreground">Aperçu des ventes</p>
+                <h2 className="font-display text-xl font-bold text-foreground">Rythme de la journée</h2>
+                <p className="text-sm text-muted-foreground mt-1">Commandes par créneau</p>
+              </div>
+              <div className="flex items-center rounded-xl border border-border/50 bg-background dark:bg-neutral-900/50 p-1 shadow-sm">
+                <button
+                  onClick={() => setTimeRange("today")}
+                  className={cn(
+                    "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                    timeRange === "today"
+                      ? "bg-[#e36329] text-white shadow-sm"
+                      : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  )}
+                >
+                  Aujourd'hui
+                </button>
+                <button
+                  onClick={() => setTimeRange("week")}
+                  className={cn(
+                    "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                    timeRange === "week"
+                      ? "bg-[#e36329] text-white shadow-sm"
+                      : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  )}
+                >
+                  Semaine
+                </button>
               </div>
             </div>
-            <div className="min-h-[300px] flex-1">
-              <HourlyChart data={hourly} />
+
+            <div className="flex-1 flex items-end justify-between gap-1 px-1 sm:gap-2 sm:px-2 pt-10 pb-2 relative h-[250px]">
+              {currentData.map((item, i) => {
+                const isHighlight = item.value === maxVal;
+                return (
+                  <div key={i} className="flex flex-col items-center gap-4 flex-1 group h-full justify-end cursor-pointer">
+                    <div className="relative flex w-full justify-center h-full items-end">
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300 pointer-events-none bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-[12px] sm:text-[13px] font-bold px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full z-10 shadow-md whitespace-nowrap">
+                        {item.orders} cmd
+                      </div>
+
+                      <div
+                        className={cn(
+                          "w-full max-w-[48px] rounded-t-[8px] sm:rounded-t-[12px] transition-all duration-700 ease-out",
+                          isHighlight
+                            ? "bg-[#e36329]"
+                            : "bg-[#f2d1c3] dark:bg-[#e36329]/20 group-hover:bg-[#eb9d7a] dark:group-hover:bg-[#e36329]/40"
+                        )}
+                        style={{ height: `${item.value}%` }}
+                      />
+                    </div>
+                    {/* Only show alternating labels on mobile, all on desktop to prevent crowding */}
+                    <span className={cn(
+                      "text-[10px] sm:text-[13px] font-medium text-muted-foreground transition-colors group-hover:text-foreground",
+                      i % 2 !== 0 && "max-sm:hidden"
+                    )}>
+                      {item.time}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </FadeUp>
 
         <FadeUp delay={0.2} className="lg:col-span-1">
-          <div className="flex h-full flex-col rounded-2xl border bg-card p-5 shadow-sm md:p-6">
-            <h2 className="font-display text-lg font-semibold mb-6">Répartition par type</h2>
-            <div className="flex-1 flex flex-col items-center justify-center gap-8">
-              {/* Simple CSS Donut Chart for visualization matching the inspiration */}
-              <div className="relative size-40 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border-[12px] border-primary/20 dark:border-primary/10">
-                 <div className="absolute inset-0 rounded-full border-[12px] border-blue-500/80 border-r-transparent border-t-transparent -rotate-45" />
-                 <div className="absolute inset-0 rounded-full border-[12px] border-amber-500/80 border-l-transparent border-b-transparent rotate-12" />
-                 <div className="flex flex-col items-center justify-center text-center">
-                    <span className="text-2xl font-bold text-foreground">75%</span>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sur place</span>
-                 </div>
+          <div className="flex h-full flex-col rounded-[24px] border bg-card p-6 shadow-sm">
+            <h2 className="font-display text-xl font-bold text-foreground mb-8">Répartition par type</h2>
+            <div className="flex-1 flex flex-col items-center justify-center gap-10">
+              <div className="relative size-[200px]">
+                <svg className="size-full -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
+                  {/* Orange - Sur Place */}
+                  <circle
+                    cx="50" cy="50" r="40" fill="none"
+                    className={cn(
+                      "stroke-[#e36329] cursor-pointer transition-all duration-300",
+                      hoveredSegment && hoveredSegment !== "sur_place" ? "opacity-30" : "opacity-100"
+                    )}
+                    strokeWidth="14" strokeDasharray="115 136.32" strokeLinecap="round"
+                    onMouseEnter={() => setHoveredSegment("sur_place")}
+                    onMouseLeave={() => setHoveredSegment(null)}
+                  />
+
+                  {/* Navy Blue - A emporter */}
+                  <circle
+                    cx="50" cy="50" r="40" fill="none"
+                    className={cn(
+                      "stroke-slate-800 dark:stroke-slate-400 cursor-pointer transition-all duration-300",
+                      hoveredSegment && hoveredSegment !== "a_emporter" ? "opacity-30" : "opacity-100"
+                    )}
+                    strokeWidth="14" strokeDasharray="46 205.32" strokeDashoffset="-135" strokeLinecap="round"
+                    onMouseEnter={() => setHoveredSegment("a_emporter")}
+                    onMouseLeave={() => setHoveredSegment(null)}
+                  />
+
+                  {/* Black - Livraison */}
+                  <circle
+                    cx="50" cy="50" r="40" fill="none"
+                    className={cn(
+                      "stroke-slate-900 dark:stroke-slate-200 cursor-pointer transition-all duration-300",
+                      hoveredSegment && hoveredSegment !== "livraison" ? "opacity-30" : "opacity-100"
+                    )}
+                    strokeWidth="14" strokeDasharray="30.32 221" strokeDashoffset="-201" strokeLinecap="round"
+                    onMouseEnter={() => setHoveredSegment("livraison")}
+                    onMouseLeave={() => setHoveredSegment(null)}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none transition-opacity duration-300">
+                  <span className="text-[34px] font-bold text-foreground tracking-tight leading-none">
+                    {hoveredSegment === "a_emporter" ? "10%" : hoveredSegment === "livraison" ? "15%" : "75%"}
+                  </span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mt-2">
+                    {hoveredSegment === "a_emporter" ? "À emporter" : hoveredSegment === "livraison" ? "Livraison" : "Sur place"}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground w-full px-4">
-                 <div className="flex items-center gap-2"><div className="size-2.5 rounded-full bg-primary/20" /> Sur place</div>
-                 <div className="flex items-center gap-2"><div className="size-2.5 rounded-full bg-blue-500/80" /> Livraison</div>
-                 <div className="flex items-center gap-2"><div className="size-2.5 rounded-full bg-amber-500/80" /> À emporter</div>
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[13px] font-medium text-muted-foreground w-full px-2">
+                <div
+                  className={cn("flex items-center gap-2 cursor-pointer transition-opacity duration-300", hoveredSegment && hoveredSegment !== "sur_place" ? "opacity-40" : "opacity-100")}
+                  onMouseEnter={() => setHoveredSegment("sur_place")}
+                  onMouseLeave={() => setHoveredSegment(null)}
+                >
+                  <div className="size-3 rounded-full bg-[#e36329]" /> Sur place
+                </div>
+                <div
+                  className={cn("flex items-center gap-2 cursor-pointer transition-opacity duration-300", hoveredSegment && hoveredSegment !== "livraison" ? "opacity-40" : "opacity-100")}
+                  onMouseEnter={() => setHoveredSegment("livraison")}
+                  onMouseLeave={() => setHoveredSegment(null)}
+                >
+                  <div className="size-3 rounded-full bg-slate-900 dark:bg-slate-200" /> Livraison
+                </div>
+                <div
+                  className={cn("flex items-center gap-2 cursor-pointer transition-opacity duration-300", hoveredSegment && hoveredSegment !== "a_emporter" ? "opacity-40" : "opacity-100")}
+                  onMouseEnter={() => setHoveredSegment("a_emporter")}
+                  onMouseLeave={() => setHoveredSegment(null)}
+                >
+                  <div className="size-3 rounded-full bg-slate-800 dark:bg-slate-400" /> À emporter
+                </div>
               </div>
             </div>
           </div>
@@ -193,10 +340,10 @@ export function OverviewView({
                         </td>
                         <td className="py-4 pr-4">
                           <Badge variant="outline" className={cn(
-                            "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800 text-muted-foreground",
-                            o.status === "done" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                            o.status === "preparing" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                            o.status === "new" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                            "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800/80 font-medium",
+                            o.status === "done" && "text-emerald-600 dark:text-emerald-500",
+                            o.status === "preparing" && "text-amber-600 dark:text-amber-500",
+                            o.status === "new" && "text-blue-600 dark:text-blue-500",
                           )}>
                             {o.status === "done" ? "Servi" : o.status === "preparing" ? "En cours" : "Nouveau"}
                           </Badge>

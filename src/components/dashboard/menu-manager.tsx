@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   UtensilsCrossed,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { formatPrice } from "@/lib/format";
 import type { Category, Item } from "@/lib/types";
@@ -116,10 +125,9 @@ export function MenuManager() {
 
   if (isPending || !data) {
     return (
-      <div className="mt-6 space-y-2" aria-busy="true">
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
+      <div className="mt-6 space-y-4" aria-busy="true">
+        <Skeleton className="h-[200px] w-full rounded-2xl" />
+        <Skeleton className="h-[200px] w-full rounded-2xl" />
       </div>
     );
   }
@@ -150,40 +158,62 @@ export function MenuManager() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold">Menu</h1>
+    <div className="-mx-4 px-4 md:-mx-8 md:px-8 max-w-7xl mx-auto space-y-8">
+      {/* Header section matches Commandes aesthetic */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground">Menu</h1>
+          <p className="text-[13.5px] text-muted-foreground mt-1 font-medium">
+            Gérez vos catégories et vos articles
+          </p>
+        </div>
         {isOwner && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <AddCategoryDialog onCreated={refresh} />
-            <Button onClick={() => setCreating(true)} disabled={data.categories.length === 0}>
-              <Plus className="size-4" /> Article
+            <Button 
+              onClick={() => setCreating(true)} 
+              disabled={data.categories.length === 0}
+              className="bg-primary text-primary-foreground font-bold rounded-full px-6 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2 w-full sm:w-auto"
+            >
+              <Plus className="size-4" /> Nouvel article
             </Button>
           </div>
         )}
       </div>
+
       {data.categories.length === 0 && (
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Commencez par créer une catégorie (ex. « Tacos », « Boissons »).
-        </p>
+        <div className="flex flex-col items-center justify-center bg-card border border-border border-dashed rounded-2xl h-[300px]">
+          <UtensilsCrossed className="size-10 text-muted-foreground/50 mb-4" />
+          <p className="text-center text-[15px] font-bold text-foreground">
+            Aucun article pour le moment.
+          </p>
+          <p className="text-center text-[13px] text-muted-foreground mt-1">
+            Commencez par créer une catégorie (ex. « Tacos », « Boissons »).
+          </p>
+        </div>
       )}
 
       {sortedCategories.map((cat, catIndex) => {
         const items = data.items
           .filter((i) => i.category_id === cat.id)
           .sort((a, b) => a.sort_order - b.sort_order);
+        
         return (
-          <section key={cat.id} className="mt-8">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-medium text-muted-foreground">{cat.name_fr}</h2>
+          <section key={cat.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Category Header */}
+            <div className="flex items-center justify-between gap-2 mb-4 bg-muted/40 px-4 py-3 rounded-xl border border-border/50">
+              <h2 className="font-display text-lg font-extrabold text-foreground tracking-tight">
+                {cat.name_fr}
+              </h2>
               {isOwner && (
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     aria-label="Monter la catégorie"
                     disabled={catIndex === 0}
                     onClick={() => moveCategory(catIndex, -1)}
+                    className="hover:bg-muted"
                   >
                     <ChevronUp className="size-4" />
                   </Button>
@@ -193,9 +223,11 @@ export function MenuManager() {
                     aria-label="Descendre la catégorie"
                     disabled={catIndex === sortedCategories.length - 1}
                     onClick={() => moveCategory(catIndex, 1)}
+                    className="hover:bg-muted"
                   >
                     <ChevronDown className="size-4" />
                   </Button>
+                  <div className="w-px h-4 bg-border mx-1" />
                   <EditCategoryDialog category={cat} onSaved={refresh} />
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -203,26 +235,28 @@ export function MenuManager() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Supprimer ${cat.name_fr}`}
+                        className="hover:bg-destructive/10 hover:text-destructive text-destructive/70"
                       >
-                        <Trash2 className="size-4 text-destructive" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="bg-card border-border shadow-xl rounded-2xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>
+                        <AlertDialogTitle className="font-display text-xl">
                           Supprimer « {cat.name_fr} » ?
                         </AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogDescription className="text-muted-foreground text-[14px]">
                           {items.length > 0
-                            ? "Déplacez d'abord les articles de cette catégorie."
-                            : "Cette action est irréversible."}
+                            ? "Vous devez d'abord supprimer ou déplacer tous les articles de cette catégorie avant de pouvoir la supprimer."
+                            : "Cette action est définitive et ne peut pas être annulée."}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogFooter className="mt-6">
+                        <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">Annuler</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={items.length > 0}
                           onClick={() => deleteCategory.mutate(cat.id)}
+                          className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Supprimer
                         </AlertDialogAction>
@@ -232,94 +266,129 @@ export function MenuManager() {
                 </div>
               )}
             </div>
-            <ul className="mt-2 space-y-2">
-              {items.map((item, itemIndex) => (
-                <li
-                  key={item.id}
-                  className={`flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/60 transition-all hover:shadow-md ${item.in_stock ? "opacity-100" : "opacity-60"}`}
-                >
-                  <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt=""
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="grid size-full place-items-center bg-accent text-accent-foreground">
-                        <UtensilsCrossed className="size-5" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`truncate font-medium ${item.in_stock ? "" : "text-muted-foreground line-through"}`}>
-                      {item.name_fr}
-                    </p>
-                    <p className="text-sm text-primary">
-                      {formatPrice(item.base_price)}
-                    </p>
-                  </div>
-                  {isOwner && (
-                    <>
-                      <div className="flex flex-col">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Monter l'article"
-                          disabled={itemIndex === 0}
-                          onClick={() => moveItem(items, itemIndex, -1)}
-                        >
-                          <ChevronUp className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label="Descendre l'article"
-                          disabled={itemIndex === items.length - 1}
-                          onClick={() => moveItem(items, itemIndex, 1)}
-                        >
-                          <ChevronDown className="size-3.5" />
-                        </Button>
-                      </div>
-                      <Switch
-                        checked={item.in_stock}
-                        aria-label={`${item.name_fr} en stock`}
-                        onCheckedChange={(checked) =>
-                          toggleStock.mutate({ id: item.id, in_stock: checked })
-                        }
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Modifier ${item.name_fr}`}
-                        onClick={() => setEditing(item)}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Supprimer ${item.name_fr}`}
-                        onClick={() => {
-                          if (confirm(`Supprimer « ${item.name_fr} » ?`)) {
-                            deleteItem.mutate(item.id);
+
+            {/* Items Datatable */}
+            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="hover:bg-transparent border-border">
+                    <TableHead className="w-[70px] pl-5">IMAGE</TableHead>
+                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ARTICLE</TableHead>
+                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">PRIX</TableHead>
+                    <TableHead className="w-[120px] text-center font-bold text-[11px] text-muted-foreground uppercase tracking-wider">EN STOCK</TableHead>
+                    {isOwner && <TableHead className="w-[200px] text-right pr-5 font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ACTIONS</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item, itemIndex) => (
+                    <TableRow 
+                      key={item.id} 
+                      className={`border-border transition-colors hover:bg-muted/50 ${item.in_stock ? "" : "opacity-60 grayscale-[0.2]"}`}
+                    >
+                      <TableCell className="pl-5 py-4">
+                        <div className="relative size-[46px] shrink-0 overflow-hidden rounded-[10px] border border-border/50 shadow-sm bg-background flex items-center justify-center">
+                          {item.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={item.name_fr}
+                              fill
+                              sizes="46px"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="size-5 text-muted-foreground/50" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-[13.5px] text-foreground">
+                            {item.name_fr}
+                          </span>
+                          {item.description_fr && (
+                            <span className="text-[12px] text-muted-foreground line-clamp-1 mt-0.5">
+                              {item.description_fr}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-bold text-[13px] text-primary bg-primary/10 w-fit px-3 py-1.5 rounded-lg border border-primary/20">
+                          {formatPrice(item.base_price)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={item.in_stock}
+                          aria-label={`${item.name_fr} en stock`}
+                          disabled={!isOwner}
+                          onCheckedChange={(checked) =>
+                            toggleStock.mutate({ id: item.id, in_stock: checked })
                           }
-                        }}
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    </>
+                          className="data-[state=checked]:bg-emerald-500"
+                        />
+                      </TableCell>
+                      {isOwner && (
+                        <TableCell className="pr-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Monter"
+                              disabled={itemIndex === 0}
+                              onClick={() => moveItem(items, itemIndex, -1)}
+                              className="hover:bg-muted"
+                            >
+                              <ChevronUp className="size-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Descendre"
+                              disabled={itemIndex === items.length - 1}
+                              onClick={() => moveItem(items, itemIndex, 1)}
+                              className="hover:bg-muted"
+                            >
+                              <ChevronDown className="size-4 text-muted-foreground" />
+                            </Button>
+                            <div className="w-px h-4 bg-border mx-1" />
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Modifier"
+                              onClick={() => setEditing(item)}
+                              className="hover:bg-muted hover:text-foreground text-muted-foreground"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Supprimer"
+                              className="text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                if (confirm(`Supprimer « ${item.name_fr} » ?`)) {
+                                  deleteItem.mutate(item.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {items.length === 0 && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={isOwner ? 5 : 4} className="h-24 text-center text-muted-foreground text-[13px]">
+                        Aucun article dans cette catégorie.
+                      </TableCell>
+                    </TableRow>
                   )}
-                </li>
-              ))}
-              {items.length === 0 && (
-                <li className="rounded-lg border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
-                  Aucun article.
-                </li>
-              )}
-            </ul>
+                </TableBody>
+              </Table>
+            </div>
           </section>
         );
       })}
@@ -370,26 +439,32 @@ function AddCategoryDialog({ onCreated }: { onCreated: () => void }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="size-4" /> Catégorie
+        <Button className="bg-card text-foreground border border-border font-bold rounded-xl px-5 py-5 hover:bg-muted transition-colors shadow-sm gap-2 w-full sm:w-auto">
+          <Plus className="size-4" /> Nouvelle catégorie
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Nouvelle catégorie</DialogTitle>
+      <DialogContent className="sm:max-w-md bg-card text-foreground border-border shadow-2xl p-0 overflow-hidden rounded-2xl">
+        <DialogHeader className="px-6 py-5 border-b border-border bg-muted/20">
+          <DialogTitle className="font-display text-xl font-bold">Nouvelle catégorie</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="cat-name">Nom</Label>
-          <Input
-            id="cat-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Tacos, Burgers, Boissons…"
-          />
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="cat-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom de la catégorie</Label>
+            <Input
+              id="cat-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Tacos, Burgers, Boissons…"
+              className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium placeholder:text-muted-foreground/50"
+            />
+          </div>
         </div>
-        <Button onClick={save} disabled={saving || !name.trim()}>
-          {saving ? "Création…" : "Créer"}
-        </Button>
+        <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3">
+          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button className="rounded-xl font-bold gap-2 px-6" onClick={save} disabled={saving || !name.trim()}>
+            {saving ? "Création…" : "Créer la catégorie"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -424,25 +499,31 @@ function EditCategoryDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Renommer ${category.name_fr}`}>
+        <Button variant="ghost" size="icon-sm" aria-label={`Renommer ${category.name_fr}`} className="hover:bg-muted hover:text-foreground text-muted-foreground">
           <Pencil className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Renommer la catégorie</DialogTitle>
+      <DialogContent className="sm:max-w-md bg-card text-foreground border-border shadow-2xl p-0 overflow-hidden rounded-2xl">
+        <DialogHeader className="px-6 py-5 border-b border-border bg-muted/20">
+          <DialogTitle className="font-display text-xl font-bold">Renommer la catégorie</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="cat-edit-name">Nom</Label>
-          <Input
-            id="cat-edit-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="cat-edit-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom</Label>
+            <Input
+              id="cat-edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
+            />
+          </div>
         </div>
-        <Button onClick={save} disabled={saving || !name.trim()}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
-        </Button>
+        <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3">
+          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button className="rounded-xl font-bold gap-2 px-6" onClick={save} disabled={saving || !name.trim()}>
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

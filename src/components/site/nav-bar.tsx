@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+
 import { Menu as MenuIcon, UtensilsCrossed, CalendarDays, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,6 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetDescription,
 } from "@/components/ui/sheet";
 
 const links = [
@@ -64,7 +65,7 @@ export function NavBar({
                     </div>
                     <div>
                       <SheetTitle className="font-display text-white text-lg leading-none mb-1">{name}</SheetTitle>
-                      <p className="text-xs text-white/50">Casablanca, Maroc</p>
+                      <SheetDescription className="text-xs text-white/50">Casablanca, Maroc</SheetDescription>
                     </div>
                   </div>
                 </SheetHeader>
@@ -109,16 +110,16 @@ export function NavBar({
         </div>
 
         {/* Center: Mobile Logo & Desktop Menu */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto flex items-center justify-center">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
           {/* Mobile Logo */}
-          <div className="md:hidden">
+          <div className="md:hidden pointer-events-auto">
             <Link href={base} className="flex items-center min-w-0">
               <LogoIcon className="w-28 sm:w-36 h-auto" />
             </Link>
           </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-8 md:flex pointer-events-auto">
             {links.map((l) => (
               <Link
                 key={l.href}

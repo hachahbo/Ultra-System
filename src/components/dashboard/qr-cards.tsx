@@ -58,42 +58,44 @@ export function QrCards({
                 value={url}
                 size={QR_SIZE}
                 level={QR_LEVEL}
-                className="h-32 w-32"
+                style={{ width: "128px", height: "128px" }}
+                className="rounded-lg shadow-sm"
               />
-              <p className="text-sm font-medium">Table {t.number}</p>
+              <p className="text-[13px] font-bold text-foreground">Table {t.number}</p>
               <Button
                 variant="ghost"
                 size="sm"
-                className="print:hidden"
+                className="print:hidden rounded-lg font-bold text-muted-foreground hover:text-foreground mt-2"
                 onClick={() => {
                   const canvas = canvasRefs.current[t.id];
                   if (canvas) download(canvas, `table-${t.number}.png`);
                 }}
               >
-                <Download className="size-4" /> Télécharger
+                <Download className="size-4 mr-2" /> Télécharger
               </Button>
             </div>
           );
         })}
 
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-primary/40 bg-primary/5 p-4 text-center print:break-inside-avoid">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-primary/40 bg-primary/5 p-6 text-center print:break-inside-avoid">
           <QRCodeCanvas
             ref={promoRef}
             value={`${origin}/${restaurantSlug}/menu`}
             size={QR_SIZE}
             level={QR_LEVEL}
-            className="h-32 w-32"
+            style={{ width: "128px", height: "128px" }}
+            className="rounded-lg shadow-sm"
           />
-          <p className="text-sm font-medium">QR Livraison / Promo</p>
+          <p className="text-[13px] font-bold text-primary">QR Livraison / Promo</p>
           <Button
             variant="ghost"
             size="sm"
-            className="print:hidden"
+            className="print:hidden rounded-lg font-bold text-primary hover:text-primary hover:bg-primary/10 mt-2"
             onClick={() => {
               if (promoRef.current) download(promoRef.current, "promo-livraison.png");
             }}
           >
-            <Download className="size-4" /> Télécharger
+            <Download className="size-4 mr-2" /> Télécharger
           </Button>
         </div>
       </div>

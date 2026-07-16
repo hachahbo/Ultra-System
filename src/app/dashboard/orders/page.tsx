@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { KitchenView } from "@/components/dashboard/kitchen-view";
+import { OrdersView } from "@/components/dashboard/orders-view";
 
 export const metadata: Metadata = { title: "Commandes" };
 
 export default function OrdersPage() {
-  return <KitchenView />;
+  return <OrdersView />;
 }

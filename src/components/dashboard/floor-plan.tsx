@@ -6,12 +6,12 @@ import type { DiningTable } from "@/lib/types";
 
 export type TableStatus = "default" | "active" | "reserved" | "free" | "selected";
 
-const statusClasses: Record<TableStatus, string> = {
-  default: "bg-card text-foreground ring-border",
-  active: "bg-primary text-primary-foreground ring-primary/50",
-  reserved: "bg-destructive/85 text-white ring-destructive/40",
-  free: "bg-emerald-500/85 text-white ring-emerald-500/40",
-  selected: "bg-card text-foreground ring-2 ring-primary",
+const statusStyles: Record<TableStatus, { wrapper: string; border: string; text: string; subtext: string }> = {
+  default: { wrapper: "bg-[#1b2431]", border: "border-border/50", text: "text-white", subtext: "text-muted-foreground" },
+  free: { wrapper: "bg-[#1b2431]", border: "border-[#4ec27f]", text: "text-white", subtext: "text-[#4ec27f]" },
+  active: { wrapper: "bg-[#1b2431]", border: "border-[#e6a92f]", text: "text-white", subtext: "text-[#e6a92f]" },
+  reserved: { wrapper: "bg-[#1b2431]", border: "border-[#e0574a]", text: "text-white", subtext: "text-[#e0574a]" },
+  selected: { wrapper: "bg-[#1b2431]", border: "border-primary", text: "text-white", subtext: "text-primary" },
 };
 
 /**
@@ -26,7 +26,7 @@ const statusClasses: Record<TableStatus, string> = {
 export function FloorPlanMap({
   tables,
   mode,
-  aspect = 4 / 3,
+  aspect = 2.2, // Significantly reduced height (panoramic) to match the screenshots perfectly
   getStatus,
   pulse,
   badge,
@@ -43,9 +43,7 @@ export function FloorPlanMap({
   onTableMove?: (id: string, posX: number, posY: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Local optimistic position while a marker is actively being dragged —
-  // avoids fighting the parent's re-render until onTableMove's request
-  // resolves and the real pos_x/pos_y catches up.
+  // Local optimistic position while a marker is actively being dragged
   const [dragPos, setDragPos] = useState<Record<string, { x: number; y: number }>>({});
   const draggingId = useRef<string | null>(null);
 
@@ -77,10 +75,6 @@ export function FloorPlanMap({
     if (mode !== "edit" || draggingId.current !== table.id) return;
     const pos = dragPos[table.id];
     draggingId.current = null;
-    // Hand off to the parent and drop the local override immediately —
-    // once the parent's data refetches, the marker must reflect the
-    // server's truth (not this drag's guess), especially on a concurrency
-    // conflict where another edit already won.
     setDragPos((prev) => {
       const next = { ...prev };
       delete next[table.id];
@@ -92,24 +86,33 @@ export function FloorPlanMap({
   return (
     <div
       ref={containerRef}
-      className="relative w-full touch-none overflow-hidden rounded-xl bg-muted select-none ring-1 ring-border"
+      className="relative w-full touch-none overflow-hidden rounded-xl bg-[#0a0a0c] select-none ring-1 ring-border shadow-inner"
       style={{ aspectRatio: aspect }}
     >
-      {tables.map((table) => {
+      {tables.map((table, i) => {
         const pos = dragPos[table.id] ?? { x: table.pos_x, y: table.pos_y };
         const status = getStatus?.(table) ?? "default";
         const isPulsing = pulse?.(table) ?? false;
         const isDragging = dragPos[table.id] !== undefined;
-        const size = Math.min(64, 40 + table.seats * 2.5);
+        const isRect = table.seats > 2;
+
+        // Sleeker rectangular look with reduced height
+        const width = 136;
+        const height = 72;
+        const styles = statusStyles[status];
 
         return (
-          <div
+          <motion.div
             key={table.id}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.05, type: "spring", bounce: 0.4 }}
             className={`absolute ${isDragging ? "" : "transition-[left,top] duration-150 ease-out"}`}
             style={{
               left: `${pos.x * 100}%`,
               top: `${pos.y * 100}%`,
               transform: "translate(-50%, -50%)",
+              zIndex: isDragging ? 50 : 10,
             }}
             onPointerDown={(e) => handlePointerDown(e, table)}
             onPointerMove={handlePointerMove}
@@ -117,22 +120,46 @@ export function FloorPlanMap({
             onPointerCancel={() => handlePointerUp(table)}
           >
             {isPulsing && (
-              <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
+              <span className="absolute inset-0 animate-ping rounded-[24px] bg-primary/40" />
             )}
+
             <motion.button
               type="button"
-              whileTap={{ scale: mode === "edit" ? 1.12 : 0.94 }}
+              whileHover={{ scale: mode === "edit" ? 1.05 : 1.02 }}
+              whileTap={{ scale: mode === "edit" ? 1.1 : 0.95 }}
               onClick={() => mode === "view" && onTableTap?.(table)}
-              className={`relative flex flex-col items-center justify-center rounded-full text-xs font-bold ring-2 transition-colors ${
-                statusClasses[status]
-              } ${mode === "edit" ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
-              style={{ width: size, height: size }}
+              className={`relative flex flex-col items-center justify-center rounded-[20px] font-bold transition-all shadow-2xl border-[3px] ${styles.wrapper
+                } ${styles.border} ${mode === "edit" ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+                }`}
+              style={{ width, height }}
             >
-              <span>{table.number}</span>
-              <span className="text-[9px] font-medium opacity-80">{table.seats}p</span>
-              {badge && <span className="absolute -right-1 -top-1">{badge(table)}</span>}
+              {/* Outer floating chairs (left/right) */}
+              <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#2a2a2c] rounded-full shadow-sm" />
+              <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-[#2a2a2c] rounded-full shadow-sm" />
+
+              {/* Top/bottom chairs depending on shape */}
+              {isRect ? (
+                <>
+                  <div className="absolute -top-3 left-[20%] w-[20%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                  <div className="absolute -top-3 right-[20%] w-[20%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                  <div className="absolute -bottom-3 left-[20%] w-[20%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                  <div className="absolute -bottom-3 right-[20%] w-[20%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                </>
+              ) : (
+                <>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-[35%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[35%] h-1.5 bg-[#2a2a2c] rounded-full shadow-sm" />
+                </>
+              )}
+
+              <span className={`text-2xl font-display ${styles.text}`}>{table.number}</span>
+              <span className={`text-[11px] font-semibold mt-1 tracking-wide ${styles.subtext}`}>
+                {table.seats}p • {table.number.toString().includes('T') ? "Terrasse" : "Salle"}
+              </span>
+
+              {badge && <span className="absolute -right-2 -top-2">{badge(table)}</span>}
             </motion.button>
-          </div>
+          </motion.div>
         );
       })}
 
