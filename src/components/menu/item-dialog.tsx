@@ -252,7 +252,7 @@ export function ItemDialog({
 
             {/* ── Floating Image Top Right ── */}
             {item.image_url && (
-              <div className="absolute -right-2 -top-12 z-30 flex size-[150px] pointer-events-none items-center justify-center sm:-right-8 sm:-top-16 sm:size-[200px]">
+              <div className="absolute -right-2 -top-12 z-[100] flex size-[150px] pointer-events-none items-center justify-center sm:-right-8 sm:-top-16 sm:size-[200px]">
                 <div className="relative size-full drop-shadow-2xl transition-transform duration-500 hover:scale-105">
                   <Image
                     src={item.image_url}

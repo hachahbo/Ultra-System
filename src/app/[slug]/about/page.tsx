@@ -113,8 +113,8 @@ export default async function AboutPage({
               <p className="text-lg text-white/80 dark:text-muted-foreground leading-relaxed mb-8">
                 Nous vous accueillons toute la journée, en coup de vent ou plus longtemps, seul, en famille ou entre amis. Venez vous attabler et passer un joli moment autour d'un verre, d'un café ou d'un thé et ainsi partager notre passion du bien manger.
               </p>
-              <Button asChild variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black dark:border-border dark:text-foreground dark:hover:bg-accent uppercase tracking-wider font-semibold px-8 py-6">
-                <Link href={`/${restaurant.slug}`}>Découvrez notre maison</Link>
+              <Button asChild className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-black dark:text-white dark:hover:bg-gray-900 uppercase tracking-wider font-semibold px-8 py-6">
+                <a href="https://maps.app.goo.gl/vPtc4puU6HnVEQWj6" target="_blank" rel="noopener noreferrer">Découvrez notre maison</a>
               </Button>
             </div>
           </div>
