@@ -9,4 +9,5 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   menu_editor: "Éditeur de menu",
   floor_plan: "Plan de salle",
   promotions: "Promotions",
+  inventory: "Inventaire",
 };

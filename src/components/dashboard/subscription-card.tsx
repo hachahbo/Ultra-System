@@ -1,45 +1,69 @@
-import { Card } from "@/components/ui/card";
+import { Check } from "lucide-react";
 import { PlanBadge, StatusBadge } from "@/components/admin/badges";
+import { FEATURE_LABELS } from "@/lib/feature-labels";
 import { formatPrice, formatDateTime } from "@/lib/format";
-import type { Restaurant, Subscription } from "@/lib/types";
+import type { FeatureKey, Restaurant, Subscription } from "@/lib/types";
 
-// Read-only — owners see their plan and billing status, never the internals
-// (provider ids, admin notes). Changes are super-admin actions only.
+// Read-only — owners see their plan, billing status and included features,
+// never the internals (provider ids, admin notes). Changes are super-admin
+// actions only (no self-serve upgrade/payment flow exists yet).
 export function SubscriptionCard({
   restaurant,
   subscription,
+  features,
 }: {
   restaurant: Restaurant;
   subscription: Subscription | null;
+  features: Record<FeatureKey, boolean>;
 }) {
   if (!subscription) return null;
 
+  const includedFeatures = (Object.keys(features) as FeatureKey[]).filter((k) => features[k]);
+
   return (
-    <Card className="p-4">
-      <p className="text-sm font-medium">Abonnement</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+    <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 to-card p-6">
+      <div className="flex items-center gap-2">
         <PlanBadge plan={restaurant.plan} />
         <StatusBadge status={restaurant.status} />
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {formatPrice(subscription.price_mad, restaurant.currency)} /{" "}
-        {subscription.billing_cycle === "yearly" ? "an" : "mois"}
-      </p>
+      <div className="mt-3.5 text-[28px] font-extrabold tracking-tight text-foreground">
+        {formatPrice(subscription.price_mad, restaurant.currency)}{" "}
+        <span className="text-[15px] font-bold text-muted-foreground">
+          / {subscription.billing_cycle === "yearly" ? "an" : "mois"}
+        </span>
+      </div>
       {subscription.trial_ends_at && restaurant.status === "trial" && (
-        <p className="mt-1 text-sm text-muted-foreground">
+        <div className="mt-1.5 text-[12.5px] text-muted-foreground">
           Essai jusqu&apos;au {formatDateTime(subscription.trial_ends_at)}
-        </p>
+        </div>
       )}
+      {subscription.current_period_end && restaurant.status !== "trial" && (
+        <div className="mt-1.5 text-[12.5px] text-muted-foreground">
+          Prochaine facture le {formatDateTime(subscription.current_period_end)}
+        </div>
+      )}
+
+      {includedFeatures.length > 0 && (
+        <div className="mt-5 grid grid-cols-1 gap-2.5 border-t border-primary/20 pt-5 sm:grid-cols-2">
+          {includedFeatures.map((key) => (
+            <div key={key} className="flex items-center gap-2 text-[12.5px] font-semibold text-foreground/80">
+              <Check className="size-4 shrink-0 text-emerald-500" />
+              {FEATURE_LABELS[key]}
+            </div>
+          ))}
+        </div>
+      )}
+
       {restaurant.status === "suspended" && (
-        <p className="mt-2 text-sm text-destructive">
+        <p className="mt-4 text-[13px] font-semibold text-destructive">
           Compte suspendu — contactez Darna pour le réactiver.
         </p>
       )}
       {restaurant.status === "expired" && (
-        <p className="mt-2 text-sm text-destructive">
+        <p className="mt-4 text-[13px] font-semibold text-destructive">
           Essai expiré — contactez Darna pour souscrire à un plan.
         </p>
       )}
-    </Card>
+    </div>
   );
 }

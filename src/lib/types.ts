@@ -111,6 +111,7 @@ export const FEATURE_KEYS = [
   "menu_editor",
   "floor_plan",
   "promotions",
+  "inventory",
 ] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
@@ -250,4 +251,42 @@ export type DiningTable = {
   pos_x: number;
   pos_y: number;
   updated_at: string;
+};
+
+export type InventoryCategory = {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  sort_order: number;
+};
+
+export type InventoryItem = {
+  id: string;
+  restaurant_id: string;
+  category_id: string;
+  name: string;
+  unit: string;
+  stock: number;
+  min_threshold: number;
+  unit_price_mad: number;
+  created_at: string;
+};
+
+export type Supplier = {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  category: string;
+  status: "active" | "follow_up";
+  created_at: string;
+};
+
+export type Delivery = {
+  id: string;
+  restaurant_id: string;
+  supplier_id: string | null;
+  label: string;
+  eta_at: string;
+  urgent: boolean;
+  created_at: string;
 };

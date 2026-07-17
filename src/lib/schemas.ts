@@ -113,6 +113,45 @@ export const tableSchema = z.object({
 
 export type TableInput = z.infer<typeof tableSchema>;
 
+export const inventoryCategorySchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  sort_order: z.number().int().min(0).optional(),
+});
+
+export type InventoryCategoryInput = z.infer<typeof inventoryCategorySchema>;
+
+export const inventoryItemSchema = z.object({
+  category_id: z.string().uuid(),
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  unit: z.string().trim().min(1, "Unité requise").max(30),
+  stock: z.number().min(0).max(1_000_000),
+  min_threshold: z.number().min(0).max(1_000_000),
+  unit_price_mad: z.number().min(0).max(1_000_000).optional(),
+});
+
+export type InventoryItemInput = z.infer<typeof inventoryItemSchema>;
+
+export const stockAdjustSchema = z.object({
+  delta: z.number().refine((v) => v !== 0, "Valeur requise"),
+});
+
+export const supplierSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  category: z.string().trim().min(1, "Catégorie requise").max(80),
+  status: z.enum(["active", "follow_up"]).optional(),
+});
+
+export type SupplierInput = z.infer<typeof supplierSchema>;
+
+export const deliverySchema = z.object({
+  supplier_id: z.string().uuid().nullable().optional(),
+  label: z.string().trim().min(1, "Libellé requis").max(160),
+  eta_at: z.string().datetime({ offset: true }).or(z.string().min(1)),
+  urgent: z.boolean().optional(),
+});
+
+export type DeliveryInput = z.infer<typeof deliverySchema>;
+
 // Operational-only — branding (name/logo/address/about) and currency moved to
 // the Super Admin Site Builder (restaurant_theme / restaurants.currency are
 // operator-owned now, see 0005_bespoke_website_model.sql). Zod strips unknown

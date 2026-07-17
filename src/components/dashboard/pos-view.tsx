@@ -36,23 +36,23 @@ const defaultOptions: CustomizationGroup[] = [
 ];
 
 const MENU: (Item & { emoji: string; imgBg: string; category: string })[] = [
-  { 
-    id: 'tp', name_fr: 'Tacos Poulet', category: 'Tacos', base_price: 35, emoji: '🌮', imgBg: '#e7a15c', description_fr: 'Poulet mariné, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 1 
+  {
+    id: 'tp', name_fr: 'Tacos Poulet', category: 'Tacos', base_price: 35, emoji: '🌮', imgBg: '#e7a15c', description_fr: 'Poulet mariné, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 1
   },
-  { 
-    id: 'tm', name_fr: 'Tacos Mixte', category: 'Tacos', base_price: 45, emoji: '🌮', imgBg: '#d98a4a', description_fr: 'Bœuf, poulet, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 2 
+  {
+    id: 'tm', name_fr: 'Tacos Mixte', category: 'Tacos', base_price: 45, emoji: '🌮', imgBg: '#d98a4a', description_fr: 'Bœuf, poulet, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 2
   },
-  { 
-    id: 'bc', name_fr: 'Burger Classic', category: 'Burgers', base_price: 40, emoji: '🍔', imgBg: '#c96a4a', description_fr: 'Steak, cheddar, salade, sauce maison', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 3 
+  {
+    id: 'bc', name_fr: 'Burger Classic', category: 'Burgers', base_price: 40, emoji: '🍔', imgBg: '#c96a4a', description_fr: 'Steak, cheddar, salade, sauce maison', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 3
   },
-  { 
-    id: 'bd', name_fr: 'Burger Double', category: 'Burgers', base_price: 55, emoji: '🍔', imgBg: '#b5651d', description_fr: 'Double steak, double cheddar, bacon', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 4 
+  {
+    id: 'bd', name_fr: 'Burger Double', category: 'Burgers', base_price: 55, emoji: '🍔', imgBg: '#b5651d', description_fr: 'Double steak, double cheddar, bacon', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 4
   },
-  { 
-    id: 'cc', name_fr: 'Coca-Cola 33cl', category: 'Boissons', base_price: 8, emoji: '🥤', imgBg: '#6f8fd0', description_fr: 'Boisson gazeuse fraîche', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 5 
+  {
+    id: 'cc', name_fr: 'Coca-Cola 33cl', category: 'Boissons', base_price: 8, emoji: '🥤', imgBg: '#6f8fd0', description_fr: 'Boisson gazeuse fraîche', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 5
   },
-  { 
-    id: 'em', name_fr: 'Eau minérale 50cl', category: 'Boissons', base_price: 5, emoji: '💧', imgBg: '#7fb0c9', description_fr: 'Eau plate ou gazeuse', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 6 
+  {
+    id: 'em', name_fr: 'Eau minérale 50cl', category: 'Boissons', base_price: 5, emoji: '💧', imgBg: '#7fb0c9', description_fr: 'Eau plate ou gazeuse', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 6
   },
 ];
 
@@ -62,15 +62,15 @@ const CATEGORIES = ['Tous', 'Tacos', 'Burgers', 'Boissons'];
 export function PosView() {
   const [category, setCategory] = useState('Tous');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Migrate from local state to global cart
   const { lines: cartLines, increment, decrement, clear: clearCart } = useCart();
-  
+
   const [customerName, setCustomerName] = useState('');
   const [table, setTable] = useState('');
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [orderType, setOrderType] = useState('Sur place');
-  
+
   // Track selected item to show the ItemDialog modal
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -82,7 +82,7 @@ export function PosView() {
     setTable('');
   };
 
-  const visibleItems = MENU.filter(m => 
+  const visibleItems = MENU.filter(m =>
     (category === 'Tous' || m.category === category) &&
     (searchQuery === '' || m.name_fr.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -94,16 +94,16 @@ export function PosView() {
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row h-full w-full bg-[#f7f2ea] dark:bg-[#0c0c0e] rounded-[22px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.08)] dark:shadow-none border border-[#ece6dc] dark:border-white/10 text-[#1c1712] dark:text-white">
-        
+      <div className="flex flex-col lg:flex-row h-full w-full bg-[#f7f2ea] dark:bg-[#0c0c0e] rounded-[22px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.08)] dark:shadow-none border border-[#ece6dc] dark:border-white/10 text-[#1c1712] dark:text-white min-h-[800px]">
+
         {/* Menu Column */}
         <div className="flex-1 min-w-0 flex flex-col p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h1 className="m-0 text-2xl font-extrabold tracking-tight">Nouvelle commande</h1>
             <div className="flex items-center gap-2 bg-white dark:bg-[#1a1a1c] border border-[#ece6dc] dark:border-white/10 rounded-xl px-3.5 py-2.5 w-full sm:w-[280px] shadow-sm dark:shadow-none">
               <Search className="size-4 text-[#928a7e] dark:text-white/50" />
-              <input 
-                placeholder="Rechercher un plat" 
+              <input
+                placeholder="Rechercher un plat"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="border-none outline-none text-sm w-full bg-transparent text-[#1c1712] dark:text-white placeholder:text-[#b6ada0] dark:placeholder:text-white/40"
@@ -118,8 +118,8 @@ export function PosView() {
                 onClick={() => setCategory(c)}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm font-bold transition-colors border",
-                  c === category 
-                    ? "border-[#ec5b1a] bg-[#ec5b1a] text-white shadow-sm dark:shadow-none" 
+                  c === category
+                    ? "border-[#ec5b1a] bg-[#ec5b1a] text-white shadow-sm dark:shadow-none"
                     : "border-[#ece6dc] dark:border-white/10 bg-white dark:bg-[#1a1a1c] text-[#5a544c] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
                 )}
               >
@@ -132,14 +132,14 @@ export function PosView() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-y-5 gap-x-4 pt-4">
               {visibleItems.map(item => {
                 return (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     onClick={() => setSelectedItem(item as Item)}
                     className="relative bg-gradient-to-br from-[#221a14] to-[#120e0b] border border-[#2c2119] rounded-[20px] p-[18px_96px_18px_18px] min-h-[118px] shadow-sm transition-transform hover:-translate-y-0.5 cursor-pointer"
                   >
-                    <div 
+                    <div
                       className="absolute -top-4 right-3.5 w-[86px] h-[86px] rounded-full flex items-center justify-center text-[32px] text-white overflow-hidden"
-                      style={{ 
+                      style={{
                         background: item.imgBg,
                         boxShadow: '0 10px 22px rgba(0,0,0,.4), 0 0 0 4px rgba(255,255,255,.05)'
                       }}
@@ -153,9 +153,9 @@ export function PosView() {
                     <div className="text-[15px] font-extrabold text-white">{item.name_fr}</div>
                     <div className="text-[11.5px] text-[#a09a92] mt-1.5 leading-[1.4] line-clamp-2">{item.description_fr}</div>
                     <div className="text-[15px] font-extrabold text-[#ff8a4d] mt-3.5">{item.base_price} MAD</div>
-                    
+
                     <div className="absolute right-4 bottom-4">
-                      <button 
+                      <button
                         className="w-[34px] h-[34px] rounded-full border-[1.5px] border-[#ec5b1a] bg-transparent text-[#ec5b1a] text-[17px] font-bold flex items-center justify-center hover:bg-[#ec5b1a]/10 transition-colors leading-none"
                       >
                         +
@@ -174,14 +174,14 @@ export function PosView() {
         </div>
 
         {/* Order Summary Column */}
-        <div className="w-full lg:w-[360px] flex-shrink-0 bg-white dark:bg-[#1a1a1c] border-t lg:border-t-0 lg:border-l border-[#ece6dc] dark:border-white/10 p-6 flex flex-col z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-          <div className="text-lg font-extrabold mb-5 shrink-0">Résumé de la commande</div>
+        <div className="w-full lg:w-[360px] flex-shrink-0 bg-white dark:bg-[#1a1a1c] border-t lg:border-t-0 lg:border-l border-[#ece6dc] dark:border-white/10 p-6 flex flex-col z-10">
+          <div className="text-lg font-extrabold mb-5">Résumé de la commande</div>
 
-          <label className="text-[13px] font-bold text-[#5a544c] dark:text-gray-400 mb-1.5 block shrink-0">Nom du client</label>
-          <input 
-            value={customerName} 
+          <label className="text-[13px] font-bold text-[#5a544c] dark:text-gray-400 mb-1.5 block">Nom du client</label>
+          <input
+            value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="Entrer un nom" 
+            placeholder="Entrer un nom"
             className="w-full border border-[#ece6dc] dark:border-white/10 rounded-xl px-3.5 py-2.5 text-sm mb-4 outline-none focus:border-[#ec5b1a] focus:ring-1 focus:ring-[#ec5b1a] transition-all bg-white dark:bg-white/5 dark:text-white"
           />
 
@@ -215,7 +215,7 @@ export function PosView() {
                   ? "border-[#ec5b1a] bg-[#ec5b1a]/[0.08] text-[#ec5b1a] dark:bg-[#ec5b1a]/[0.12]"
                   : "border-[#ece6dc] dark:border-white/10 bg-white dark:bg-white/5 text-[#928a7e] dark:text-white/40",
                 orderType === 'Sur place' &&
-                  "hover:border-[#ec5b1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ec5b1a]/50"
+                "hover:border-[#ec5b1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ec5b1a]/50"
               )}
             >
               <span className={cn("font-medium", table ? "text-[#ec5b1a]" : "")}>
@@ -284,7 +284,7 @@ export function PosView() {
             {cartEmpty ? (
               <div className="text-center text-[#b6ada0] dark:text-gray-500 text-sm py-10 flex flex-col items-center gap-3">
                 <span className="text-4xl opacity-50">🛒</span>
-                <span>Le panier est vide.<br/>Ajoutez des articles du menu.</span>
+                <span>Le panier est vide.<br />Ajoutez des articles du menu.</span>
               </div>
             ) : (
               <div className="flex flex-col gap-1">
@@ -292,7 +292,7 @@ export function PosView() {
                   const itemMock = MENU.find(x => x.id === line.item_id);
                   return (
                     <div key={line.key} className="flex gap-3 py-2.5 border-b border-[#f2eee6] dark:border-white/10 last:border-0">
-                      <div 
+                      <div
                         className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center text-xl text-white shadow-sm dark:shadow-none relative overflow-hidden"
                         style={{ background: itemMock?.imgBg || '#333' }}
                       >
@@ -314,13 +314,13 @@ export function PosView() {
                         )}
                         <div className="flex justify-between items-center mt-1.5">
                           <div className="flex items-center gap-1.5">
-                            <button 
+                            <button
                               onClick={() => decrement(line.key)}
                               className="w-6 h-6 rounded-md border border-[#ece6dc] dark:border-white/10 bg-[#fbf8f2] dark:bg-white/5 flex items-center justify-center text-xs font-bold hover:bg-[#f2eee6] dark:hover:bg-white/10 transition-colors"
                             >
                               –
                             </button>
-                            <button 
+                            <button
                               onClick={() => increment(line.key)}
                               className="w-6 h-6 rounded-md border border-[#ece6dc] dark:border-white/10 bg-[#fbf8f2] dark:bg-white/5 flex items-center justify-center text-xs font-bold hover:bg-[#f2eee6] dark:hover:bg-white/10 transition-colors"
                             >
@@ -350,14 +350,14 @@ export function PosView() {
               <span>Total</span>
               <span>{total} MAD</span>
             </div>
-            
-            <Button 
-              onClick={placeOrder} 
+
+            <Button
+              onClick={placeOrder}
               disabled={cartEmpty}
               className={cn(
                 "w-full h-[52px] rounded-xl text-[15px] font-bold transition-all shadow-sm dark:shadow-none",
-                cartEmpty 
-                  ? "bg-[#f2eee6] dark:bg-white/5 text-[#b6ada0] dark:text-white/30 opacity-100 hover:bg-[#f2eee6] dark:hover:bg-white/5" 
+                cartEmpty
+                  ? "bg-[#f2eee6] dark:bg-white/5 text-[#b6ada0] dark:text-white/30 opacity-100 hover:bg-[#f2eee6] dark:hover:bg-white/5"
                   : "bg-[#ec5b1a] text-white hover:bg-[#d94a09] hover:shadow-md hover:-translate-y-0.5"
               )}
             >
@@ -365,14 +365,14 @@ export function PosView() {
             </Button>
           </div>
         </div>
-        
+
       </div>
 
       {/* Item Options Modal */}
-      <ItemDialog 
-        item={selectedItem} 
-        currency="MAD" 
-        onClose={() => setSelectedItem(null)} 
+      <ItemDialog
+        item={selectedItem}
+        currency="MAD"
+        onClose={() => setSelectedItem(null)}
       />
     </>
   );

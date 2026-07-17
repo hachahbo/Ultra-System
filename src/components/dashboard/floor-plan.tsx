@@ -80,7 +80,18 @@ export function FloorPlanMap({
       delete next[table.id];
       return next;
     });
-    if (pos) onTableMove?.(table.id, pos.x, pos.y);
+    if (pos) {
+      const dx = Math.abs(pos.x - table.pos_x);
+      const dy = Math.abs(pos.y - table.pos_y);
+      // If moved significantly, it's a drag. Otherwise, it's a tap.
+      if (dx > 0.005 || dy > 0.005) {
+        onTableMove?.(table.id, pos.x, pos.y);
+      } else {
+        onTableTap?.(table);
+      }
+    } else {
+      onTableTap?.(table);
+    }
   }
 
   return (
@@ -127,7 +138,7 @@ export function FloorPlanMap({
               type="button"
               whileHover={{ scale: mode === "edit" ? 1.05 : 1.02 }}
               whileTap={{ scale: mode === "edit" ? 1.1 : 0.95 }}
-              onClick={() => mode === "view" && onTableTap?.(table)}
+              onClick={() => onTableTap?.(table)}
               className={`relative flex flex-col items-center justify-center rounded-[20px] font-bold transition-all shadow-2xl border-[3px] ${styles.wrapper
                 } ${styles.border} ${mode === "edit" ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
                 }`}

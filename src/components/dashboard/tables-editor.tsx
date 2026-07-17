@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { QRCodeCanvas } from "qrcode.react";
 import { Pencil, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
   const totalSeats = list.reduce((sum, t) => sum + t.seats, 0);
 
   return (
-    <div className="-mx-4 px-4 md:-mx-8 md:px-8 max-w-7xl mx-auto space-y-10 pb-20">
+    <div className="-mx-4 px-4 md:-mx-8 md:px-8 w-full space-y-10 pb-20">
 
       {/* Header section matches Commandes/Menu aesthetic */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
@@ -145,8 +146,8 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none flex flex-col">
               <TableForm
-                onSubmit={(v) => create.mutate(v)}
                 saving={create.isPending}
+                onSubmit={(v) => create.mutate(v)}
                 onCancel={() => setAddOpen(false)}
               />
             </DialogContent>
@@ -175,6 +176,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
             <FloorPlanMap
               tables={list}
               mode="edit"
+              onTableTap={(t) => setEditing(t)}
               onTableMove={(id, x, y) => {
                 const table = list.find((t) => t.id === id);
                 if (table) move.mutate({ table, x, y });
@@ -268,7 +270,8 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
         <DialogContent className="sm:max-w-md bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none flex flex-col">
           {editing && (
             <TableForm
-              defaultValues={{ number: editing.number, seats: editing.seats }}
+              table={editing}
+              restaurantSlug={restaurantSlug}
               saving={update.isPending}
               onSubmit={(v) => update.mutate({ ...v, id: editing.id, updated_at: editing.updated_at })}
               onCancel={() => setEditing(null)}
@@ -281,19 +284,21 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 }
 
 function TableForm({
-  defaultValues,
+  table,
+  restaurantSlug,
   saving,
   onSubmit,
   onCancel,
 }: {
-  defaultValues?: TableInput;
+  table?: DiningTable;
+  restaurantSlug?: string;
   saving: boolean;
   onSubmit: (values: TableInput) => void;
   onCancel: () => void;
 }) {
   const form = useForm<TableInput>({
     resolver: zodResolver(tableSchema),
-    defaultValues: defaultValues ?? { number: "", seats: 2 },
+    defaultValues: table ? { number: table.number, seats: table.seats } : { number: "", seats: 2 },
   });
   const errors = form.formState.errors;
 
@@ -301,36 +306,63 @@ function TableForm({
     <>
       <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
         <DialogTitle className="font-display text-xl font-bold tracking-tight">
-          {defaultValues ? `Modifier la table ${defaultValues.number}` : "Nouvelle table"}
+          {table ? `Paramètres de la table` : "Nouvelle table"}
         </DialogTitle>
       </DialogHeader>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden" noValidate>
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
-          <div className="space-y-2">
-            <Label htmlFor="table-number" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Numéro de table</Label>
-            <Input
-              id="table-number"
-              placeholder="Ex: 12, Terasse 1..."
-              className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
-              {...form.register("number")}
-            />
-            {errors.number && (
-              <p className="text-[13px] font-medium text-destructive">{errors.number.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="table-seats" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nombre de places</Label>
-            <Input
-              id="table-seats"
-              type="number"
-              min={1}
-              max={30}
-              className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
-              {...form.register("seats", { valueAsNumber: true })}
-            />
-            {errors.seats && (
-              <p className="text-[13px] font-medium text-destructive">{errors.seats.message}</p>
-            )}
+          
+          {table && restaurantSlug && (
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-5 bg-card border border-border shadow-sm rounded-2xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px] pointer-events-none" />
+              <div className="shrink-0 bg-white p-2 rounded-xl border shadow-sm relative z-10">
+                <QRCodeCanvas
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${restaurantSlug}/menu?table=${encodeURIComponent(table.number)}`}
+                  size={512}
+                  level="H"
+                  style={{ width: "96px", height: "96px" }}
+                />
+              </div>
+              <div className="flex flex-col text-center sm:text-left gap-1.5 relative z-10 w-full justify-center h-[112px]">
+                <h3 className="font-display font-bold text-2xl text-foreground mt-1">Table {table.number}</h3>
+                <p className="text-[13px] text-muted-foreground font-medium">QR Code de commande pour cette table</p>
+                <div className="mt-2 text-[12px] bg-primary/10 text-primary border border-primary/20 font-bold px-3 py-1 rounded-full w-fit mx-auto sm:mx-0">
+                  {table.seats} places
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {table && <h4 className="font-display text-sm font-bold text-foreground">Paramètres</h4>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-number" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Numéro de table</Label>
+                <Input
+                  id="table-number"
+                  placeholder="Ex: 12, Terasse 1..."
+                  className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
+                  {...form.register("number")}
+                />
+                {errors.number && (
+                  <p className="text-[13px] font-medium text-destructive">{errors.number.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="table-seats" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nombre de places</Label>
+                <Input
+                  id="table-seats"
+                  type="number"
+                  min={1}
+                  max={30}
+                  className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
+                  {...form.register("seats", { valueAsNumber: true })}
+                />
+                {errors.seats && (
+                  <p className="text-[13px] font-medium text-destructive">{errors.seats.message}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

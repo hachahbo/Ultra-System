@@ -11,7 +11,7 @@ async function main() {
     console.error("DB Error:", error);
     return;
   }
-  
+
   for (let i = 0; i < data.length; i++) {
     const table = data[i];
     const num = parseInt(table.number, 10);
@@ -19,10 +19,10 @@ async function main() {
       // 4-column layout stretched to edges
       const col = (num - 1) % 4; // 0, 1, 2, 3
       const row = Math.floor((num - 1) / 4); // 0 or 1
-      
-      const newX = 0.08 + (col * 0.28); // 0.08, 0.36, 0.64, 0.92
+
+      const newX = 0.12 + (col * 0.20); // 0.16, 0.36, 0.56, 0.76 (shifted slightly left)
       const newY = row === 0 ? 0.25 : 0.75;
-      
+
       await supabase.from('tables').update({ pos_x: newX, pos_y: newY }).eq('id', table.id);
     }
   }

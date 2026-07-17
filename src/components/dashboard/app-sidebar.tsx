@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   LineChart,
   LogOut,
+  Package,
   Settings,
   ShoppingBag,
   Users,
@@ -61,8 +62,9 @@ const groups: Group[] = [
     ],
   },
   {
-    label: "Croissance",
+    label: "Gestion",
     items: [
+      { href: "/dashboard/inventory", label: "Inventaire", icon: Package, ownerOnly: true, feature: "inventory" },
       { href: "/dashboard/customers", label: "Clients", icon: Users, ownerOnly: true },
       { href: "/dashboard/analytics", label: "Statistiques", icon: LineChart, ownerOnly: true, feature: "analytics" },
     ],

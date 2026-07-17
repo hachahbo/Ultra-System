@@ -44,6 +44,10 @@ async function fetchStaff(): Promise<StaffMember[]> {
   return (await res.json()).staff;
 }
 
+function initialsOf(email: string) {
+  return email.slice(0, 2).toUpperCase();
+}
+
 export function StaffManagement() {
   const queryClient = useQueryClient();
   const { data: staff, isPending } = useQuery({ queryKey: ["staff"], queryFn: fetchStaff });
@@ -61,69 +65,91 @@ export function StaffManagement() {
   });
 
   return (
-    <div className="rounded-xl border p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-medium">Personnel</h2>
-          <p className="text-sm text-muted-foreground">
-            Accès limité aux commandes et réservations.
-          </p>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <div className="text-[15px] font-extrabold text-foreground">Personnel</div>
+            <div className="mt-1 text-[12.5px] text-muted-foreground">
+              Accès limité aux commandes et réservations.
+            </div>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 rounded-xl font-bold">
+                <UserPlus className="size-4" /> Ajouter
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-sm">
+              <AddStaffForm onCreated={() => { setOpen(false); refresh(); }} />
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <UserPlus className="size-4" /> Ajouter
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
-            <AddStaffForm onCreated={() => { setOpen(false); refresh(); }} />
-          </DialogContent>
-        </Dialog>
       </div>
 
-      <div className="mt-4 space-y-2">
-        {isPending && (
-          <p className="py-4 text-center text-sm text-muted-foreground">Chargement…</p>
-        )}
-        {!isPending && (staff?.length ?? 0) === 0 && (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            Aucun membre du personnel pour le moment.
-          </p>
-        )}
-        {staff?.map((s) => (
-          <div
-            key={s.id}
-            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{s.email}</p>
-              <p className="text-xs text-muted-foreground">
-                Ajouté le {formatDateTime(s.created_at)}
-              </p>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="text-[15px] font-extrabold text-foreground">Membres de l&apos;équipe</div>
+          {!isPending && <span className="text-[12px] font-bold text-muted-foreground">{staff?.length ?? 0} membre{(staff?.length ?? 0) === 1 ? "" : "s"}</span>}
+        </div>
+        <div className="flex flex-col">
+          {isPending && (
+            <p className="py-6 text-center text-[13px] text-muted-foreground">Chargement…</p>
+          )}
+          {!isPending && (staff?.length ?? 0) === 0 && (
+            <p className="py-6 text-center text-[13px] text-muted-foreground">
+              Aucun membre du personnel pour le moment.
+            </p>
+          )}
+          {staff?.map((s) => (
+            <div
+              key={s.id}
+              className="flex items-center gap-3.5 border-t border-border py-3.5 first:border-t-0"
+            >
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[13px] font-extrabold text-primary">
+                {initialsOf(s.email)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13.5px] font-bold text-foreground">{s.email}</p>
+                <p className="text-[12px] text-muted-foreground">
+                  Ajouté le {formatDateTime(s.created_at)}
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Retirer ${s.email}`}
+                    className="flex size-9 items-center justify-center rounded-[9px] border border-border bg-muted/40 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-2xl border-border bg-card shadow-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-display text-xl">
+                      Retirer {s.email} ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-[14px] text-muted-foreground">
+                      Cette personne perdra immédiatement l&apos;accès au tableau de bord.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-4">
+                    <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">
+                      Annuler
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => removeStaff.mutate(s.id)}
+                      className="rounded-xl bg-destructive font-bold text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Retirer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon-sm" aria-label={`Retirer ${s.email}`}>
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Retirer {s.email} ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette personne perdra immédiatement l&apos;accès au tableau de bord.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => removeStaff.mutate(s.id)}>
-                    Retirer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -159,20 +185,34 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>Ajouter un membre</DialogTitle>
+      <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
+        <DialogTitle className="font-display text-xl font-bold">Ajouter un membre</DialogTitle>
       </DialogHeader>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6" noValidate>
         <div className="space-y-2">
-          <Label htmlFor="staff-email">Email</Label>
-          <Input id="staff-email" type="email" {...form.register("email")} />
+          <Label htmlFor="staff-email" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+            Email
+          </Label>
+          <Input
+            id="staff-email"
+            type="email"
+            className="h-11 rounded-[11px] border-border bg-background text-[13.5px]"
+            {...form.register("email")}
+          />
           {errors.email && (
             <p className="text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="staff-password">Mot de passe temporaire</Label>
-          <Input id="staff-password" type="text" {...form.register("password")} />
+          <Label htmlFor="staff-password" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+            Mot de passe temporaire
+          </Label>
+          <Input
+            id="staff-password"
+            type="text"
+            className="h-11 rounded-[11px] border-border bg-background text-[13.5px]"
+            {...form.register("password")}
+          />
           <p className="text-xs text-muted-foreground">
             La personne devra le changer à sa première connexion.
           </p>
@@ -193,7 +233,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
         {errors.consent && (
           <p className="-mt-2 text-sm text-destructive">{errors.consent.message}</p>
         )}
-        <Button type="submit" className="w-full" disabled={saving}>
+        <Button type="submit" className="w-full rounded-xl font-bold" disabled={saving}>
           <Plus className="size-4" /> {saving ? "Création…" : "Créer le compte"}
         </Button>
       </form>

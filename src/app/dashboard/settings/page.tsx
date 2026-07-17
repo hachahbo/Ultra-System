@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { SettingsForm } from "@/components/dashboard/settings-form";
-import { StaffManagement } from "@/components/dashboard/staff-management";
-import { SubscriptionCard } from "@/components/dashboard/subscription-card";
-import { FeatureLocked } from "@/components/dashboard/feature-locked";
-import { Separator } from "@/components/ui/separator";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { getSessionContext } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
 import type { Subscription } from "@/lib/types";
@@ -24,28 +20,19 @@ export default async function SettingsPage() {
     .maybeSingle();
 
   return (
-    <div>
-      <h1 className="font-display text-2xl font-semibold">Réglages</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Profil du restaurant et accès de l&apos;équipe.
+    <div className="mx-auto max-w-3xl">
+      <h1 className="font-display text-3xl font-bold text-foreground">Réglages</h1>
+      <p className="mt-1 text-[13.5px] font-medium text-muted-foreground">
+        Profil du restaurant, abonnement et accès de l&apos;équipe.
       </p>
 
       <div className="mt-6">
-        <SubscriptionCard restaurant={ctx.restaurant} subscription={subscription as Subscription | null} />
-      </div>
-
-      <div className="mt-6">
-        <SettingsForm restaurant={ctx.restaurant} />
-      </div>
-
-      <div className="mt-8 space-y-3">
-        <Separator />
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Équipe</p>
-        {ctx.features.staff_management ? (
-          <StaffManagement />
-        ) : (
-          <FeatureLocked feature="Gestion du personnel" />
-        )}
+        <SettingsTabs
+          restaurant={ctx.restaurant}
+          subscription={subscription as Subscription | null}
+          features={ctx.features}
+          hasStaffManagement={ctx.features.staff_management}
+        />
       </div>
     </div>
   );
