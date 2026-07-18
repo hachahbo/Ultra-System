@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireSession } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 const patchSchema = z
   .object({
@@ -16,7 +16,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireSession();
+  const guard = await requireRole(["owner", "manager", "serveur"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "reservations");
   if (featureError) return featureError;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 const patchSchema = z
   .object({
@@ -21,7 +21,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "floor_plan");
   if (featureError) return featureError;
@@ -77,7 +77,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "floor_plan");
   if (featureError) return featureError;

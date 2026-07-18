@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashboardProviders } from "@/components/dashboard/providers";
 import { SuspendedNotice } from "@/components/dashboard/suspended-notice";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { getSessionContext, isSuspended } from "@/lib/dashboard";
 import { getAdminContext } from "@/lib/admin-auth";
+import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 
@@ -30,6 +31,16 @@ export default async function DashboardLayout({
   // src/lib/dashboard.ts), since this redirect alone can be bypassed by a
   // direct fetch.
   if (ctx.profile.must_change_password) redirect("/change-password");
+
+  // Authoritative per-role route gate (the access matrix in
+  // src/lib/permissions.ts). The proxy only pre-empts the highest-value
+  // owner-only sections at the edge; every /dashboard/* path is enforced
+  // here. Pathname comes from the x-pathname header proxy.ts forwards —
+  // Server Components have no other way to read the current URL.
+  const pathname = (await headers()).get("x-pathname") ?? "/dashboard";
+  if (!canAccessRoute(ctx.profile.role, pathname)) {
+    redirect(defaultRouteFor(ctx.profile.role));
+  }
 
   // Below the nav/API guard layer on purpose: requireOwner()/requireSession()
   // already 403 every API call for a suspended tenant, but rendering the

@@ -46,6 +46,7 @@ import {
   type StockStatus,
 } from "@/lib/inventory-query";
 import type { InventoryCategory, InventoryItem } from "@/lib/types";
+import { canWrite } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 const STATUS_CLASSES: Record<StockStatus, string> = {
@@ -176,7 +177,7 @@ function InventoryContent({
   onRefresh: () => void;
   children?: React.ReactNode;
 }) {
-  const isOwner = data.role === "owner";
+  const isOwner = canWrite(data.role, "inventory");
   const sortedCategories = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
   const lowCount = lowStockCount(data.items);
   const value = stockValue(data.items);

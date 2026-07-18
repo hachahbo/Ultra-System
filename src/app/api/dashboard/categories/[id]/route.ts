@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { categorySchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 const patchSchema = categorySchema.partial();
 
@@ -11,7 +11,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "menu_editor");
   if (featureError) return featureError;
@@ -42,7 +42,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "menu_editor");
   if (featureError) return featureError;

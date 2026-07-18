@@ -8,6 +8,7 @@ import { dayBucket, casaHour, startOfTodayCasa } from "@/lib/time";
 import { dailyBuckets, last7Keys, keyDaysAgo, deltaPct } from "@/lib/dashboard-stats";
 import { OverviewView } from "@/components/dashboard/overview-view";
 import { DashboardToolbar } from "@/components/dashboard/dashboard-toolbar";
+import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 import type { Item, Order, Reservation } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Aperçu" };
@@ -17,7 +18,7 @@ const HISTORY_DAYS = 14;
 export default async function OverviewPage() {
   const ctx = await getSessionContext();
   if (!ctx) redirect("/");
-  if (ctx.profile.role !== "owner") redirect("/dashboard/orders");
+  if (!canAccessRoute(ctx.profile.role, "/dashboard")) redirect(defaultRouteFor(ctx.profile.role));
 
   const supabase = await createClient();
   const now = new Date();

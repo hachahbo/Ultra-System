@@ -1,13 +1,14 @@
 import { isToday, isTomorrow, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Delivery, InventoryCategory, InventoryItem, Supplier } from "@/lib/types";
+import type { Role } from "@/lib/permissions";
 
 // Shared across inventory-view — keeps the TanStack query key/fetcher in
 // sync for every consumer (mirrors tables-query.ts).
 export const inventoryQueryKey = ["dashboard-inventory"] as const;
 
 export type InventoryData = {
-  role: "owner" | "staff";
+  role: Role;
   categories: InventoryCategory[];
   items: InventoryItem[];
   suppliers: Supplier[];

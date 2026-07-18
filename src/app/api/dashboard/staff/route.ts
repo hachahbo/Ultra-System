@@ -14,9 +14,9 @@ export async function GET() {
   // "profiles owner read tenant" RLS policy (0002 migration) allows this.
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, role, created_at, consented_at")
+    .select("id, role, active, created_at, consented_at")
     .eq("restaurant_id", guard.ctx.restaurant.id)
-    .eq("role", "staff");
+    .neq("role", "owner");
 
   if (error) {
     return NextResponse.json({ error: "Erreur de lecture" }, { status: 500 });
@@ -29,6 +29,8 @@ export async function GET() {
       return {
         id: p.id,
         email: data.user?.email ?? "—",
+        role: p.role,
+        active: p.active ?? true,
         created_at: p.created_at,
         consented_at: p.consented_at,
       };
@@ -68,7 +70,8 @@ export async function POST(request: Request) {
   const { error: profileError } = await admin.from("profiles").insert({
     id: created.user.id,
     restaurant_id: guard.ctx.restaurant.id,
-    role: "staff",
+    role: parsed.data.role,
+    active: true,
     must_change_password: true,
     consented_at: new Date().toISOString(),
   });

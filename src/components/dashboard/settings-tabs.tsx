@@ -2,30 +2,27 @@
 
 import { useState } from "react";
 import { SettingsForm } from "@/components/dashboard/settings-form";
-import { StaffManagement } from "@/components/dashboard/staff-management";
 import { SubscriptionCard } from "@/components/dashboard/subscription-card";
-import { FeatureLocked } from "@/components/dashboard/feature-locked";
 import { cn } from "@/lib/utils";
 import type { FeatureKey, Restaurant, Subscription } from "@/lib/types";
 
 const TABS = [
   { id: "general", label: "Général" },
-  { id: "team", label: "Équipe" },
   { id: "billing", label: "Abonnement" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
+// Team management moved to its own first-class page (/dashboard/team) —
+// see src/app/dashboard/team/page.tsx.
 export function SettingsTabs({
   restaurant,
   subscription,
   features,
-  hasStaffManagement,
 }: {
   restaurant: Restaurant;
   subscription: Subscription | null;
   features: Record<FeatureKey, boolean>;
-  hasStaffManagement: boolean;
 }) {
   const [tab, setTab] = useState<TabId>("general");
 
@@ -51,12 +48,6 @@ export function SettingsTabs({
 
       <div className="mt-6">
         {tab === "general" && <SettingsForm restaurant={restaurant} />}
-        {tab === "team" &&
-          (hasStaffManagement ? (
-            <StaffManagement />
-          ) : (
-            <FeatureLocked feature="Gestion du personnel" />
-          ))}
         {tab === "billing" && (
           <SubscriptionCard restaurant={restaurant} subscription={subscription} features={features} />
         )}

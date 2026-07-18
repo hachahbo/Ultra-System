@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { COPY_KEYS, FEATURE_KEYS, FONT_PAIR_KEYS, SECTION_KEYS } from "@/lib/types";
 
+// Roles an owner may assign to an invited/edited team member — never
+// 'owner' itself (that tier is provisioned outside this flow).
+export const inviteRoleSchema = z.enum(["manager", "serveur", "cuisine"]);
+
 // Moroccan numbers: accept 06/07 mobile or +2126/+2127, tolerant of spaces.
 export const phoneSchema = z
   .string()
@@ -172,12 +176,23 @@ export type RestaurantSettingsInput = z.infer<typeof restaurantSettingsSchema>;
 export const staffSchema = z.object({
   email: z.string().trim().email("Email invalide"),
   password: z.string().min(8, "8 caractères minimum"),
+  role: inviteRoleSchema,
   consent: z
     .boolean()
     .refine((v) => v === true, "Le consentement du membre du personnel est requis"),
 });
 
 export type StaffInput = z.infer<typeof staffSchema>;
+
+export const staffPatchSchema = z
+  .object({
+    role: inviteRoleSchema,
+    active: z.boolean(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "Aucune modification");
+
+export type StaffPatchInput = z.infer<typeof staffPatchSchema>;
 
 // ---------------------------------------------------------------------------
 // Super Admin

@@ -1,8 +1,22 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { defaultRouteFor, type Role } from "@/lib/permissions";
+
+// Owner-only sections worth bouncing at the edge before any rendering
+// happens. Fine-grained per-role routing for the rest of /dashboard lives in
+// the server layout (src/app/dashboard/layout.tsx) — enforcing everything
+// here would mean a profiles round-trip on every dashboard request.
+const OWNER_ONLY_PREFIXES = ["/dashboard/settings", "/dashboard/team", "/dashboard/analytics"];
 
 // Refreshes the Supabase session cookie and protects /dashboard (plan.md §7).
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Forward the pathname to server components — there's no other way for
+  // src/app/dashboard/layout.tsx to read the current path via headers() for
+  // the fine-grained per-role redirect (canAccessRoute/defaultRouteFor).
+  request.headers.set("x-pathname", pathname);
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,8 +44,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
   if (
     !user &&
     (pathname.startsWith("/dashboard") ||
@@ -44,6 +56,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && OWNER_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const role = profile?.role as Role | undefined;
+    if (role && role !== "owner") {
+      const url = request.nextUrl.clone();
+      url.pathname = defaultRouteFor(role);
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (user && pathname === "/login") {
     // "platform_admins self read" RLS policy lets the session client check
     // its own membership without the service-role key.
@@ -53,7 +80,21 @@ export async function proxy(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
     const url = request.nextUrl.clone();
-    url.pathname = membership ? "/admin" : "/dashboard";
+    if (membership) {
+      url.pathname = "/admin";
+    } else {
+      // Land directly on the role's allowed page — sending every non-owner
+      // role through "/dashboard" only for the layout to redirect them
+      // again is the double-redirect that trips the Next 16 dev-mode
+      // profiler bug (see src/app/login/page.tsx for the same fix).
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      const role = profile?.role as Role | undefined;
+      url.pathname = role ? defaultRouteFor(role) : "/dashboard";
+    }
     url.search = "";
     return NextResponse.redirect(url);
   }

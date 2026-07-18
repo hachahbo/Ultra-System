@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { defaultRouteFor, type Role } from "@/lib/permissions";
 import { loginSchema, type LoginInput } from "@/lib/schemas";
 import { HeroImages } from "@/components/site/hero-images";
 
@@ -50,7 +51,27 @@ function LoginForm() {
       .select("user_id")
       .eq("user_id", data.user.id)
       .maybeSingle();
-    const home = membership ? "/admin" : "/dashboard";
+
+    // Land non-owner/manager roles directly on their allowed page — routing
+    // everyone through "/dashboard" and letting the server layout's
+    // canAccessRoute redirect chases them off it right after client-side
+    // navigation lands is a same-tick double redirect that trips a Next 16
+    // dev-mode profiler bug ("cannot have a negative time stamp"). One hop
+    // here avoids that chain entirely; the layout redirect stays as the
+    // real enforcement for direct deep-links.
+    let home = "/dashboard";
+    if (membership) {
+      home = "/admin";
+    } else {
+      // "profiles self read" RLS policy (0001_init.sql) lets the signed-in
+      // user read their own profile row.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (profile?.role) home = defaultRouteFor(profile.role as Role);
+    }
 
     const next = searchParams.get("next");
     router.replace(next?.startsWith(home) ? next : home);

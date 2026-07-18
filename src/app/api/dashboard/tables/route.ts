@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireOwner, requireSession } from "@/lib/dashboard";
+import { assertFeature, requireRole, requireSession } from "@/lib/dashboard";
 import { tableSchema } from "@/lib/schemas";
 
-// Tenant read — staff use this for the live orders map, not just owners.
+// Tenant read — reused by kitchen-view.tsx and reservations-view.tsx as well
+// as the /dashboard/tables floor plan, so this stays open to any
+// authenticated role rather than the floor-plan page's own role gate.
 export async function GET() {
   const guard = await requireSession();
   if ("response" in guard) return guard.response;
@@ -23,7 +25,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "floor_plan");
   if (featureError) return featureError;

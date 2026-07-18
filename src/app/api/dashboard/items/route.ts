@@ -3,14 +3,14 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { itemSchema } from "@/lib/schemas";
-import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 const createSchema = itemSchema.extend({
   image_url: z.string().url().optional().nullable(),
 });
 
 export async function POST(request: Request) {
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "menu_editor");
   if (featureError) return featureError;

@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFeatures } from "@/lib/features";
+import type { Role } from "@/lib/permissions";
 import type { FeatureKey, Profile, Restaurant, RestaurantFeature } from "@/lib/types";
 
 export type SessionContext = {
@@ -21,14 +22,17 @@ export async function getSessionContext(): Promise<SessionContext | null> {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, restaurant_id, role, must_change_password, consented_at")
+    .select("id, restaurant_id, role, active, must_change_password, consented_at")
     .eq("id", user.id)
     .maybeSingle();
-  
+
   if (profileError) {
     console.error("Profile fetch error:", profileError);
   }
   if (!profile) return null;
+  // Soft-disabled team members lose dashboard access immediately, even with
+  // a live session cookie.
+  if (profile.active === false) return null;
 
   const { data: restaurant, error: restaurantError } = await supabase
     .from("restaurants")
@@ -64,17 +68,20 @@ const SUSPENDED_RESPONSE = () =>
   );
 
 /**
- * Guard for owner-only API routes, especially any route that also touches
+ * Guard for role-scoped API routes, especially any route that also touches
  * `createAdminClient()` (service role bypasses RLS entirely, so this check
- * is the only tenant/role boundary those routes have).
+ * is the only tenant/role boundary those routes have) — RLS-backed routes
+ * get a second layer for free from 0008_team_roles.sql's policies, but
+ * every mutating route should still check here rather than rely on RLS
+ * alone.
  *
  * Also blocks staff who still have a forced password change pending —
- * middleware/layout redirects can be bypassed by a direct API call, so every
+ * proxy/layout redirects can be bypassed by a direct API call, so every
  * mutating dashboard route re-checks this server-side.
  */
-export async function requireOwner(): Promise<
-  { ctx: SessionContext } | { response: NextResponse }
-> {
+export async function requireRole(
+  roles: Role[],
+): Promise<{ ctx: SessionContext } | { response: NextResponse }> {
   const ctx = await getSessionContext();
   if (!ctx) {
     return { response: NextResponse.json({ error: "Non autorisé" }, { status: 401 }) };
@@ -90,12 +97,19 @@ export async function requireOwner(): Promise<
       ),
     };
   }
-  if (ctx.profile.role !== "owner") {
+  if (!roles.includes(ctx.profile.role)) {
     return {
-      response: NextResponse.json({ error: "Réservé au propriétaire" }, { status: 403 }),
+      response: NextResponse.json({ error: "Accès refusé pour ce rôle" }, { status: 403 }),
     };
   }
   return { ctx };
+}
+
+/** Guard for owner-only ("Admin") API routes. */
+export async function requireOwner(): Promise<
+  { ctx: SessionContext } | { response: NextResponse }
+> {
+  return requireRole(["owner"]);
 }
 
 /**

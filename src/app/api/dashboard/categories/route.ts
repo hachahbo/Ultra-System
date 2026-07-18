@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 const createSchema = z.object({
   name_fr: z.string().trim().min(1).max(80),
@@ -10,7 +10,7 @@ const createSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "menu_editor");
   if (featureError) return featureError;

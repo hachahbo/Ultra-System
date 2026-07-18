@@ -47,10 +47,11 @@ import {
 import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { formatPrice } from "@/lib/format";
 import type { Category, Item } from "@/lib/types";
+import { canWrite, type Role } from "@/lib/permissions";
 
 type MenuData = {
   restaurant_id: string;
-  role: "owner" | "staff";
+  role: Role;
   categories: Category[];
   items: Item[];
 };
@@ -132,7 +133,7 @@ export function MenuManager() {
     );
   }
 
-  const isOwner = data.role === "owner";
+  const isOwner = canWrite(data.role, "menu");
   const sortedCategories = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
 
   function moveCategory(index: number, dir: -1 | 1) {

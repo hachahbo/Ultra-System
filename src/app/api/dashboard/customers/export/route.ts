@@ -4,8 +4,9 @@ function csvEscape(value: string) {
   return /[",\n;]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
-// One-click CSV export of the customer list (plan.md §3E). RLS restricts the
-// select to the owner's own restaurant (staff get zero rows).
+// One-click CSV export of the customer list (plan.md §3E). RLS ("customers
+// owner read", 0008_team_roles.sql) restricts the select to owner/manager of
+// the caller's own restaurant — serveur/cuisine get zero rows.
 export async function GET() {
   const supabase = await createClient();
   const {

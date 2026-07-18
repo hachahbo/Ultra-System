@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireSession } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 
 export async function GET() {
-  const guard = await requireSession();
+  const guard = await requireRole(["owner", "manager", "serveur"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "reservations");
   if (featureError) return featureError;

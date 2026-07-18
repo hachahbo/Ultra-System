@@ -3,13 +3,17 @@ import { redirect } from "next/navigation";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { getSessionContext } from "@/lib/dashboard";
 import { createClient } from "@/lib/supabase/server";
+import { defaultRouteFor } from "@/lib/permissions";
 import type { Subscription } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Réglages" };
 
 export default async function SettingsPage() {
   const ctx = await getSessionContext();
-  if (!ctx || ctx.profile.role !== "owner") redirect("/dashboard");
+  // Belt-and-suspenders: the dashboard layout's canAccessRoute gate already
+  // redirects non-owners away from /dashboard/settings.
+  if (!ctx) redirect("/");
+  if (ctx.profile.role !== "owner") redirect(defaultRouteFor(ctx.profile.role));
 
   // "subscriptions owner read" RLS policy scopes this to the caller's own row.
   const supabase = await createClient();
@@ -31,7 +35,6 @@ export default async function SettingsPage() {
           restaurant={ctx.restaurant}
           subscription={subscription as Subscription | null}
           features={ctx.features}
-          hasStaffManagement={ctx.features.staff_management}
         />
       </div>
     </div>

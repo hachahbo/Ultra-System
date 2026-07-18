@@ -37,22 +37,22 @@ const defaultOptions: CustomizationGroup[] = [
 
 const MENU: (Item & { emoji: string; imgBg: string; category: string })[] = [
   {
-    id: 'tp', name_fr: 'Tacos Poulet', category: 'Tacos', base_price: 35, emoji: '🌮', imgBg: '#e7a15c', description_fr: 'Poulet mariné, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 1
+    id: 'tp', name_fr: 'Tacos Poulet', category: 'Tacos', base_price: 35, emoji: '🌮', imgBg: '#e7a15c', description_fr: 'Poulet mariné, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 1, is_smart_menu_eligible: false
   },
   {
-    id: 'tm', name_fr: 'Tacos Mixte', category: 'Tacos', base_price: 45, emoji: '🌮', imgBg: '#d98a4a', description_fr: 'Bœuf, poulet, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 2
+    id: 'tm', name_fr: 'Tacos Mixte', category: 'Tacos', base_price: 45, emoji: '🌮', imgBg: '#d98a4a', description_fr: 'Bœuf, poulet, frites, fromage', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c1', name_ar: null, name_es: null, in_stock: true, sort_order: 2, is_smart_menu_eligible: false
   },
   {
-    id: 'bc', name_fr: 'Burger Classic', category: 'Burgers', base_price: 40, emoji: '🍔', imgBg: '#c96a4a', description_fr: 'Steak, cheddar, salade, sauce maison', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 3
+    id: 'bc', name_fr: 'Burger Classic', category: 'Burgers', base_price: 40, emoji: '🍔', imgBg: '#c96a4a', description_fr: 'Steak, cheddar, salade, sauce maison', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 3, is_smart_menu_eligible: false
   },
   {
-    id: 'bd', name_fr: 'Burger Double', category: 'Burgers', base_price: 55, emoji: '🍔', imgBg: '#b5651d', description_fr: 'Double steak, double cheddar, bacon', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 4
+    id: 'bd', name_fr: 'Burger Double', category: 'Burgers', base_price: 55, emoji: '🍔', imgBg: '#b5651d', description_fr: 'Double steak, double cheddar, bacon', image_url: '/images/dish-4.png', customization_groups: defaultOptions, restaurant_id: 'r1', category_id: 'c2', name_ar: null, name_es: null, in_stock: true, sort_order: 4, is_smart_menu_eligible: false
   },
   {
-    id: 'cc', name_fr: 'Coca-Cola 33cl', category: 'Boissons', base_price: 8, emoji: '🥤', imgBg: '#6f8fd0', description_fr: 'Boisson gazeuse fraîche', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 5
+    id: 'cc', name_fr: 'Coca-Cola 33cl', category: 'Boissons', base_price: 8, emoji: '🥤', imgBg: '#6f8fd0', description_fr: 'Boisson gazeuse fraîche', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 5, is_smart_menu_eligible: false
   },
   {
-    id: 'em', name_fr: 'Eau minérale 50cl', category: 'Boissons', base_price: 5, emoji: '💧', imgBg: '#7fb0c9', description_fr: 'Eau plate ou gazeuse', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 6
+    id: 'em', name_fr: 'Eau minérale 50cl', category: 'Boissons', base_price: 5, emoji: '💧', imgBg: '#7fb0c9', description_fr: 'Eau plate ou gazeuse', image_url: null, customization_groups: [], restaurant_id: 'r1', category_id: 'c3', name_ar: null, name_es: null, in_stock: true, sort_order: 6, is_smart_menu_eligible: false
   },
 ];
 

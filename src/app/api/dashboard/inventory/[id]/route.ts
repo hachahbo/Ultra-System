@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { assertFeature, requireRole } from "@/lib/dashboard";
 import { inventoryItemSchema, stockAdjustSchema } from "@/lib/schemas";
 
 const patchSchema = z.union([inventoryItemSchema.partial(), stockAdjustSchema]);
@@ -11,7 +11,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "inventory");
   if (featureError) return featureError;
@@ -70,7 +70,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const guard = await requireOwner();
+  const guard = await requireRole(["owner", "manager"]);
   if ("response" in guard) return guard.response;
   const featureError = assertFeature(guard.ctx, "inventory");
   if (featureError) return featureError;

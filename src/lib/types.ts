@@ -1,6 +1,8 @@
 // Database row types + the public menu JSON shape (plan.md §8).
 // Names stay as language objects so the trilingual option remains free later.
 
+import type { Role } from "@/lib/permissions";
+
 export type LocalizedName = { fr: string; ar?: string | null; es?: string | null };
 
 export type CustomizationOption = { name: string; price_modifier: number };
@@ -176,7 +178,22 @@ export type Item = {
   image_url: string | null;
   in_stock: boolean;
   sort_order: number;
+  is_smart_menu_eligible: boolean;
   customization_groups: CustomizationGroup[];
+};
+
+export type PromotionRule = { category_id: string; count: number };
+
+export type Promotion = {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  active: boolean;
+  sort_order: number;
+  rules: PromotionRule[];
+  created_at: string;
 };
 
 export type OrderLine = {
@@ -233,12 +250,14 @@ export type PublicMenu = {
   restaurant: Restaurant;
   categories: Category[];
   items: Item[];
+  promotions: Promotion[];
 };
 
 export type Profile = {
   id: string;
   restaurant_id: string;
-  role: "owner" | "staff";
+  role: Role;
+  active?: boolean;
   must_change_password?: boolean;
   consented_at?: string | null;
 };

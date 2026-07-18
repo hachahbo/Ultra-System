@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getPublicMenu, getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { MenuBrowser } from "@/components/menu/menu-browser";
+import { FormulesSection } from "@/components/menu/formules-section";
 
 export const metadata: Metadata = { title: "Menu" };
 
@@ -35,6 +36,12 @@ export default async function MenuPage({
           : "Une sélection de plats préparés avec soin. Touchez un plat pour l’ajouter."}
       </p>
       <MenuBrowser menu={menu} table={table ?? null} orderingEnabled={features.online_ordering} />
+      <FormulesSection
+        promotions={menu.promotions}
+        categories={menu.categories}
+        items={menu.items}
+        currency={menu.restaurant.currency}
+      />
     </div>
   );
 }

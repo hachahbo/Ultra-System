@@ -14,6 +14,7 @@ import {
   Settings,
   ShoppingBag,
   Users,
+  UserCog,
   UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
 import type { FeatureKey } from "@/lib/types";
+import { canAccessRoute, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 type Item = {
@@ -39,17 +41,19 @@ type Item = {
   label: string;
   icon: LucideIcon;
   exact?: boolean;
-  ownerOnly?: boolean;
   feature?: FeatureKey;
 };
 
 type Group = { label: string; items: Item[] };
 
+// Route access itself comes from canAccessRoute (src/lib/permissions.ts) —
+// the same access matrix the server layout enforces. This filter is
+// cosmetic only; feature flags stay a separate, plan-driven gate.
 const groups: Group[] = [
   {
     label: "Opération",
     items: [
-      { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true, ownerOnly: true },
+      { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true },
       { href: "/dashboard/orders", label: "Commandes", icon: ShoppingBag },
       { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays, feature: "reservations" },
     ],
@@ -57,22 +61,23 @@ const groups: Group[] = [
   {
     label: "Contenu",
     items: [
-      { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, ownerOnly: true, feature: "menu_editor" },
-      { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid, ownerOnly: true, feature: "floor_plan" },
+      { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, feature: "menu_editor" },
+      { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid, feature: "floor_plan" },
     ],
   },
   {
     label: "Gestion",
     items: [
-      { href: "/dashboard/inventory", label: "Inventaire", icon: Package, ownerOnly: true, feature: "inventory" },
-      { href: "/dashboard/customers", label: "Clients", icon: Users, ownerOnly: true },
-      { href: "/dashboard/analytics", label: "Statistiques", icon: LineChart, ownerOnly: true, feature: "analytics" },
+      { href: "/dashboard/inventory", label: "Inventaire", icon: Package, feature: "inventory" },
+      { href: "/dashboard/customers", label: "Clients", icon: Users },
+      { href: "/dashboard/analytics", label: "Statistiques", icon: LineChart, feature: "analytics" },
     ],
   },
   {
     label: "Système",
     items: [
-      { href: "/dashboard/settings", label: "Réglages", icon: Settings, ownerOnly: true },
+      { href: "/dashboard/team", label: "Équipe", icon: UserCog, feature: "staff_management" },
+      { href: "/dashboard/settings", label: "Réglages", icon: Settings },
     ],
   },
 ];
@@ -83,12 +88,11 @@ export function AppSidebar({
   features,
 }: {
   restaurantName: string;
-  role: "owner" | "staff";
+  role: Role;
   features: Record<FeatureKey, boolean>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isOwner = role === "owner";
   const { state, toggleSidebar, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
 
@@ -99,7 +103,7 @@ export function AppSidebar({
   }
 
   const visible = (item: Item) =>
-    (!item.ownerOnly || isOwner) && (!item.feature || features[item.feature]);
+    canAccessRoute(role, item.href) && (!item.feature || features[item.feature]);
 
   const visibleGroups = groups
     .map((g) => ({ ...g, items: g.items.filter(visible) }))
