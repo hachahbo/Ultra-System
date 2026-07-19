@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FloorPlanMap } from "@/components/dashboard/floor-plan";
 import { QrCards } from "@/components/dashboard/qr-cards";
+import { TableTurnoverPanel } from "@/components/dashboard/table-turnover";
 import { fetchTables, tablesQueryKey } from "@/lib/tables-query";
 import { tableSchema, type TableInput } from "@/lib/schemas";
 import type { DiningTable } from "@/lib/types";
@@ -166,6 +167,9 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
           <p className="text-3xl font-display font-bold text-primary">{totalSeats} <span className="text-sm text-muted-foreground lowercase tracking-normal font-medium">places</span></p>
         </div>
       </div>
+
+      {/* Rotation des tables (live occupancy + turnover) */}
+      <TableTurnoverPanel />
 
       {/* Floor Plan */}
       <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
