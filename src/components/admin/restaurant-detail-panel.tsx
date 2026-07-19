@@ -29,6 +29,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StatusBadge, PlanBadge } from "@/components/admin/badges";
 import { FEATURE_LABELS } from "@/lib/feature-labels";
 import { formatPrice, formatDateTime } from "@/lib/format";
@@ -43,11 +50,22 @@ type DetailData = {
   recentAuditEntries: { id: string; action: string; created_at: string; metadata: Record<string, unknown> }[];
 };
 
+type FranchiseRow = { id: string; name: string; slug: string; parent_restaurant_id: string | null };
+
 async function fetchDetail(id: string): Promise<DetailData> {
   const res = await fetch(`/api/admin/restaurants/${id}`);
   if (!res.ok) throw new Error("fetch failed");
   return res.json();
 }
+
+async function fetchFranchiseList(): Promise<FranchiseRow[]> {
+  const res = await fetch("/api/admin/restaurants/franchise");
+  if (!res.ok) throw new Error("fetch failed");
+  const body = await res.json();
+  return body.restaurants ?? [];
+}
+
+const NO_PARENT = "__none__";
 
 export function RestaurantDetailPanel({
   restaurantId,
@@ -67,9 +85,33 @@ export function RestaurantDetailPanel({
     enabled: !!restaurantId && open,
   });
 
+  // Lightweight full-tree fetch for the franchise picker — see the route's
+  // own comment for why this stays unpaginated.
+  const { data: franchiseList } = useQuery({
+    queryKey: ["admin-restaurants-franchise"],
+    queryFn: fetchFranchiseList,
+    enabled: open,
+  });
+
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["admin-restaurant", restaurantId] });
     queryClient.invalidateQueries({ queryKey: ["admin-restaurants"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-restaurants-franchise"] });
+  }
+
+  async function setParent(parentId: string | null) {
+    if (!restaurantId) return;
+    const res = await fetch(`/api/admin/restaurants/${restaurantId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parent_restaurant_id: parentId }),
+    });
+    if (!res.ok) {
+      toast.error("Mise à jour impossible");
+      return;
+    }
+    toast.success(parentId ? "Restaurant lié à la franchise" : "Restaurant détaché");
+    invalidate();
   }
 
   async function toggleFeature(featureKey: FeatureKey, enabled: boolean) {
@@ -197,6 +239,64 @@ export function RestaurantDetailPanel({
                   )}
                 </Card>
               )}
+
+              {(() => {
+                const list = franchiseList ?? [];
+                const children = list.filter((r) => r.parent_restaurant_id === data.restaurant.id);
+                const hasChildren = children.length > 0;
+                const candidates = list.filter(
+                  (r) => r.id !== data.restaurant.id && r.parent_restaurant_id === null,
+                );
+                const currentParent = list.find((r) => r.id === data.restaurant.parent_restaurant_id);
+
+                return (
+                  <Card className="p-3">
+                    <p className="text-sm font-medium">Franchise</p>
+
+                    {hasChildren ? (
+                      <>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Siège de {children.length} filiale{children.length > 1 ? "s" : ""} :{" "}
+                          {children.map((c) => c.name).join(", ")}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Un siège ne peut pas devenir lui-même une filiale — détachez d&apos;abord
+                          ses filiales pour le rattacher à un autre restaurant.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {currentParent
+                            ? `Filiale de ${currentParent.name}`
+                            : "Restaurant indépendant"}
+                        </p>
+                        <Select
+                          value={data.restaurant.parent_restaurant_id ?? NO_PARENT}
+                          onValueChange={(v) => setParent(v === NO_PARENT ? null : v)}
+                        >
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="Rattacher à…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_PARENT}>Indépendant (aucun siège)</SelectItem>
+                            {candidates.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {candidates.length === 0 && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Aucun autre restaurant ne peut servir de siège pour le moment.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </Card>
+                );
+              })()}
 
               <div>
                 <p className="mb-2 text-sm font-medium">Fonctionnalités</p>

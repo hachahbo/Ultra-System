@@ -224,6 +224,7 @@ export const adminRestaurantPatchSchema = z.object({
   city: z.string().trim().max(120).nullable().optional(),
   plan: planSchema.optional(),
   status: restaurantStatusSchema.optional(),
+  parent_restaurant_id: z.string().uuid().nullable().optional(),
 });
 export type AdminRestaurantPatchInput = z.infer<typeof adminRestaurantPatchSchema>;
 

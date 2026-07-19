@@ -134,6 +134,14 @@ export async function PATCH(
       city: input.city,
     });
   }
+  if (input.parent_restaurant_id !== undefined && input.parent_restaurant_id !== before.parent_restaurant_id) {
+    await logAdminAction(
+      guard.ctx.adminId,
+      input.parent_restaurant_id ? "franchise.link" : "franchise.unlink",
+      id,
+      { from: before.parent_restaurant_id, to: input.parent_restaurant_id },
+    );
+  }
 
   revalidateTag("admin-analytics", "max");
   return NextResponse.json({ restaurant: updated as Restaurant });
