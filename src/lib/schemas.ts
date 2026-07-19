@@ -93,6 +93,7 @@ export const itemSchema = z.object({
   description_fr: z.string().trim().max(300).optional(),
   base_price: z.number({ message: "Prix invalide" }).min(0, "Prix invalide").max(10000),
   in_stock: z.boolean(),
+  is_smart_menu_eligible: z.boolean().optional(),
   sort_order: z.number().int().min(0).optional(),
   customization_groups: z.array(customizationGroupSchema).max(10).optional(),
 });
@@ -107,6 +108,22 @@ export const categorySchema = z.object({
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
+
+export const promotionRuleSchema = z.object({
+  category_id: z.string().uuid("Catégorie requise"),
+  count: z.number().int().min(1, "Au moins 1 article").max(20),
+});
+
+export const promotionSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120),
+  description: z.string().trim().max(300).optional(),
+  price: z.number({ message: "Prix invalide" }).min(0, "Prix invalide").max(10000),
+  active: z.boolean(),
+  sort_order: z.number().int().min(0).optional(),
+  rules: z.array(promotionRuleSchema).min(1, "Au moins une règle requise").max(10),
+});
+
+export type PromotionInput = z.infer<typeof promotionSchema>;
 
 export const tableSchema = z.object({
   number: z.string().trim().min(1, "Numéro requis").max(10),

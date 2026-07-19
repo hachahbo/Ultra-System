@@ -57,6 +57,7 @@ export function ItemFormDialog({
       description_fr: item?.description_fr ?? "",
       base_price: item ? Number(item.base_price) : 0,
       in_stock: item?.in_stock ?? true,
+      is_smart_menu_eligible: item?.is_smart_menu_eligible ?? false,
       customization_groups: item?.customization_groups ?? [],
     },
   });
@@ -205,6 +206,19 @@ export function ItemFormDialog({
                 id="in_stock"
                 checked={form.watch("in_stock")}
                 onCheckedChange={(v) => form.setValue("in_stock", v)}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border px-3 py-2.5">
+              <div>
+                <Label htmlFor="is_smart_menu_eligible">Éligible Menu Smart</Label>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  Peut être choisi dans une formule à prix fixe (« Nos formules »)
+                </p>
+              </div>
+              <Switch
+                id="is_smart_menu_eligible"
+                checked={form.watch("is_smart_menu_eligible") ?? false}
+                onCheckedChange={(v) => form.setValue("is_smart_menu_eligible", v)}
               />
             </div>
 

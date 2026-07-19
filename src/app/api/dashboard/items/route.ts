@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       description_fr: parsed.data.description_fr || null,
       base_price: parsed.data.base_price,
       in_stock: parsed.data.in_stock,
+      is_smart_menu_eligible: parsed.data.is_smart_menu_eligible ?? false,
       image_url: parsed.data.image_url ?? null,
       customization_groups: parsed.data.customization_groups ?? [],
     })

@@ -14,6 +14,7 @@ const patchSchema = z
     description_fr: z.string().trim().max(300).nullable(),
     base_price: z.number().min(0).max(10000),
     in_stock: z.boolean(),
+    is_smart_menu_eligible: z.boolean(),
     image_url: z.string().url().nullable(),
     sort_order: z.number().int().min(0),
     customization_groups: z.array(customizationGroupSchema).max(10),
