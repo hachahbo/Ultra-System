@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+# Blocks commits containing anything that looks like a JWT (Supabase
+# service_role/anon keys are JWTs) in staged file contents. Cheap local
+# guard — CI runs the real gitleaks scan (.github/workflows/secret-scan.yml).
+# See ROADMAP.md Phase 0: spread_tables.mjs / check_tables.mjs incident, 2026-07-19.
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+hit=0
+for f in $staged; do
+  if [ -f "$f" ] && git diff --cached -- "$f" | grep -qE '^\+.*eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}'; then
+    echo "pre-commit: possible JWT/API key added in $f — aborting commit."
+    hit=1
+  fi
+done
+
+if [ "$hit" -ne 0 ]; then
+  echo "If this is a false positive, use 'git commit --no-verify' deliberately."
+  exit 1
+fi
