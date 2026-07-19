@@ -82,11 +82,28 @@ export async function GET(request: Request) {
     ownerLastActiveAt: lastActiveByRestaurant.get(r.id) ?? null,
   }));
 
+  // Platform-wide summary strip — deliberately unfiltered/unpaginated (mirrors
+  // the admin overview/subscriptions summary cards): total restaurants,
+  // active count, expired-or-suspended count, and this month's revenue
+  // across every restaurant, not just the current page/filter.
+  const [{ data: allStatuses }, { data: allMonthOrders }] = await Promise.all([
+    admin.from("restaurants").select("status"),
+    admin.from("orders").select("total").gte("created_at", monthStart).limit(10_000),
+  ]);
+  const statuses = (allStatuses ?? []) as { status: string }[];
+  const summary = {
+    total: statuses.length,
+    active: statuses.filter((s) => s.status === "active").length,
+    issues: statuses.filter((s) => s.status !== "active").length,
+    monthlyRevenue: (allMonthOrders ?? []).reduce((sum, o) => sum + Number(o.total), 0),
+  };
+
   return NextResponse.json({
     restaurants: restaurantsWithMetrics,
     total: count ?? 0,
     page,
     limit,
+    summary,
   });
 }
 

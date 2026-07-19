@@ -31,6 +31,8 @@ export type Restaurant = {
   plan: Plan;
   status: RestaurantStatus;
   city: string | null;
+  parent_restaurant_id: string | null;
+  created_at: string;
   updated_at: string;
 };
 

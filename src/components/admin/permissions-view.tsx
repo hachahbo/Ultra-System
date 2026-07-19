@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Check, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -24,26 +26,101 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { FEATURE_LABELS } from "@/lib/feature-labels";
-import { FEATURE_KEYS, type FeatureKey, type Restaurant } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { FEATURE_KEYS, type FeatureKey, type Plan } from "@/lib/types";
 
-async function fetchRestaurants(): Promise<Restaurant[]> {
-  const res = await fetch("/api/admin/restaurants?limit=100");
+type PermissionRestaurant = { id: string; name: string; plan: Plan; activeFeatures: FeatureKey[] };
+
+async function fetchRestaurants(): Promise<PermissionRestaurant[]> {
+  const res = await fetch("/api/admin/permissions");
   if (!res.ok) throw new Error("fetch failed");
   const body = await res.json();
   return body.restaurants;
 }
 
+const PLAN_AVATAR_CLASS: Record<Plan, string> = {
+  free: "bg-muted text-muted-foreground",
+  pro: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  enterprise: "bg-primary/10 text-primary",
+};
+
+function initialsOf(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+// undefined = untouched, true = will enable, false = will disable.
+type Staged = Partial<Record<FeatureKey, boolean>>;
+
+function FeatureToggleCard({
+  featureKey,
+  state,
+  onCycle,
+}: {
+  featureKey: FeatureKey;
+  state: boolean | undefined;
+  onCycle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onCycle}
+      className={cn(
+        "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+        state === true && "border-primary/40 bg-primary/5",
+        state === false && "border-destructive/40 bg-destructive/5",
+        state === undefined && "border-border",
+      )}
+    >
+      <div
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-[9px]",
+          state === true
+            ? "bg-primary/10 text-primary"
+            : state === false
+              ? "bg-destructive/10 text-destructive"
+              : "bg-muted text-muted-foreground",
+        )}
+      >
+        {state === true ? <Check className="size-4" /> : state === false ? <X className="size-4" /> : null}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13.5px] font-bold">{FEATURE_LABELS[featureKey]}</p>
+        <p className="text-[11px] text-muted-foreground">
+          {state === true ? "Sera activé" : state === false ? "Sera désactivé" : "Inchangé"}
+        </p>
+      </div>
+      <div
+        className={cn(
+          "h-[23px] w-10 shrink-0 rounded-full p-0.5 transition-colors",
+          state === true ? "bg-primary" : state === false ? "bg-destructive/60" : "bg-muted",
+        )}
+      >
+        <div
+          className={cn(
+            "size-[19px] rounded-full bg-white transition-transform",
+            state === true && "translate-x-[17px]",
+          )}
+        />
+      </div>
+    </button>
+  );
+}
+
 export function PermissionsView() {
   const queryClient = useQueryClient();
   const { data: restaurants, isPending } = useQuery({
-    queryKey: ["admin-restaurants-all"],
+    queryKey: ["admin-permissions"],
     queryFn: fetchRestaurants,
   });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [pendingChanges, setPendingChanges] = useState<Record<FeatureKey, boolean>>(
-    {} as Record<FeatureKey, boolean>,
-  );
+  const [staged, setStaged] = useState<Staged>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,18 +140,24 @@ export function PermissionsView() {
     );
   }
 
-  function setPendingChange(key: FeatureKey, enabled: boolean) {
-    setPendingChanges((prev) => ({ ...prev, [key]: enabled }));
+  // Cycle: untouched -> on -> off -> untouched.
+  function cycleFeature(key: FeatureKey) {
+    setStaged((prev) => {
+      const cur = prev[key];
+      const next = { ...prev };
+      if (cur === undefined) next[key] = true;
+      else if (cur === true) next[key] = false;
+      else delete next[key];
+      return next;
+    });
   }
 
-  const changeCount = Object.keys(pendingChanges).length;
+  const stagedKeys = Object.keys(staged) as FeatureKey[];
+  const canApply = selected.size > 0 && stagedKeys.length > 0;
 
   async function applyBulk() {
     setSubmitting(true);
-    const changes = (Object.keys(pendingChanges) as FeatureKey[]).map((featureKey) => ({
-      featureKey,
-      enabled: pendingChanges[featureKey],
-    }));
+    const changes = stagedKeys.map((featureKey) => ({ featureKey, enabled: staged[featureKey]! }));
     const res = await fetch("/api/admin/permissions/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -85,49 +168,82 @@ export function PermissionsView() {
       toast.error("Mise à jour groupée impossible");
       return;
     }
-    toast.success(`${changes.length} fonctionnalité${changes.length > 1 ? "s" : ""} appliquée${changes.length > 1 ? "s" : ""} sur ${selected.size} restaurant${selected.size > 1 ? "s" : ""}`);
+    toast.success(
+      `${changes.length} fonctionnalité${changes.length > 1 ? "s" : ""} appliquée${changes.length > 1 ? "s" : ""} sur ${selected.size} restaurant${selected.size > 1 ? "s" : ""}`,
+    );
     setConfirmOpen(false);
-    setPendingChanges({} as Record<FeatureKey, boolean>);
+    setStaged({});
     setSelected(new Set());
-    queryClient.invalidateQueries({ queryKey: ["admin-restaurants-all"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-permissions"] });
   }
 
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold">Permissions</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="mt-1 max-w-2xl text-sm text-muted-foreground text-pretty">
         Sélectionnez des restaurants et une fonctionnalité pour appliquer un changement en masse.
         Pour les réglages fins par restaurant, ouvrez son panneau depuis la page Restaurants.
       </p>
 
       {selected.size > 0 && (
-        <div className="mt-4 rounded-xl border bg-muted/40 p-4">
-          <p className="text-sm font-medium">
-            {selected.size} restaurant{selected.size > 1 ? "s" : ""} sélectionné
-            {selected.size > 1 ? "s" : ""} — définir :
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Card className="mt-4 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[14px] font-bold">
+              {selected.size} restaurant{selected.size > 1 ? "s" : ""} sélectionné
+              {selected.size > 1 ? "s" : ""} — définir :
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setStaged(Object.fromEntries(FEATURE_KEYS.map((k) => [k, true])))}
+              >
+                Tout activer
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setStaged(Object.fromEntries(FEATURE_KEYS.map((k) => [k, false])))}
+              >
+                Tout désactiver
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURE_KEYS.map((key) => (
-              <div key={key} className="flex items-center justify-between gap-2 rounded-lg border bg-background p-2">
-                <span className="text-sm">{FEATURE_LABELS[key]}</span>
-                <Switch
-                  checked={pendingChanges[key] ?? false}
-                  onCheckedChange={(checked) => setPendingChange(key, checked)}
-                />
-              </div>
+              <FeatureToggleCard
+                key={key}
+                featureKey={key}
+                state={staged[key]}
+                onCycle={() => cycleFeature(key)}
+              />
             ))}
           </div>
-          <div className="mt-3 flex justify-end">
-            <Button disabled={changeCount === 0} onClick={() => setConfirmOpen(true)}>
-              Appliquer
-            </Button>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className={cn("text-[12.5px]", stagedKeys.length ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+              {stagedKeys.length
+                ? `${stagedKeys.length} fonctionnalité${stagedKeys.length > 1 ? "s" : ""} en attente d'application`
+                : "Cliquez sur une fonctionnalité pour préparer un changement."}
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setStaged({})} disabled={stagedKeys.length === 0}>
+                Réinitialiser
+              </Button>
+              <Button type="button" size="sm" disabled={!canApply} onClick={() => setConfirmOpen(true)}>
+                Appliquer
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="mt-4 overflow-x-auto rounded-xl border">
         {isPending || !restaurants ? (
-          <div className="space-y-2 p-4">
+          <div className="flex flex-col gap-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
@@ -144,19 +260,42 @@ export function PermissionsView() {
                 </TableHead>
                 <TableHead>Restaurant</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Fonctionnalités actives</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {restaurants.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className={cn(selected.has(r.id) && "bg-primary/[0.03]")}>
                   <TableCell>
-                    <Checkbox
-                      checked={selected.has(r.id)}
-                      onCheckedChange={() => toggleSelected(r.id)}
-                    />
+                    <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggleSelected(r.id)} />
                   </TableCell>
-                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[11.5px] font-extrabold",
+                          PLAN_AVATAR_CLASS[r.plan],
+                        )}
+                      >
+                        {initialsOf(r.name)}
+                      </div>
+                      <span className="font-bold">{r.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{r.plan}</TableCell>
+                  <TableCell>
+                    {r.activeFeatures.length === 0 ? (
+                      <span className="text-[11.5px] text-muted-foreground/60">Aucune</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {r.activeFeatures.map((f) => (
+                          <Badge key={f} variant="secondary" className="rounded-full font-semibold">
+                            {FEATURE_LABELS[f]}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -169,7 +308,7 @@ export function PermissionsView() {
           <DialogHeader>
             <DialogTitle>Confirmer le changement groupé</DialogTitle>
             <DialogDescription>
-              {changeCount} fonctionnalité{changeCount > 1 ? "s" : ""} sur {selected.size}{" "}
+              {stagedKeys.length} fonctionnalité{stagedKeys.length > 1 ? "s" : ""} sur {selected.size}{" "}
               restaurant{selected.size > 1 ? "s" : ""}. Cette action écrase tout réglage
               individuel existant pour ces fonctionnalités.
             </DialogDescription>

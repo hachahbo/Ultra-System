@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,9 +27,12 @@ import { StatusBadge, PlanBadge } from "@/components/admin/badges";
 import { CreateRestaurantDialog } from "@/components/admin/create-restaurant-dialog";
 import { RestaurantDetailPanel } from "@/components/admin/restaurant-detail-panel";
 import { formatPrice, formatDateTime } from "@/lib/format";
-import type { AdminRestaurantRow } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { AdminRestaurantRow, Plan } from "@/lib/types";
 
 type Filters = { plan: string; status: string; city: string; q: string };
+
+type RestaurantsSummary = { total: number; active: number; issues: number; monthlyRevenue: number };
 
 async function fetchRestaurants(filters: Filters, page: number) {
   const params = new URLSearchParams({ page: String(page), limit: "20" });
@@ -39,7 +43,29 @@ async function fetchRestaurants(filters: Filters, page: number) {
 
   const res = await fetch(`/api/admin/restaurants?${params}`);
   if (!res.ok) throw new Error("fetch failed");
-  return res.json() as Promise<{ restaurants: AdminRestaurantRow[]; total: number; page: number; limit: number }>;
+  return res.json() as Promise<{
+    restaurants: AdminRestaurantRow[];
+    total: number;
+    page: number;
+    limit: number;
+    summary: RestaurantsSummary;
+  }>;
+}
+
+const PLAN_AVATAR_CLASS: Record<Plan, string> = {
+  free: "bg-muted text-muted-foreground",
+  pro: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  enterprise: "bg-primary/10 text-primary",
+};
+
+function initialsOf(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 export function RestaurantsView() {
@@ -88,6 +114,32 @@ export function RestaurantsView() {
         <CreateRestaurantDialog
           onCreated={() => queryClient.invalidateQueries({ queryKey: ["admin-restaurants"] })}
         />
+      </div>
+
+      {/* Summary strip — platform-wide, unaffected by filters (see route) */}
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-[12px] font-bold text-muted-foreground">Restaurants</p>
+          <p className="mt-1.5 text-2xl font-extrabold tracking-tight">{data?.summary.total ?? "—"}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[12px] font-bold text-muted-foreground">Actifs</p>
+          <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
+            {data?.summary.active ?? "—"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[12px] font-bold text-muted-foreground">Expirés / suspendus</p>
+          <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-destructive">
+            {data?.summary.issues ?? "—"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[12px] font-bold text-muted-foreground">Revenu total (mois)</p>
+          <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-primary">
+            {data ? formatPrice(data.summary.monthlyRevenue) : "—"}
+          </p>
+        </Card>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -168,7 +220,22 @@ export function RestaurantsView() {
             <TableBody>
               {data.restaurants.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[11.5px] font-extrabold",
+                          PLAN_AVATAR_CLASS[r.plan],
+                        )}
+                      >
+                        {initialsOf(r.name)}
+                      </div>
+                      <div>
+                        <p className="font-bold">{r.name}</p>
+                        <p className="text-[11.5px] text-muted-foreground">/{r.slug}</p>
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell>{r.city ?? "—"}</TableCell>
                   <TableCell><PlanBadge plan={r.plan} /></TableCell>
                   <TableCell><StatusBadge status={r.status} /></TableCell>
