@@ -3,10 +3,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { reservationSchema } from "@/lib/schemas";
+import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 // Public reservation intake — written to the DB (never WhatsApp-only, §2).
 // Owner confirms/declines manually from the dashboard (§3D).
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  const ipLimit = await checkRateLimit(`reservation:ip:${ip}`, 5, 60);
+  if (!ipLimit.allowed) {
+    return rateLimitResponse(ipLimit.retryAfterSeconds);
+  }
+
   let body: unknown;
   try {
     body = await request.json();

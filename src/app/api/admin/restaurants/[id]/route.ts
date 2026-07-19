@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/api";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit";
@@ -134,6 +135,7 @@ export async function PATCH(
     });
   }
 
+  revalidateTag("admin-analytics", "max");
   return NextResponse.json({ restaurant: updated as Restaurant });
 }
 
@@ -168,6 +170,7 @@ export async function DELETE(
     await logAdminAction(guard.ctx.adminId, "restaurant.delete", null, {
       slug: restaurant.slug,
     });
+    revalidateTag("admin-analytics", "max");
     return NextResponse.json({ ok: true, deleted: true });
   }
 
@@ -183,5 +186,6 @@ export async function DELETE(
     from: restaurant.status,
     to: "suspended",
   });
+  revalidateTag("admin-analytics", "max");
   return NextResponse.json({ ok: true, deleted: false });
 }

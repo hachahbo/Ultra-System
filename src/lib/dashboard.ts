@@ -34,21 +34,17 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   // a live session cookie.
   if (profile.active === false) return null;
 
-  const { data: restaurant, error: restaurantError } = await supabase
-    .from("restaurants")
-    .select("*")
-    .eq("id", profile.restaurant_id)
-    .maybeSingle();
-    
+  // Both only depend on profile.restaurant_id, not on each other — fetch in
+  // parallel instead of two sequential round-trips.
+  const [{ data: restaurant, error: restaurantError }, { data: overrides }] = await Promise.all([
+    supabase.from("restaurants").select("*").eq("id", profile.restaurant_id).maybeSingle(),
+    supabase.from("restaurant_features").select("*").eq("restaurant_id", profile.restaurant_id),
+  ]);
+
   if (restaurantError) {
     console.error("Restaurant fetch error:", restaurantError);
   }
   if (!restaurant) return null;
-
-  const { data: overrides } = await supabase
-    .from("restaurant_features")
-    .select("*")
-    .eq("restaurant_id", profile.restaurant_id);
 
   const restaurantRow = restaurant as Restaurant;
   const features = resolveFeatures(restaurantRow.plan, (overrides ?? []) as RestaurantFeature[]);

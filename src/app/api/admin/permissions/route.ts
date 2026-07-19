@@ -7,8 +7,11 @@ import type { Plan, RestaurantFeature } from "@/lib/types";
 
 // Restaurants + their resolved feature set (plan defaults + per-restaurant
 // overrides), for the bulk-permissions table's "Fonctionnalités actives"
-// column. Small dataset (every restaurant, unpaginated) — same "read
-// everything, it's a handful of rows" approach as the admin analytics route.
+// column. Deliberately unpaginated (ROADMAP.md Phase 2 Task 2.5): the
+// client's "select all" + bulk-apply-to-N-restaurants flow needs every
+// restaurant id up front — paginating here without a cross-page selection
+// redesign would silently apply bulk changes to only the visible page.
+// Revisit once tenant count approaches ~200.
 export async function GET() {
   const guard = await requireSuperAdmin();
   if ("response" in guard) return guard.response;

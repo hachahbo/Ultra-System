@@ -128,6 +128,7 @@ export type Subscription = {
   price_mad: number;
   trial_ends_at: string | null;
   current_period_end: string | null;
+  canceled_at: string | null;
   provider: "manual" | "stripe";
   provider_customer_id: string | null;
   provider_subscription_id: string | null;

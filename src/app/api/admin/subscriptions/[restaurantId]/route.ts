@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/api";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit";
@@ -28,9 +29,19 @@ export async function PATCH(
     return apiError("not_found", "Abonnement introuvable", 404);
   }
 
+  // canceled_at (0010_churn_and_integrity.sql) is the source of truth for
+  // churn/acquisition math — set it the moment status transitions TO
+  // canceled, clear it if the subscription is ever reactivated. Never
+  // derived from updated_at, which any unrelated edit (e.g. a notes change)
+  // would otherwise bump.
+  const statusChange: { canceled_at?: string | null } = {};
+  if (parsed.data.status && parsed.data.status !== before.status) {
+    statusChange.canceled_at = parsed.data.status === "canceled" ? new Date().toISOString() : null;
+  }
+
   const { data: updated, error } = await admin
     .from("subscriptions")
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, ...statusChange, updated_at: new Date().toISOString() })
     .eq("restaurant_id", restaurantId)
     .select("*")
     .maybeSingle();
@@ -52,5 +63,6 @@ export async function PATCH(
     changes: parsed.data,
   });
 
+  revalidateTag("admin-analytics", "max");
   return NextResponse.json({ subscription: updated });
 }

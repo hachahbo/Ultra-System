@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { logAdminAction } from "@/lib/audit";
 import { staffPatchSchema } from "@/lib/schemas";
 
 // Service role bypasses RLS entirely — every handler below re-verifies the
@@ -52,6 +53,12 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: "Mise à jour impossible" }, { status: 500 });
   }
+
+  await logAdminAction(guard.ctx.profile.id, "staff.update", guard.ctx.restaurant.id, {
+    targetId: id,
+    changes: parsed.data,
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -82,5 +89,11 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: "Suppression impossible" }, { status: 500 });
   }
+
+  await logAdminAction(guard.ctx.profile.id, "staff.remove", guard.ctx.restaurant.id, {
+    targetId: id,
+    targetRole: target.role,
+  });
+
   return NextResponse.json({ ok: true });
 }

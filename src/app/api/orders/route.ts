@@ -3,12 +3,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { orderSchema } from "@/lib/schemas";
+import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 
 // Public order intake (dine-in QR + delivery). Uses the service role — every
 // row is scoped to the restaurant resolved server-side from the slug, and all
 // prices are recomputed from the DB so the client can't tamper with them.
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  const ipLimit = await checkRateLimit(`order:ip:${ip}`, 10, 60);
+  if (!ipLimit.allowed) {
+    return rateLimitResponse(ipLimit.retryAfterSeconds);
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -35,6 +42,14 @@ export async function POST(request: Request) {
   if (!restaurant) {
     return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
   }
+
+  // Soft per-tenant cap — catches a flood spread across many IPs targeting
+  // one restaurant's kitchen, which the per-IP limit above wouldn't stop.
+  const slugLimit = await checkRateLimit(`order:slug:${restaurant.id}`, 100, 3600);
+  if (!slugLimit.allowed) {
+    return rateLimitResponse(slugLimit.retryAfterSeconds);
+  }
+
   const features = applyStatusGate(
     restaurant.status,
     await getPublicFeatures(restaurant.id, restaurant.plan),

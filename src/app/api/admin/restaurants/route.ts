@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { apiError } from "@/lib/api";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getLastSignInMap } from "@/lib/auth-users";
 import { createRestaurantSchema } from "@/lib/schemas";
 import { startOfMonthCasa } from "@/lib/time";
 import type { Restaurant } from "@/lib/types";
@@ -67,13 +69,11 @@ export async function GET(request: Request) {
     metricsByRestaurant.set(o.restaurant_id, entry);
   }
 
+  const lastSignInById = await getLastSignInMap();
   const lastActiveByRestaurant = new Map<string, string | null>();
-  await Promise.all(
-    (ownerProfiles ?? []).map(async (p) => {
-      const { data } = await admin.auth.admin.getUserById(p.id);
-      lastActiveByRestaurant.set(p.restaurant_id, data.user?.last_sign_in_at ?? null);
-    }),
-  );
+  for (const p of ownerProfiles ?? []) {
+    lastActiveByRestaurant.set(p.restaurant_id, lastSignInById[p.id] ?? null);
+  }
 
   const restaurantsWithMetrics = rows.map((r) => ({
     ...r,
@@ -185,5 +185,6 @@ export async function POST(request: Request) {
     ownerEmail: input.ownerEmail,
   });
 
+  revalidateTag("admin-analytics", "max");
   return NextResponse.json({ id: restaurant.id }, { status: 201 });
 }

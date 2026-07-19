@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertFeature, requireOwner } from "@/lib/dashboard";
+import { logAdminAction } from "@/lib/audit";
 import { staffSchema } from "@/lib/schemas";
 
 export async function GET() {
@@ -80,6 +81,12 @@ export async function POST(request: Request) {
     await admin.auth.admin.deleteUser(created.user.id);
     return NextResponse.json({ error: "Création impossible" }, { status: 500 });
   }
+
+  await logAdminAction(guard.ctx.profile.id, "staff.invite", guard.ctx.restaurant.id, {
+    targetId: created.user.id,
+    email: parsed.data.email,
+    role: parsed.data.role,
+  });
 
   return NextResponse.json({ id: created.user.id }, { status: 201 });
 }

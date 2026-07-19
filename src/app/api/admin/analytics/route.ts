@@ -1,20 +1,34 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getLastSignInMap } from "@/lib/auth-users";
+import { computeFinancialSummary, isActiveOrTrialing, monthlyPrice } from "@/lib/analytics-math";
 import { dayBucket, weekBucket, startOfTodayCasa } from "@/lib/time";
 import type { Plan, RestaurantStatus } from "@/lib/types";
 
 const DAYS = 30;
 const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", enterprise: "Enterprise" };
 
-function monthlyPrice(priceMad: number, billingCycle: string): number {
-  return billingCycle === "yearly" ? priceMad / 12 : priceMad;
-}
-
 export async function GET() {
   const guard = await requireSuperAdmin();
   if ("response" in guard) return guard.response;
 
+  // The auth guard runs per-request (cheap); only the expensive aggregation
+  // below — half a dozen table scans plus a full auth.users walk — is
+  // cached and shared across every super admin's dashboard load. The
+  // payload is platform-wide, not caller-specific, so this is safe to share.
+  const payload = await getCachedAnalytics();
+  return NextResponse.json(payload);
+}
+
+const getCachedAnalytics = unstable_cache(
+  computeAnalytics,
+  ["admin-analytics"],
+  { revalidate: 60, tags: ["admin-analytics"] },
+);
+
+async function computeAnalytics() {
   const admin = createAdminClient();
   const now = new Date();
   const from30 = new Date(startOfTodayCasa(now).getTime() - (DAYS - 1) * 86_400_000);
@@ -36,7 +50,7 @@ export async function GET() {
       .select("id, name, city, plan, status, created_at, parent_restaurant_id"),
     admin
       .from("subscriptions")
-      .select("restaurant_id, status, plan_tier, billing_cycle, price_mad, created_at, updated_at"),
+      .select("restaurant_id, status, plan_tier, billing_cycle, price_mad, created_at, canceled_at"),
     admin
       .from("orders")
       .select("restaurant_id, created_at, total")
@@ -70,7 +84,7 @@ export async function GET() {
     billing_cycle: string;
     price_mad: string | number;
     created_at: string;
-    updated_at: string;
+    canceled_at: string | null;
   }[];
 
   const expiringTrials = (expiring ?? []).map((s) => ({
@@ -100,35 +114,22 @@ export async function GET() {
       pct: Math.round((planCounts[p] / restaurantRows.length) * 100),
     }));
 
-  // --- MRR, growth, churn, ARPU, pending revenue ------------------------
-  const activeSubs = subscriptionRows.filter((s) => s.status === "active" || s.status === "trialing");
-  const mrr = activeSubs.reduce((sum, s) => sum + monthlyPrice(Number(s.price_mad), s.billing_cycle), 0);
+  // --- MRR, growth, churn, ARPU, pending revenue (pure math, unit-tested
+  // separately — see src/lib/analytics-math.ts) --------------------------
+  const {
+    mrr,
+    mrrGrowthPct,
+    churnRatePct,
+    arpu,
+    pendingRevenue,
+    failedPaymentsCount,
+  } = computeFinancialSummary(subscriptionRows, from30);
 
-  const newSubs = activeSubs.filter((s) => new Date(s.created_at) >= from30);
-  const newMRR = newSubs.reduce((sum, s) => sum + monthlyPrice(Number(s.price_mad), s.billing_cycle), 0);
-
-  const canceledThisPeriod = subscriptionRows.filter(
-    (s) => s.status === "canceled" && new Date(s.updated_at) >= from30,
-  );
-  const churnedMRR = canceledThisPeriod.reduce(
-    (sum, s) => sum + monthlyPrice(Number(s.price_mad), s.billing_cycle),
-    0,
-  );
-
-  const prevMRR = mrr - newMRR + churnedMRR;
-  const mrrGrowthPct = prevMRR > 0 ? ((newMRR - churnedMRR) / prevMRR) * 100 : null;
-
-  const activeAtStart = activeSubs.length + canceledThisPeriod.length;
-  const churnRatePct = activeAtStart > 0 ? (canceledThisPeriod.length / activeAtStart) * 100 : 0;
-
-  const arpu = activeSubs.length > 0 ? mrr / activeSubs.length : 0;
-
+  // Still needed downstream (franchise-tree MRR map, at-risk past-due set) —
+  // kept as simple local filters rather than folding into the pure module,
+  // since they're not part of the KPI math itself.
+  const activeSubs = subscriptionRows.filter(isActiveOrTrialing);
   const pastDueSubs = subscriptionRows.filter((s) => s.status === "past_due");
-  const pendingRevenue = pastDueSubs.reduce(
-    (sum, s) => sum + monthlyPrice(Number(s.price_mad), s.billing_cycle),
-    0,
-  );
-  const failedPaymentsCount = pastDueSubs.length;
 
   // --- Orders (30d) ------------------------------------------------------
   const orderRows = (orders ?? []) as { restaurant_id: string; created_at: string; total: number }[];
@@ -165,8 +166,8 @@ export async function GET() {
       entry.new += 1;
       acqMap.set(key, entry);
     }
-    if (s.status === "canceled") {
-      const canceledAt = new Date(s.updated_at);
+    if (s.status === "canceled" && s.canceled_at) {
+      const canceledAt = new Date(s.canceled_at);
       if (canceledAt >= from8Weeks) {
         const key = weekBucket(canceledAt);
         const entry = acqMap.get(key) ?? { new: 0, lost: 0 };
@@ -183,14 +184,10 @@ export async function GET() {
   const profileRows = (profiles ?? []) as { id: string; restaurant_id: string; role: string }[];
   const restaurantUserIds = new Set(profileRows.map((p) => p.id));
 
-  const allUsers: { id: string; last_sign_in_at: string | null }[] = [];
-  for (let page = 1; ; page++) {
-    const { data: usersPage, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error || !usersPage) break;
-    allUsers.push(...usersPage.users.map((u) => ({ id: u.id, last_sign_in_at: u.last_sign_in_at ?? null })));
-    if (usersPage.users.length < 200) break;
-  }
-  const staffUsers = allUsers.filter((u) => restaurantUserIds.has(u.id));
+  const lastSignInMap = await getLastSignInMap();
+  const staffUsers = [...restaurantUserIds]
+    .filter((id) => id in lastSignInMap)
+    .map((id) => ({ id, last_sign_in_at: lastSignInMap[id] }));
   const from24h = new Date(now.getTime() - 24 * 60 * 60_000);
   const dau = staffUsers.filter((u) => u.last_sign_in_at && new Date(u.last_sign_in_at) >= from24h).length;
   const mau = staffUsers.filter((u) => u.last_sign_in_at && new Date(u.last_sign_in_at) >= from30).length;
@@ -270,7 +267,7 @@ export async function GET() {
       })),
     }));
 
-  return NextResponse.json({
+  return {
     restaurantCount: restaurantRows.length,
     statusCounts,
     planCounts,
@@ -294,5 +291,5 @@ export async function GET() {
     recentSignups,
     atRiskAccounts,
     franchiseTree,
-  });
+  };
 }

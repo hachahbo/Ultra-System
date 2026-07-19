@@ -2,9 +2,13 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Every mutating api/admin/* route calls this. An unauditable admin action
- * is worse than a retried one, so a failed write throws instead of being
- * fire-and-forget — the caller's request should fail too.
+ * Every mutating api/admin/* route calls this, and (since 0011) owner-side
+ * team mutations in api/dashboard/staff/* do too — `adminId` is just "the
+ * auth.users id who made the change"; audit_logs.admin_id references
+ * auth.users generically, an owner satisfies that FK the same as a platform
+ * admin. An unauditable action is worse than a retried one, so a failed
+ * write throws instead of being fire-and-forget — the caller's request
+ * should fail too, even though the underlying mutation already succeeded.
  */
 export async function logAdminAction(
   adminId: string,
