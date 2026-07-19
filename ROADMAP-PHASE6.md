@@ -37,10 +37,20 @@
 | `0012_recipes.sql` | **`0013_recipes.sql`** |
 | `0013_kds.sql` | **`0014_kds.sql`** |
 | `0014_table_sessions.sql` | **`0015_table_sessions.sql`** |
-| `0015_labor.sql` | **`0016_labor.sql`** |
+| `0015_labor.sql` | ~~`0016_labor.sql`~~ → **`0018_labor.sql`** (see note below) |
 
 Apply each the same way `0007`–`0012` were: direct `pg` connection via the
 `aws-0-eu-west-1` pooler (there's no local Supabase stack).
+
+⚠ **Update (2026-07-20) — numbering drifted again, mid-plan.** 6.1–6.3
+landed as planned (`0013`–`0015`), but **`ROADMAP-PHASE7.md`** (Performance
+& Web Vitals) was executed out of order in between and consumed
+**`0016_analytics_orders_rollup.sql`** and **`0017_web_vitals.sql`** — both
+verified live. So **6.4 Labor now starts at `0018`**, not `0016`. This is
+exactly the collision this file warned about for the generic plan's own
+numbers; same rule applies here: **check `ls supabase/migrations/`
+immediately before writing a new migration file, never trust a number
+written down in advance.**
 
 ---
 
@@ -168,7 +178,7 @@ the same broken-POS issue flagged at the end of `ROADMAP.md`). Sequence that
 
 ---
 
-## 🟣 Phase 6.4 — Labor & Payment (`0016_labor.sql`)
+## 🟣 Phase 6.4 — Labor & Payment (`0018_labor.sql` — see numbering update above)
 
 - Labor migration/UI (6.4.1–6.4.3): schema is fine (`profiles.id = auth.uid()`,
   so the `profile_id = auth.uid()` RLS works). `set_updated_at()` reuse OK.
@@ -182,7 +192,7 @@ the same broken-POS issue flagged at the end of `ROADMAP.md`). Sequence that
   - `src/app/api/webhooks/billing/route.ts` is **already a deliberate 501
     stub** with a comment explaining the CMI/Stripe-Morocco situation — that's
     where the webhook handler slots in; don't create a parallel route.
-  - `orders` has no `payment_status` column yet → add it in `0016`.
+  - `orders` has no `payment_status` column yet → add it in `0018`.
 
 ---
 

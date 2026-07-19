@@ -1,8 +1,8 @@
 # Darna — State of the Project
 
-> Multi-tenant restaurant management platform. Last reviewed: **2026-07-19**, against migrations `0001`–`0009` and the current `main` working tree.
+> Multi-tenant restaurant management platform. Last reviewed: **2026-07-20**, against migrations `0001`–`0017` and the current `main` working tree.
 
-**Stack:** Next.js 16.2.10 (App Router, Turbopack) · React 19 · Supabase (Postgres 17 + Auth + Storage) · Tailwind v4 + shadcn/ui (radix-nova) · TanStack Query · Zustand · Recharts · Zod · framer-motion
+**Stack:** Next.js 16.2.10 (App Router, Turbopack) · React 19 · Supabase (Postgres 17 + Auth + Storage + Realtime) · Tailwind v4 + shadcn/ui (radix-nova) · TanStack Query · Zustand · Recharts · Zod · framer-motion · web-vitals
 
 ---
 
@@ -52,7 +52,8 @@ The single source of truth for the access matrix is **`src/lib/permissions.ts`**
 | `/dashboard/reservations` | ✓ | ✓ | ✓ | — |
 | `/dashboard/menu` | ✓ | ✓ | RO | RO |
 | `/dashboard/tables` | ✓ | ✓ | ✓ | — |
-| `/dashboard/inventory` | ✓ | ✓ | — | RO |
+| `/dashboard/inventory` (incl. `/variances`) | ✓ | ✓ | — | RO |
+| `/dashboard/kds` | ✓ | ✓ | ✓ | ✓ |
 | `/dashboard/customers` | ✓ | ✓ | — | — |
 | `/dashboard/analytics` / `settings` / `team` | ✓ | — | — | — |
 
@@ -60,20 +61,22 @@ The single source of truth for the access matrix is **`src/lib/permissions.ts`**
 
 Deliberately **server-first**; there is no global client auth store, and that is a feature, not a gap:
 
-- **Server state:** TanStack Query per surface (`["staff"]`, `["admin-analytics"]`, `["dashboard-inventory"]`, …), fetched from API routes that re-check auth on every call.
-- **Session/role:** resolved server-side per request (`getSessionContext()`), passed down as props (e.g. `AppSidebar role={ctx.profile.role}`). A client-side role store would be spoofable decoration — the pattern here means UI role state can never disagree with what the server enforces.
+- **Server state:** TanStack Query per surface (`["staff"]`, `["admin-analytics"]`, `["dashboard-inventory"]`, `["kds-tickets"]`, `["table-turnover"]`, `["admin-web-vitals"]`, …), fetched from API routes that re-check auth on every call.
+- **Session/role:** resolved server-side per request (`getSessionContext()`, profile → restaurant+features in parallel), passed down as props. A client-side role store would be spoofable decoration — the pattern here means UI role state can never disagree with what the server enforces.
 - **Client state:** one Zustand store — the public-site **cart** (`src/store/cart.ts`, `persist`-ed, keyed by restaurant slug + optional `?table=` QR param for dine-in). Everything else is local `useState`.
-- **Public data caching:** `unstable_cache` with `revalidate: 60` + tag `"menu"` on all public reads (`getPublicMenu`, `getPublicFeatures`, `getPublicTheme`); admin theme publishes call `revalidateTag("menu")`.
+- **Real user monitoring:** `WebVitalsReporter` (root layout) reports CLS/LCP/INP/FCP/TTFB via `navigator.sendBeacon` to `/api/vitals`, stored in `web_vitals` (`0017`) and surfaced as P75-by-surface on the admin overview.
+- **Live updates:** Supabase Realtime, used for the first time as of `0013`/`0014`/`0015` — `orders`, `kds_tickets`, and `table_sessions` are in the `supabase_realtime` publication. `KdsView` and `TableTurnoverPanel` subscribe directly (`postgres_changes`) instead of polling.
+- **Public data caching:** `unstable_cache` with `revalidate: 60` + tag `"menu"` on all public reads (`getPublicMenu`, `getPublicFeatures`, `getPublicTheme`) — `getPublicMenu` also calls `get_available_menu` (auto-86: recipe-linked items with insufficient stock render greyed out, same as a manual 86). Admin theme publishes and analytics-affecting mutations call `revalidateTag(tag, "max")`.
 
 ### 1.4 Tenant isolation model
 
 Every tenant table carries `restaurant_id` and RLS. Three access tiers:
 
 1. **Public read** (`using (true)`): `restaurants`, `categories`, `items`, `promotions` — the storefront's menu data, read with the anon key.
-2. **Tenant-scoped** (`restaurant_id = my_restaurant_id()`): orders, reservations, tables, inventory, customers — with role predicates on writes (`my_role() = 'owner'` or `my_role_can_manage()` for manager-writable tables since `0008`).
-3. **Service-role only** (RLS on, zero policies): `restaurant_theme`, `platform_admins`, `audit_logs` — reachable only through `createAdminClient()` behind `requireSuperAdmin()`.
+2. **Tenant-scoped** (`restaurant_id = my_restaurant_id()`): orders, reservations, tables, table_sessions, inventory, recipes, kds_tickets, customers — with role predicates on writes (`my_role() = 'owner'` or `my_role_can_manage()` for manager-writable tables since `0008`).
+3. **Service-role only** (RLS on, zero policies): `restaurant_theme`, `platform_admins`, `audit_logs`, `web_vitals` — reachable only through `createAdminClient()` behind `requireSuperAdmin()` (or, for `web_vitals` writes, the public `/api/vitals` insert-only route).
 
-Public writes (customer order/reservation) go through server routes that resolve the restaurant from the slug server-side and insert with the service role — the browser never chooses a `restaurant_id`.
+Public writes (customer order/reservation) go through server routes that resolve the restaurant from the slug server-side and insert with the service role — the browser never chooses a `restaurant_id`. `/api/orders` and `/api/reservations` are rate-limited per IP + per tenant (`src/lib/rate-limit.ts`, `0011_rate_limits.sql`).
 
 ### 1.5 Core ERD
 
@@ -91,13 +94,24 @@ erDiagram
     restaurants ||--o{ reservations : ""
     restaurants ||--o{ customers : ""
     restaurants ||--o{ tables : "floor plan"
+    restaurants ||--o{ table_sessions : "occupancy (0015)"
     restaurants ||--o{ inventory_categories : ""
     restaurants ||--o{ inventory_items : ""
     restaurants ||--o{ suppliers : ""
     restaurants ||--o{ deliveries : ""
+    restaurants ||--o{ recipes : "menu costing (0013)"
+    restaurants ||--o{ inventory_variances : "stock shortfalls (0013)"
+    restaurants ||--o{ stations : "kitchen zones (0014)"
+    restaurants ||--o{ kds_tickets : "fan-out (0014)"
     categories ||--o{ items : ""
+    items ||--o{ recipes : "ingredients"
+    items }o--o| stations : "routes to"
     inventory_categories ||--o{ inventory_items : ""
+    inventory_items ||--o{ recipes : "consumed by"
     suppliers ||--o{ deliveries : ""
+    tables ||--o{ table_sessions : ""
+    orders ||--o{ kds_tickets : "one per station"
+    orders ||--o| table_sessions : "seats/vacates"
     customers |o--o{ orders : "optional link"
     auth_users ||--|| profiles : "id FK"
     auth_users |o--o| platform_admins : "super admin"
@@ -108,7 +122,7 @@ erDiagram
         text slug UK
         text plan "free|pro|enterprise"
         text status "active|trial|suspended|expired"
-        uuid parent_restaurant_id FK "nullable, 0009"
+        uuid parent_restaurant_id FK "nullable, 0009 — no write UI yet"
     }
     profiles {
         uuid id PK "= auth.users.id"
@@ -124,137 +138,151 @@ erDiagram
         text billing_cycle "monthly|yearly"
         numeric price_mad
         timestamptz trial_ends_at
+        timestamptz canceled_at "0010 — churn math source of truth"
     }
     items {
         uuid category_id FK
+        uuid station_id FK "0014, nullable"
         numeric base_price
         bool in_stock
         bool is_smart_menu_eligible "0007"
         jsonb customization_groups
     }
-    promotions {
-        uuid restaurant_id FK
-        numeric price
-        jsonb rules "[{category_id, count}] (0007)"
+    recipes {
+        uuid menu_item_id FK
+        uuid inventory_item_id FK
+        numeric quantity
+        text unit
     }
     orders {
         uuid restaurant_id FK
         text type "dine_in|delivery"
-        jsonb items "denormalized lines"
+        jsonb items "denormalized lines: item_id/quantity/unit_price/options"
         text status "new|preparing|done"
+        text table_number "nullable"
+    }
+    table_sessions {
+        uuid table_id FK
+        uuid order_id FK "nullable"
+        timestamptz seated_at
+        timestamptz vacated_at "nullable"
+        text status "active|completed"
+    }
+    kds_tickets {
+        uuid order_id FK
+        uuid station_id FK "nullable = catch-all"
+        jsonb lines "subset of order.items for this station"
+        text status "pending|bumped"
+    }
+    inventory_variances {
+        uuid inventory_item_id FK
+        uuid order_id FK "nullable"
+        numeric expected_deduction
+        numeric available_stock
+        text reason "stock_went_negative"
     }
     restaurant_features {
         uuid restaurant_id FK
-        text feature_key "8 keys, CHECK-constrained"
+        text feature_key "10 keys, CHECK-constrained"
         bool enabled
+    }
+    web_vitals {
+        text pathname
+        text slug "nullable — storefront pages only"
+        text metric_name "CLS|LCP|INP|FCP|TTFB"
+        numeric value
+        text rating "good|needs-improvement|poor"
     }
 ```
 
-*(`orders.items` is denormalized JSONB by design — an order is an immutable receipt; menu edits must not rewrite history.)*
+*(`orders.items` is denormalized JSONB by design — an order is an immutable receipt; menu edits must not rewrite history. Two DB triggers now fire on every order insert: `auto_deduct_inventory` (stock, clamped at 0, never blocks the order) and `fan_order_to_kds` (kitchen tickets); a third fires on `dine_in` inserts (`auto_start_table_session`) and a fourth on status→`done` updates (`auto_vacate_table_session`).)*
 
 ---
 
 ## 2. Current Progress — What We Have Achieved
 
 ### Super Admin ("Darna") — `/admin`
-- ✅ **Overview**: financial KPIs with delta pills (MRR growth from period deltas, ARPU, churn rate, pending revenue from `past_due` subs), platform-health row (**real DAU/MAU/stickiness** from `auth.users.last_sign_in_at`, at-risk count), revenue area chart, plan-distribution donut with %, 8-week Acquisition vs Désabonnement bar chart, recent-signups table with derived onboarding status (no items → *Onboarding*, no orders → *Menu en cours*, else *Actif*), at-risk table (0 orders/7d, failed payment, no login/14d), collapsible **franchise tree** (`parent_restaurant_id`, migration `0009`) with honest empty state.
-- ✅ **Restaurants**: search + plan/status/city filters, pagination, platform-wide summary strip, per-row monthly revenue/orders/last-owner-login, create dialog (restaurant + owner account), detail panel, quick suspend/reactivate, per-restaurant site builder (`restaurant_theme` draft/publish with asset upload).
-- ✅ **Subscriptions**: summary strip (MRR/actifs/impayés/annulés), status filter chips, renewal countdown (overdue/soon coloring), full edit dialog + one-click quick actions (extend trial +14d, mark paid, suspend) — all writing through the audited PATCH route.
-- ✅ **Permissions**: bulk feature toggles with **tri-state staging** (enable/disable/untouched), resolved active-features column per restaurant (plan defaults + overrides via `resolveFeatures`), select-all, confirm dialog, audit-logged bulk upsert.
+- ✅ **Overview**: financial KPIs with delta pills (MRR growth, ARPU, churn rate from `canceled_at`, pending revenue), platform-health row (real DAU/MAU/stickiness, cached — no more per-request Auth-API N+1), revenue area chart backed by a Postgres rollup RPC (`get_order_aggregates`, `0016` — replaced a raw up-to-20k-row `orders` fetch), plan-distribution donut, 8-week Acquisition vs Désabonnement bar chart, recent-signups table, at-risk table, collapsible franchise tree (`parent_restaurant_id`) with honest empty state, and a **Core Web Vitals P75 panel** (per-surface: storefront/dashboard/admin, last 7 days, `get_web_vitals_p75` RPC, `0017`).
+- ✅ **Restaurants**: search + plan/status/city filters, pagination, platform-wide summary strip, per-row monthly revenue/orders/last-owner-login, create dialog, detail panel, quick suspend/reactivate, per-restaurant site builder (theme draft/publish with asset upload — uploads now capped at 1MB WebP, client-compressed with an iterative quality-reduction loop).
+- ✅ **Subscriptions**: summary strip, status filter chips, renewal countdown, full edit dialog + quick actions — deliberately unpaginated by design (bulk "select all restaurants" flow needs the full set; revisit past ~200 tenants).
+- ✅ **Permissions**: bulk feature toggles with tri-state staging, resolved active-features column, audit-logged bulk upsert — same deliberate no-pagination tradeoff as Subscriptions.
 - ✅ **Audit log**: every mutating `/api/admin/*` route writes `audit_logs` via `logAdminAction`.
-- ✅ Plan-driven **feature flags** (8 keys) with per-restaurant overrides; trial-expiry cron (`0004`) auto-downgrades.
+- ✅ Plan-driven **feature flags** (10 keys, incl. `recipes`/`kds` added in `0013`/`0014`) with per-restaurant overrides; trial-expiry cron (`0004`) auto-downgrades.
 
 ### Owner Dashboard — `/dashboard`
-- ✅ **4-role RBAC** end-to-end (see §1.2) — matrix-driven sidebar, per-page gates, `requireRole` API guards, RLS extension (`my_role_can_manage()`), role-aware login landing.
-- ✅ **Team (Équipe)** page: datatable with avatar/role badge/status dot, search + role filter chips, kebab actions (role reassign, activate/deactivate, remove w/ confirm), invite dialog with role-picker cards, role tally footer. Self-protection: can't deactivate/delete yourself or an owner; invited members forced through `must_change_password`.
-- ✅ **Menu manager** (owner/manager write, read-only for serveur/cuisine via `canWrite`), with customization groups (jsonb options/modifiers).
-- ✅ **Inventory**: categories/items/stock thresholds/suppliers/deliveries, low-stock + stock-value stats, role-gated writes.
-- ✅ **Orders** (kitchen view, status flow new→preparing→done), **Reservations** (day filters, table assignment), **Floor plan** (drag-position tables), **Customers** (CSV export — the owner's "exportable asset"), **Analytics**, **Overview** with 7-day deltas and hourly rhythm, **Settings** (profile + subscription card).
+- ✅ **4-role RBAC** end-to-end — matrix-driven sidebar, per-page gates, `requireRole` API guards, RLS extension, role-aware login landing.
+- ✅ **Team (Équipe)**: datatable, search + role filter, kebab actions, invite dialog, self-protection (can't touch yourself or an owner).
+- ✅ **Menu manager**: categories, items, customization groups, **cost/margin columns and a recipe editor** when the `recipes` feature is on (ingredient picker, live cost preview, feeds `menu_item_costs` — `0013`).
+- ✅ **Recipe costing & inventory variances**: menu-item ↔ ingredient links; every order auto-deducts stock (clamped at 0, never blocks checkout) and logs a variance row when stock would've gone negative; a dedicated `/dashboard/inventory/variances` page lists them. Auto-86: the public menu greys out recipe-linked items whose ingredients are short, without hiding them.
+- ✅ **Cuisine (KDS)**: full-screen live ticket board (`/dashboard/kds`), station-filtered, tap-to-bump, realtime-updated. `PosView` now places **real** staff-created orders (`POST /api/dashboard/orders`) that fan out to the kitchen through the same trigger as online orders — the dine-in gap flagged in the previous review is closed.
+- ✅ **Tables & Plan**: floor-plan drag editor, QR-code generator, and — new — a **Table Turnover panel**: live "occupied now" chips with elapsed time (flagged past 90 min), plus today's/7-day service counts and average duration, realtime-subscribed to `table_sessions` (`0015`).
+- ✅ **Inventory**, **Orders**, **Reservations**, **Customers** (CSV export), **Analytics**, **Overview**, **Settings**.
 - ✅ Suspended-tenant takeover screen; forced password-change takeover; feature-locked placeholders per plan.
 
 ### Public storefronts — `/[slug]`
-- ✅ Bespoke-theme rendering (operator-owned `restaurant_theme`: colors, font pairs, hero images, section toggles, custom copy) with draft/preview/publish.
-- ✅ Menu with category pills, animated dish cards, customization bottom-sheet, **"Nos formules"** section (Menu Smart combo resolved from `promotions.rules` × `is_smart_menu_eligible` items).
-- ✅ Cart (Zustand persist, QR `?table=` dine-in context) → checkout → order POST; reservation form; about/contact.
+- ✅ Bespoke-theme rendering (colors, font pairs, hero images, section toggles, custom copy) with draft/preview/publish.
+- ✅ Menu with category pills, dish cards, customization bottom-sheet, "Nos formules" (Menu Smart combos), **auto-86 on recipe-linked items**.
+- ✅ Cart (Zustand persist, QR `?table=` dine-in context) → checkout → order POST → **triggers stock deduction, kitchen ticket, and table-session start automatically**; reservation form; about/contact.
+- ✅ **Performance pass (Phase 7)**: every `<img>` (19, not the 9 an early pass miscounted) converted to `next/image`; the homepage's default hero fallback shrank from a 1.6MB JPEG + 6.6MB PNG to two compressed WebP files; dead `framer-motion` imports removed from the hero (zero JSX usage, pure bundle weight); below-the-fold sections (`ValuesSection`/`TestimonialsSection`) and Recharts-heavy admin/dashboard views are dynamically imported; Lighthouse CI + RUM wired (real score capture pending a runner with system Chrome — this sandbox has none).
 
 ### Data & tooling
-- ✅ 9 SQL migrations, all applied to the live instance (including a drift fix: `0006` was committed but never applied — caught and repaired).
-- ✅ Seeders: Ô rendez-vous full menu (29 items/4 categories + Menu Smart promotion), themed inventory (33 items/6 categories/5 suppliers/4 deliveries), idempotent team seeder (real Auth users for manager/serveur/cuisine), demo platform data (5 restaurants, orders, subscriptions).
+- ✅ **17 SQL migrations**, all applied to the live instance via the hosted `pg` pooler (no local Supabase stack). `0010`–`0012` closed out Phase 0–2 (churn integrity, rate limits, indexes); `0013`–`0015` are Phase 6.1–6.3 (recipes, KDS, table sessions); `0016`–`0017` are Phase 7 (order-aggregate rollup, web vitals) — **Phase 6.4 (labor) now starts at `0018`**, not the `0016` originally reserved for it, since Phase 7 landed in between.
+- ✅ Secret hygiene: the previously git-tracked `spread_tables.mjs`/`check-db.js`/`test-profile.js`/`check_tables.mjs` (one of which embedded a live `service_role` JWT) are gone from HEAD; a husky pre-commit hook blocks staged JWT-shaped strings; `.github/workflows/secret-scan.yml` runs gitleaks in CI.
+- ✅ **Automated tests**: 77 Vitest unit tests (`permissions.ts`, `features.ts`, `analytics-math.ts` — MRR/churn/ARPU extracted to pure functions specifically to be testable) + a Playwright RBAC matrix (`e2e/rbac.spec.ts`, one login per role, gated on a `BASE_URL` secret so it doesn't need a local Supabase stack). CI (`ci.yml`) runs typecheck/lint/test unconditionally, e2e and Lighthouse conditionally on their respective secrets being configured.
+- ✅ Seeders: Ô rendez-vous full menu, themed inventory, idempotent team seeder, demo platform data (5 restaurants, orders, subscriptions).
+- ✅ Mockup HTML bundles (8 files, up to 430KB) moved out of `src/` into `design-mockups/` at the repo root.
 
 ---
 
 ## 3. Database & State Analysis
 
-### 3.1 Missing / weak indexes
+### 3.1 Indexes — closed out
 
-| Table | Issue | Impact | Fix |
-|---|---|---|---|
-| `profiles` | **No index on `restaurant_id`** — FK column queried by team GET, owner lookups (admin restaurants route), DAU mapping | Seq scan per team-page load; grows with staff count | `create index profiles_restaurant_idx on profiles (restaurant_id)` |
-| `orders` | Only `(restaurant_id, created_at desc)` — admin analytics scans `created_at >= X` **globally** (no restaurant filter) | Full scan across all tenants' orders at scale | Add `create index orders_created_idx on orders (created_at desc)` |
-| `orders` | No partial index for the kitchen's hot query (open orders) | Fine now; degrades with history | `create index orders_open_idx on orders (restaurant_id) where status <> 'done'` |
-| `subscriptions` | Churn math filters `status='canceled' and updated_at >= X`; only `status` is indexed | Minor today | Composite `(status, updated_at)` — or better, fix the model (below) |
-| `reservations` | Pending-count badge filters `status='new'` unindexed | Minor | Partial index if reservation volume grows |
+The gaps flagged in the previous review (`profiles.restaurant_id`, `orders.created_at`, a partial open-orders index, `subscriptions(status, canceled_at)`, a partial pending-reservations index) all shipped in `0012_indexes.sql` and are live. Nothing outstanding here.
 
-### 3.2 Data-model gaps
+### 3.2 Data-model gaps — what's left
 
-- **`subscriptions.updated_at` as churn proxy.** MRR growth/churn/acquisition charts treat `updated_at` of a canceled row as its cancellation date. Any later edit to a canceled row (e.g. a note) silently shifts the churn week. Add `canceled_at timestamptz` (and ideally an append-only `subscription_events` table for true historical MRR instead of derived period deltas).
-- **No `orders.updated_at` trigger** — the column exists (`0002`) but is only set by app code on status PATCH; a DB trigger would make the optimistic-concurrency column trustworthy.
-- **Franchise tree is single-level by convention, unconstrained by schema.** Nothing prevents a branch from having its own children or `parent_restaurant_id = id` cycles. Add a CHECK (`parent_restaurant_id <> id`) and a trigger rejecting grandchildren, or document one-level as invariant.
-- **`promotions.rules` is unvalidated jsonb** — a malformed rule renders as an empty formule (fails soft), but a CHECK on jsonb shape or Zod-on-write in the future promotions editor would harden it.
-- **`suppliers.status` / `inventory` enums** are free-text CHECKs in some places (`'active'|'follow_up'`) with no shared TS enum — drift risk between UI and DB.
+- **Franchise tree has no write path.** `parent_restaurant_id` (since `0009`) renders read-only in the admin overview's tree — there's no link/unlink UI. The `0010` migration did add the guard rails (`no_self_parent` CHECK + a trigger rejecting grandchildren), so the schema is safe to write to whenever the UI lands.
+- **Promotions are seed-only.** `promotions.rules` (jsonb, since `0007`) has RLS and a working public-read/resolve path (the storefront's "Nos formules" section), but no dashboard CRUD — an owner can't create or edit a combo without a script.
+- **`table_sessions` has no historical retention policy.** `table_turnover_metrics` filters to the last 30 days server-side (`where seated_at >= now() - interval '30 days'`), but the underlying table itself grows unbounded. Fine at pilot scale; revisit with a cleanup job once volume is real.
+- **`inventory_variances` has no dashboard-side alerting** beyond the list view — a restaurant with recurring stockouts has to notice the pattern manually rather than being surfaced it (e.g. "this ingredient has caused 5 variances this week").
 
-### 3.3 Redundant / duplicated frontend state
+### 3.3 Redundant / duplicated frontend state — partially addressed
 
-- **`initialsOf()` is copy-pasted in 5+ components** (staff-management, overview-view, subscriptions-view, restaurants-view, permissions-view) with two different semantics (email-based vs name-based). → `src/lib/avatar.ts`.
-- **Plan/status color maps duplicated 4×** (`PLAN_AVATAR_CLASS`, `PLAN_PILL_CLASS`, `ROLE_COLORS`, badges.tsx styles) with slightly different palettes (pro = blue in badges.tsx but orange in the mockup-derived views). → consolidate into `src/components/admin/badges.tsx` as the single palette.
-- **Role travels through API payloads** (`/api/dashboard/menu` and `/api/dashboard/inventory` return `role` for the client to compute read-only mode) while the layout already knows it server-side. Fine functionally, but two sources of truth for the same fact per page.
-- **`formatPrice(x).replace(".00","")`** sprinkled in 3 components — belongs in `formatPrice` as an option.
-- `pos-view.tsx` still renders a **hardcoded mock menu** (Tacos-era demo data) — dead weight or a stale surface, should consume `/api/dashboard/menu`.
+- ✅ `initialsOf()` consolidated into `src/lib/avatar.ts`.
+- ✅ Palette consolidation into `src/components/admin/badges.tsx` (`PLAN_COLOR_CLASS` etc.) — used consistently in `overview-view.tsx`.
+- ⚠️ **Still open:** no shared `KpiCard`/`AvatarChip`/`StatusDot`/`FilterChips`/`DataTableShell` primitives file yet — each admin/dashboard view still hand-rolls its own summary-strip cards and table-with-skeleton wrapper. Real duplication, just not yet worth the refactor risk mid-feature-build.
+- ✅ `pos-view.tsx` no longer renders mock data — confirmed wired to `/api/dashboard/menu` and `/api/dashboard/orders`.
 
 ---
 
 ## 4. Technical Debt & Bottlenecks
 
-Ordered by how badly each bites as restaurant count grows:
+Re-ranked — the P0/P1 items from the last pass are closed; what's left is smaller and more product-shaped:
 
-1. **🔴 Committed service-role key.** `spread_tables.mjs` (git-tracked) hardcodes a live `service_role` JWT. This bypasses RLS entirely for anyone with repo access. **Rotate the key in Supabase, purge the file (and `check-db.js`/`test-profile.js` patterns) — this is the one item that shouldn't wait for a "phase".**
-2. **N+1 against the Auth Admin API.** `/api/admin/restaurants` calls `auth.admin.getUserById()` once **per row** for last-login; `/api/admin/analytics` pages through **every auth user** (`listUsers`, 200/page) on **every request** with no cache. At 500 restaurants ≈ 500+ sequential Auth API calls per admin page view. → cache the id→last_sign_in map (60s `unstable_cache`) or mirror `last_sign_in_at` into `profiles` via a lightweight auth hook.
-3. **Admin analytics loads raw rows to aggregate in JS.** 30 days of `orders` (`limit 10–20k`) fetched wholesale, bucketed in the route. Works at pilot scale; at hundreds of tenants this is MBs per dashboard load. → Postgres RPC/materialized view (`orders_daily_rollup`) refreshed by cron `0004`-style.
-4. **Unpaginated "fetch all" admin endpoints.** `/api/admin/permissions` and `/api/admin/subscriptions` read every restaurant/subscription. Acceptable to ~200 tenants; needs pagination + server search beyond that.
-5. **Public write endpoints have no rate limiting.** `/api/orders` and `/api/reservations` validate with Zod and scope by slug, but nothing stops a bot from flooding a tenant's kitchen with fake orders. → per-IP + per-slug rate limit (Upstash or Postgres bucket) and a soft daily cap.
-6. **Repetitive UI to abstract** (each currently re-implemented per page): summary-strip KPI card (4 admin/dashboard variants), avatar chip, status-dot badge, filter-chip row, "table with skeleton + Empty + rows" wrapper. One `admin/primitives.tsx` pass would delete several hundred lines.
-7. **Mockup artifacts in the repo.** 8 `* - Standalone.html` bundles (some inside `src/components/**`, up to 430KB each) ship in git and confuse tooling; `Dashboard.html` lives in `src/components/site`. → move to `/design-mockups` (gitignored or LFS).
-8. **`getSessionContext` does 3 sequential queries** (profile → restaurant → features) on every dashboard request; trivially parallelizable, or collapsible into one RPC.
-9. **No automated tests.** RBAC matrix, permission resolution, and MRR math are all pure functions begging for unit tests; the 4-layer auth chain deserves a Playwright pass per role. All verification so far has been manual/scripted.
+1. **🟠 Two schemas shipped with no write UI.** Promotions (since `0007`) and franchise linking (since `0009`) both have working, RLS-safe backends and render read-only or seed-only. This is the highest-value remaining gap — the cost of building the feature was already paid, only the UI is missing.
+2. **🟡 `table_sessions` (Phase 6.3) view now exists; the model behind it is otherwise unexercised.** The turnover panel is real and live, but nothing yet uses `table_turnover_metrics` for anything beyond display — no alerting on abnormally long sessions, no historical trend beyond the 7-day summary shown today.
+3. **🟡 Migration-numbering discipline is manual and has already drifted once.** `ROADMAP-PHASE6.md` originally reserved `0016_labor.sql`; Phase 7 took `0016`/`0017` instead, mid-plan. Both roadmap docs now say "check `ls supabase/migrations/` immediately before writing a new file, never trust a number written down in advance" — but there's no automated guard (e.g. a CI check that the highest migration number matches what's referenced in open roadmap docs).
+4. **🟢 No shared admin/dashboard UI primitives.** ~400–600 LOC of duplicated card/table/badge markup across `overview-view.tsx`, `subscriptions-view.tsx`, `restaurants-view.tsx`, `permissions-view.tsx`, `table-turnover.tsx`. Cosmetic, not urgent.
+5. **🟢 Lighthouse/axe baseline not yet captured for real.** The CI job, `lighthouserc.js`, and RUM pipeline are all wired and tested for wiring correctness, but no environment used so far has had a working system Chrome to produce real scores. Will resolve itself the first time the CI job runs on a PR (GitHub's `ubuntu-latest` runner has Chrome).
+6. **🟢 `orders.payment_status` doesn't exist yet.** Needed for Phase 6.4's payment work; flagged there, not urgent until CMI merchant onboarding unblocks that phase.
 
 ---
 
-## 5. Roadmap & Optimizations — Next Phase (prioritized)
+## 5. Roadmap — where the detailed plans live
 
-### P0 — Security & correctness (this week)
-1. **Rotate the Supabase service-role key**; delete/rewrite `spread_tables.mjs`, `check-db.js`, `test-profile.js` to read from `.env`; add a secret-scanning pre-commit hook.
-2. **Rate-limit public writes** (`/api/orders`, `/api/reservations`) per IP + per tenant.
-3. **Team API hardening finish-line:** add a "last active owner" guard (currently you can't delete *an* owner, but a future multi-owner tenant could demote the last one), and audit-log team mutations (admin actions are logged; owner-side team changes are not).
-4. Add `canceled_at` to `subscriptions` + backfill; switch churn/acquisition math off `updated_at`.
+This file stays architectural; **phase-by-phase task lists live in their own docs** and shouldn't be duplicated here (that duplication is exactly what let this file go stale for months last time):
 
-### P1 — Scale prep (next sprint)
-5. **Index pass** (§3.1: `profiles.restaurant_id`, `orders.created_at`, partial open-orders index) — one migration, applied like `0007`–`0009`.
-6. **Kill the Auth-API N+1:** mirror `last_sign_in_at` into `profiles` (or cache the map for 60s) — fixes both admin restaurants and analytics routes.
-7. **Cache the admin analytics payload** (`unstable_cache`, 60s tag like the public menu) and split it: KPIs+health in one query group, tables lazy-loaded — the page currently blocks on the slowest aggregate.
-8. **Public storefront caching:** menu pages are already `unstable_cache(60)`d — add `generateStaticParams` + ISR for `/[slug]` shells, `next/image` remote-pattern optimization for Storage-hosted dish photos, and stale-while-revalidate on the theme fetch.
+- **`ROADMAP.md`** — Phases 0–5 (security, rate limits, indexes, churn integrity, tests, primitives/payload pass). **All done** as of `0012`.
+- **`ROADMAP-PHASE6.md`** — Restaurant-OS depth. **6.1 Recipe Costing, 6.2 Real KDS, 6.3 Table Turnover: done** (`0013`–`0015`, UI included). **6.4 Labor & Payment: not started** — labor is buildable now as `0018`; payment is externally blocked on CMI merchant onboarding (Morocco), webhook route is a deliberate `501` stub.
+- **`ROADMAP-PHASE7.md`** — Performance & Web Vitals. **Done** (`0016`–`0017`) except for capturing real Lighthouse/axe numbers, blocked on runner availability, not on missing work.
 
-### P2 — Payload & DX (following sprint)
-9. **Chart payload reduction:** return pre-bucketed series only (drop raw pass-through fields), round to day granularity server-side, and drop the unused `statusCounts`/`planCounts` duplicates now superseded by `planDistribution`.
-10. **Abstraction pass:** `KpiCard`, `AvatarChip`, `StatusDot`, `FilterChips`, `DataTableShell` shared primitives; unify plan/role palettes in `badges.tsx`; extract `initialsOf`/`formatPrice` options into `lib`.
-11. **Wire `pos-view` to real menu data** or remove it.
-12. **Test foundation:** unit tests for `permissions.ts`, `resolveFeatures`, MRR/churn math; one Playwright login-per-role smoke covering the RBAC matrix.
-
-### P3 — Product depth
-13. Promotions editor UI (dashboard-side CRUD for `promotions` — table + RLS shipped in `0007`, currently seed-only).
-14. Franchise management UI (link/unlink `parent_restaurant_id` from the admin restaurant panel — schema shipped in `0009`, tree renders, no write path yet).
-15. Dedicated cuisine KDS view (auto-refresh ticket board) on `/dashboard/orders` for the `cuisine` role.
-16. Real billing provider integration behind `src/lib/billing/provider.ts` (webhook route is an explicit 501 stub — Stripe can't onboard Moroccan merchants; CMI is the likely path).
+**Not yet in a roadmap doc, worth scoping next:**
+1. Promotions editor (dashboard CRUD over `promotions.rules`).
+2. Franchise link/unlink UI (`parent_restaurant_id` write path in the admin restaurant panel).
+3. Phase 6.4 Labor (shift/labor model, migration `0018`) — start this in parallel with kicking off CMI paperwork, since payment is the long pole.
+4. Admin/dashboard UI primitives extraction (§4.4) — worth doing once the current feature velocity slows, not before.
 
 ---
 
-*Document generated from direct codebase + live-database review. Key files: `src/proxy.ts`, `src/lib/permissions.ts`, `src/lib/dashboard.ts`, `src/lib/features.ts`, `supabase/migrations/0001–0009`, `src/app/api/admin/analytics/route.ts`.*
+*Document generated from direct codebase + live-database review. Key files: `src/proxy.ts`, `src/lib/permissions.ts`, `src/lib/dashboard.ts`, `src/lib/features.ts`, `supabase/migrations/0001–0017`, `src/app/api/admin/analytics/route.ts`, `ROADMAP-PHASE6.md`, `ROADMAP-PHASE7.md`.*
