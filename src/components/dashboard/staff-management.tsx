@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LaborPanel } from "@/components/dashboard/labor-panel";
 import { initialsOf } from "@/lib/avatar";
 import { formatDateTime } from "@/lib/format";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
@@ -83,6 +84,7 @@ type TeamMember = {
   active: boolean;
   created_at: string;
   consented_at: string | null;
+  hourly_rate_mad: number | null;
 };
 
 async function fetchStaff(): Promise<TeamMember[]> {
@@ -362,6 +364,8 @@ export function StaffManagement() {
           </div>
         )}
       </div>
+
+      <LaborPanel staff={staff ?? []} />
 
       <AlertDialog open={!!removing} onOpenChange={(v) => !v && setRemoving(null)}>
         <AlertDialogContent className="rounded-2xl border-border bg-card shadow-2xl">

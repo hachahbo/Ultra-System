@@ -15,7 +15,7 @@ export async function GET() {
   // "profiles owner read tenant" RLS policy (0002 migration) allows this.
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, role, active, created_at, consented_at")
+    .select("id, role, active, created_at, consented_at, hourly_rate_mad")
     .eq("restaurant_id", guard.ctx.restaurant.id)
     .neq("role", "owner");
 
@@ -34,6 +34,7 @@ export async function GET() {
         active: p.active ?? true,
         created_at: p.created_at,
         consented_at: p.consented_at,
+        hourly_rate_mad: p.hourly_rate_mad,
       };
     }),
   );

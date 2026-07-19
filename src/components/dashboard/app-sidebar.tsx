@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/client";
+import { ClockWidget } from "@/components/dashboard/clock-widget";
 import type { FeatureKey } from "@/lib/types";
 import { canAccessRoute, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -166,6 +167,7 @@ export function AppSidebar({
 
       <SidebarFooter className="p-4">
         <SidebarMenu>
+          <ClockWidget />
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={signOut}

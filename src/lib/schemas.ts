@@ -205,6 +205,7 @@ export const staffPatchSchema = z
   .object({
     role: inviteRoleSchema,
     active: z.boolean(),
+    hourly_rate_mad: z.number().min(0).max(1000).nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, "Aucune modification");
