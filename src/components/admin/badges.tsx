@@ -25,21 +25,27 @@ export function StatusBadge({ status }: { status: RestaurantStatus }) {
   );
 }
 
-const PLAN_STYLES: Record<Plan, string> = {
-  free: "border-border text-muted-foreground",
-  pro: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  enterprise: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+// Single source of truth for plan colors across the admin surface — was
+// three different mappings across restaurants-view/permissions-view
+// (avatar chips) and this file's own badge (which didn't even distinguish
+// pro from enterprise, both blue). bg/text for avatar chips and solid
+// badges; border for the outlined PlanBadge below.
+export const PLAN_COLOR_CLASS: Record<Plan, { bg: string; text: string; border: string }> = {
+  free: { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" },
+  pro: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
+  enterprise: { bg: "bg-primary/10", text: "text-primary", border: "border-primary/30" },
 };
 
-const PLAN_LABELS: Record<Plan, string> = {
+export const PLAN_LABELS: Record<Plan, string> = {
   free: "Free",
   pro: "Pro",
   enterprise: "Enterprise",
 };
 
 export function PlanBadge({ plan }: { plan: Plan }) {
+  const c = PLAN_COLOR_CLASS[plan];
   return (
-    <Badge variant="outline" className={PLAN_STYLES[plan]}>
+    <Badge variant="outline" className={`${c.border} ${c.bg} ${c.text}`}>
       {PLAN_LABELS[plan]}
     </Badge>
   );

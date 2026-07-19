@@ -3,7 +3,7 @@ import { apiError } from "@/lib/api";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_BYTES = 1024 * 1024;
 const KINDS = new Set(["logo", "hero"]);
 
 // The operator has no restaurant_id, so the tenant-scoped storage RLS
@@ -29,7 +29,7 @@ export async function POST(
     return apiError("invalid_input", "Le fichier doit être au format WebP", 400);
   }
   if (file.size > MAX_BYTES) {
-    return apiError("invalid_input", "Fichier trop volumineux (max 3 Mo)", 400);
+    return apiError("invalid_input", "Fichier trop volumineux (max 1 Mo)", 400);
   }
 
   const admin = createAdminClient();

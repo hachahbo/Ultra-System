@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { defaultRouteFor, type Role } from "@/lib/permissions";
 
 const schema = z
   .object({
@@ -51,7 +52,15 @@ export default function ChangePasswordPage() {
       return;
     }
     toast.success("Mot de passe mis à jour");
-    router.replace("/dashboard");
+    // Land directly on the role's allowed page — every invited team member
+    // has must_change_password=true, so ALL of them hit this path on their
+    // first login. Routing everyone through "/dashboard" only for the
+    // server layout to redirect non-owner/manager roles again is the same
+    // double-redirect chain fixed in src/app/login/page.tsx (Next 16
+    // dev-mode profiler crash: "cannot have a negative time stamp").
+    const body = await res.json().catch(() => null);
+    const role = body?.role as Role | undefined;
+    router.replace(role ? defaultRouteFor(role) : "/dashboard");
     router.refresh();
   }
 

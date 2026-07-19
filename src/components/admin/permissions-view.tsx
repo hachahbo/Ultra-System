@@ -25,7 +25,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { PLAN_COLOR_CLASS } from "@/components/admin/badges";
 import { FEATURE_LABELS } from "@/lib/feature-labels";
+import { initialsOf } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { FEATURE_KEYS, type FeatureKey, type Plan } from "@/lib/types";
 
@@ -36,22 +38,6 @@ async function fetchRestaurants(): Promise<PermissionRestaurant[]> {
   if (!res.ok) throw new Error("fetch failed");
   const body = await res.json();
   return body.restaurants;
-}
-
-const PLAN_AVATAR_CLASS: Record<Plan, string> = {
-  free: "bg-muted text-muted-foreground",
-  pro: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  enterprise: "bg-primary/10 text-primary",
-};
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 // undefined = untouched, true = will enable, false = will disable.
@@ -274,7 +260,8 @@ export function PermissionsView() {
                       <div
                         className={cn(
                           "flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[11.5px] font-extrabold",
-                          PLAN_AVATAR_CLASS[r.plan],
+                          PLAN_COLOR_CLASS[r.plan].bg,
+                          PLAN_COLOR_CLASS[r.plan].text,
                         )}
                       >
                         {initialsOf(r.name)}

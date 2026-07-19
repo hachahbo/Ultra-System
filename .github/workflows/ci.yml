@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  # RBAC/E2E smoke (ROADMAP.md Phase 3, Task 3.3). Not run against "a local
+  # Supabase" — this project has no local stack; migrations go through the
+  # hosted pooler (see ROADMAP.md conventions). This job targets a real
+  # deployment instead, and is skipped entirely unless BASE_URL is
+  # configured as a repo/environment secret, so a fork or a repo without
+  # staging set up doesn't get a permanently-red required check.
+  #
+  # To enable: add repo secrets BASE_URL (a staging deployment URL) and,
+  # optionally, OWNER_EMAIL/OWNER_PASSWORD + SUPER_ADMIN_EMAIL/
+  # SUPER_ADMIN_PASSWORD for the owner/super-admin coverage in e2e/rbac.spec.ts
+  # (the manager/serveur/cuisine seed accounts are already covered without
+  # any secrets, via scripts/seed-orendezvous-team.mjs's known test creds).
+  e2e:
+    runs-on: ubuntu-latest
+    if: ${{ vars.BASE_URL != '' || secrets.BASE_URL != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          BASE_URL: ${{ vars.BASE_URL || secrets.BASE_URL }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
+          OWNER_PASSWORD: ${{ secrets.OWNER_PASSWORD }}
+          SUPER_ADMIN_EMAIL: ${{ secrets.SUPER_ADMIN_EMAIL }}
+          SUPER_ADMIN_PASSWORD: ${{ secrets.SUPER_ADMIN_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  # Lighthouse CI (ROADMAP-PHASE7.md Task 7.4.2). Builds and serves the app
+  # locally against real (preview) env vars, then runs lighthouserc.js's
+  # assertions. Gated on LHCI_GITHUB_APP_TOKEN existing, same reasoning as
+  # the e2e job above — a fork/repo without it configured shouldn't get a
+  # permanently-red required check. /dashboard and /admin in
+  # lighthouserc.js's URL list are unauthenticated (measure the login
+  # redirect, not the real page) until this job gains a login step.
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: [checks]
+    if: ${{ vars.LHCI_GITHUB_APP_TOKEN != '' || secrets.LHCI_GITHUB_APP_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_PREVIEW }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_PREVIEW }}
+      - name: Start server
+        run: npm start &
+      - name: Wait for server
+        run: npx wait-on http://localhost:3000 --timeout 30000
+      - name: Run Lighthouse CI
+        run: npm run lhci
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

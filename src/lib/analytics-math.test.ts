@@ -45,7 +45,8 @@ describe("computeFinancialSummary", () => {
     ];
     const result = computeFinancialSummary(subs, PERIOD_START);
     expect(result.mrr).toBe(1499);
-    expect(result.activeSubscriptionsCount).toBe(2);
+    // active + trialing + yearly-active = 3 (canceled is excluded).
+    expect(result.activeSubscriptionsCount).toBe(3);
   });
 
   it("computes ARPU as mrr / active count, 0 when no active subs", () => {

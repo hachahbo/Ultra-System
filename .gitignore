@@ -41,6 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # one-off debug/scratch scripts — never commit these; they tend to accumulate
 # hardcoded keys (see spread_tables.mjs / check_tables.mjs incident, 2026-07-19)
 spread_tables.*

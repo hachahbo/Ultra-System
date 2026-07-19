@@ -1,13 +1,22 @@
 import { Fragment } from "react";
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/site/sections/hero-section";
 import { SpecialsSection } from "@/components/site/sections/specials-section";
 import { WelcomeSection } from "@/components/site/sections/welcome-section";
-import { ValuesSection } from "@/components/site/sections/values-section";
-import { TestimonialsSection } from "@/components/site/sections/testimonials-section";
 import { getPublicMenu } from "@/lib/menu";
 import { getSiteTheme } from "@/lib/site-theme";
 import type { SectionKey } from "@/lib/types";
+
+// Below-the-fold on the homepage (after Hero + up to 4 specials + Welcome) —
+// dynamically imported so they don't inflate the above-the-fold JS/RSC
+// payload that matters for LCP.
+const ValuesSection = dynamic(() =>
+  import("@/components/site/sections/values-section").then((m) => m.ValuesSection),
+);
+const TestimonialsSection = dynamic(() =>
+  import("@/components/site/sections/testimonials-section").then((m) => m.TestimonialsSection),
+);
 
 export default async function HomePage({
   params,

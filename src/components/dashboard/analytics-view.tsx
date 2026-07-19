@@ -31,6 +31,7 @@ type AnalyticsData = {
   typeSplit: { dine_in: number; delivery: number };
   byHour: { hour: number; orders: number }[];
   newVsReturning: { new: number; returning: number };
+  tableTurnover: { hour: number; duration: number; sessions: number }[];
 };
 
 type Range = "7d" | "30d" | "90d";
@@ -256,7 +257,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
           </div>
 
           {/* 3. OPERATIONAL BREAKDOWN */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-[16px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[16px]">
             <FadeUp delay={0.24}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
                 <div className="text-[14px] font-extrabold mb-[16px]">Sur place vs Livraison</div>
@@ -365,6 +366,26 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                       <YAxis hide />
                       <ChartTooltip content={<ChartTooltipContent indicator="line" />} cursor={false} />
                       <Bar dataKey="orders" fill="#7c8cff" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </div>
+            </FadeUp>
+
+            <FadeUp delay={0.34}>
+              <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
+                <div className="text-[14px] font-extrabold mb-[4px]">Rotation des tables</div>
+                <div className="text-[11.5px] text-muted-foreground dark:text-[#8b8b93] mb-[14px]">
+                  Durée moyenne par table (minutes)
+                </div>
+                <div className="flex-1 min-h-[120px]">
+                  <ChartContainer config={{ duration: { label: "Minutes", color: "#ec5b1a" } }} className="w-full h-full">
+                    <BarChart data={data.tableTurnover} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
+                      <CartesianGrid vertical={false} strokeOpacity={0.15} />
+                      <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => `${v}h`} />
+                      <YAxis hide />
+                      <ChartTooltip content={<ChartTooltipContent indicator="line" />} cursor={false} />
+                      <Bar dataKey="duration" fill="#ec5b1a" radius={[2, 2, 0, 0]} />
                     </BarChart>
                   </ChartContainer>
                 </div>

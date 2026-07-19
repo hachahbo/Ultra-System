@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { DishCard } from "@/components/site/dish-card";
 import type { Item } from "@/lib/types";
 
@@ -25,13 +26,13 @@ export function SpecialsSection({
     <section className="relative overflow-hidden bg-background py-20 md:py-28">
       {/* Decorative Botanicals */}
       <div className="pointer-events-none absolute left-[2%] top-[5%] w-42 opacity-10 dark:invert dark:opacity-20 sm:w-80">
-        <img src="/images/Group (5).svg" alt="" className="h-auto w-full" />
+        <Image src="/images/Group (5).svg" alt="" width={119} height={124} className="h-auto w-full" />
       </div>
       <div className="pointer-events-none absolute right-[5%] top-[10%] w-48 opacity-10 dark:invert dark:opacity-20 sm:w-64">
-        <img src="/images/Group (1).svg" alt="" className="h-auto w-full" />
+        <Image src="/images/Group (1).svg" alt="" width={316} height={300} className="h-auto w-full" />
       </div>
       <div className="pointer-events-none absolute bottom-[5%] right-[2%] w-72 opacity-10 dark:invert dark:opacity-20 sm:w-96">
-        <img src="/images/Group (6).svg" alt="" className="h-auto w-full" />
+        <Image src="/images/Group (6).svg" alt="" width={77} height={78} className="h-auto w-full" />
       </div>
 
       <div className="relative mx-auto max-w-[1400px] px-4 xl:px-8">
@@ -48,10 +49,12 @@ export function SpecialsSection({
         <div className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] shadow-2xl">
           {/* Left Side: Featured Image */}
           <div className="w-full lg:w-[45%] p-4 sm:p-8 lg:p-12">
-            <div className="w-full h-full min-h-[400px] overflow-hidden rounded-[32px] shadow-xl">
-              <img
+            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-[32px] shadow-xl">
+              <Image
                 src="/images/orendezvous.tanger_1777049699_3882496730961703431_73557593345.jpg"
-                className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(min-width: 1024px) 45vw, 90vw"
+                className="object-cover object-center hover:scale-105 transition-transform duration-500"
                 alt="Featured dishes collage"
               />
             </div>

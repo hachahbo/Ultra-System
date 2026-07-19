@@ -56,7 +56,7 @@ export function DishCard({
       {/* Bottom Actions (Price Left, Add Right) */}
       <div className="mt-4 flex w-full items-center justify-between z-20">
         <span className="font-display text-xl font-black text-[oklch(0.685_0.165_45)]">
-          {formatPrice(item.base_price, currency).replace(".00", "")}
+          {formatPrice(item.base_price, currency)}
         </span>
         <div className="flex size-10 items-center justify-center rounded-full text-white transition-transform group-hover:scale-110">
           <Plus className="size-5" />

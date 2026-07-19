@@ -20,13 +20,14 @@ export async function GET(request: Request) {
   const from = new Date(startOfTodayCasa().getTime() - (days - 1) * 86_400_000);
 
   const supabase = await createClient();
-  const [{ data: orders }, { data: customers }] = await Promise.all([
+  const [{ data: orders }, { data: customers }, { data: turnover }] = await Promise.all([
     supabase
       .from("orders")
       .select("created_at, type, total, items, customer_id")
       .gte("created_at", from.toISOString())
       .limit(10_000),
     supabase.from("customers").select("id, first_seen"),
+    supabase.from("table_turnover_metrics").select("*"),
   ]);
 
   const rows = (orders ?? []) as Pick<
@@ -91,11 +92,26 @@ export async function GET(request: Request) {
     else returningCustomers += 1;
   }
 
+  // --- Table Turnover Metrics ---
+  const turnoverByHour = new Array(24).fill({ duration: 0, sessions: 0 });
+  if (turnover) {
+    for (const t of turnover) {
+      if (!t.hour_bucket) continue;
+      const h = new Date(t.hour_bucket).getHours(); // UTC to local may be needed, assuming UTC=local for now
+      turnoverByHour[h] = { 
+        duration: Math.round(t.avg_duration_minutes ?? 0), 
+        sessions: t.total_sessions ?? 0 
+      };
+    }
+  }
+  const tableTurnover = turnoverByHour.map((v, hour) => ({ hour, ...v }));
+
   return NextResponse.json({
     revenueSeries,
     topItems,
     typeSplit,
     byHour,
     newVsReturning: { new: newCustomers, returning: returningCustomers },
+    tableTurnover,
   });
 }

@@ -116,6 +116,8 @@ export const FEATURE_KEYS = [
   "floor_plan",
   "promotions",
   "inventory",
+  "recipes",
+  "kds",
 ] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
@@ -183,6 +185,28 @@ export type Item = {
   sort_order: number;
   is_smart_menu_eligible: boolean;
   customization_groups: CustomizationGroup[];
+};
+
+export type MenuItemCost = {
+  menu_item_id: string;
+  computed_cost: number;
+  margin_mad: number;
+  margin_pct: number | null;
+};
+
+export type Recipe = {
+  id: string;
+  menu_item_id: string;
+  quantity: number;
+  unit: string;
+  notes: string | null;
+  inventory_item: {
+    id: string;
+    name: string;
+    unit: string;
+    stock: number;
+    unit_price_mad: number;
+  };
 };
 
 export type PromotionRule = { category_id: string; count: number };

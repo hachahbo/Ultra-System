@@ -52,32 +52,40 @@ export function WelcomeSection({
 
         {/* Image Grid placeholders */}
         <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1754944082_highlight18054770264426605.jpg"
               alt="Restaurant ambiance 1"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg"
               alt="Restaurant ambiance 2"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
-              src="/images/orendezvous.tanger_1777049699_3882496730852669917_73557593345.jpg"
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
+              src="/images/hero-default.webp"
               alt="Restaurant ambiance 3"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1777049699_3882496732303853455_73557593345.jpg"
               alt="Restaurant ambiance 4"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, 50vw"
+              className="object-cover"
             />
           </div>
         </div>

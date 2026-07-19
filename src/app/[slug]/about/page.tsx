@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -59,32 +60,40 @@ export default async function AboutPage({
 
         {/* Image Grid placeholders */}
         <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1754944082_highlight18054770264426605.jpg"
               alt="Restaurant ambiance 1"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg"
               alt="Restaurant ambiance 2"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
-              src="/images/orendezvous.tanger_1777049699_3882496730852669917_73557593345.jpg"
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
+              src="/images/hero-default.webp"
               alt="Restaurant ambiance 3"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
             />
           </div>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
-            <img
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]">
+            <Image
               src="/images/orendezvous.tanger_1777049699_3882496732303853455_73557593345.jpg"
               alt="Restaurant ambiance 4"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
             />
           </div>
         </div>
@@ -101,8 +110,14 @@ export default async function AboutPage({
             </div>
 
             {/* Image left */}
-            <div className="w-full md:w-1/2 aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 dark:border-border/50">
-              <img src="/images/orendezvous.tanger_1754944082_highlight18054770264426605.jpg" alt="Table" className="w-full h-full object-cover" />
+            <div className="relative w-full md:w-1/2 aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 dark:border-border/50">
+              <Image
+                src="/images/orendezvous.tanger_1754944082_highlight18054770264426605.jpg"
+                alt="Table"
+                fill
+                sizes="(min-width: 768px) 45vw, 90vw"
+                className="object-cover"
+              />
             </div>
             
             {/* Content right */}
@@ -136,8 +151,14 @@ export default async function AboutPage({
 
             {/* Bottom Right Card */}
             <div className="bg-[#cd6133] dark:bg-[#7c3a21] rounded-[2rem] p-8 md:p-12 flex flex-col text-white shadow-md">
-              <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/10 dark:border-border/50 mb-8">
-                <img src="/images/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg" alt="Interior" className="w-full h-full object-cover" />
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 dark:border-border/50 mb-8">
+                <Image
+                  src="/images/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg"
+                  alt="Interior"
+                  fill
+                  sizes="(min-width: 768px) 45vw, 90vw"
+                  className="object-cover"
+                />
               </div>
               <h3 className="font-display text-3xl md:text-4xl font-bold mb-4">
                 Privatisation

@@ -54,6 +54,7 @@ const groups: Group[] = [
     label: "Opération",
     items: [
       { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true },
+      { href: "/dashboard/kds", label: "Cuisine (KDS)", icon: UtensilsCrossed, feature: "kds" },
       { href: "/dashboard/orders", label: "Commandes", icon: ShoppingBag },
       { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays, feature: "reservations" },
     ],

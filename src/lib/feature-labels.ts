@@ -5,9 +5,11 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   online_ordering: "Commande en ligne",
   reservations: "Réservations",
   analytics: "Statistiques",
-  staff_management: "Gestion du personnel",
-  menu_editor: "Éditeur de menu",
+  staff_management: "Équipe",
+  menu_editor: "Menu",
   floor_plan: "Plan de salle",
   promotions: "Promotions",
   inventory: "Inventaire",
+  recipes: "Fiches techniques",
+  kds: "Écran cuisine (KDS)",
 };

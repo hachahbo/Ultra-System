@@ -47,29 +47,43 @@ export const getPublicMenu = unstable_cache(
       .maybeSingle();
     if (!restaurant) return null;
 
-    const [{ data: categories }, { data: items }, { data: promotions }] = await Promise.all([
-      supabase
-        .from("categories")
-        .select("*")
-        .eq("restaurant_id", restaurant.id)
-        .order("sort_order"),
-      supabase
-        .from("items")
-        .select("*")
-        .eq("restaurant_id", restaurant.id)
-        .order("sort_order"),
-      supabase
-        .from("promotions")
-        .select("*")
-        .eq("restaurant_id", restaurant.id)
-        .eq("active", true)
-        .order("sort_order"),
-    ]);
+    const [{ data: categories }, { data: items }, { data: availableItems }, { data: promotions }] =
+      await Promise.all([
+        supabase
+          .from("categories")
+          .select("*")
+          .eq("restaurant_id", restaurant.id)
+          .order("sort_order"),
+        supabase
+          .from("items")
+          .select("*")
+          .eq("restaurant_id", restaurant.id)
+          .order("sort_order"),
+        // get_available_menu (0013_recipes.sql) returns the subset of
+        // in_stock=true items whose recipe ingredients still cover ≥1
+        // serving — items with no recipe are always included. Used below
+        // to auto-86 recipe-linked items while still listing everything
+        // (grayed out), matching the existing manual-86 UX rather than
+        // hiding items outright.
+        supabase.rpc("get_available_menu", { rid: restaurant.id }),
+        supabase
+          .from("promotions")
+          .select("*")
+          .eq("restaurant_id", restaurant.id)
+          .eq("active", true)
+          .order("sort_order"),
+      ]);
+
+    const availableIds = new Set((availableItems ?? []).map((i: { id: string }) => i.id));
+    const itemsWithAvailability = (items ?? []).map((item) => ({
+      ...item,
+      in_stock: item.in_stock && availableIds.has(item.id),
+    }));
 
     return {
       restaurant: restaurant as Restaurant,
       categories: categories ?? [],
-      items: items ?? [],
+      items: itemsWithAvailability,
       promotions: promotions ?? [],
     } as PublicMenu;
   },

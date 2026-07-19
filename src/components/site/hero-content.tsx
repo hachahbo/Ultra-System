@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +15,6 @@ export function HeroContent({
   sub?: string;
   ctaLabel?: string;
 }) {
-  const transition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const };
-
   return (
     <div className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full">
       {/* 1. Title */}

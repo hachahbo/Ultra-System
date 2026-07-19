@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -522,13 +523,18 @@ function RecipeLinkCard() {
         Chaque commande déduit automatiquement les ingrédients. Ex : 1 Taco Al Pastor = 120g porc, 2
         tortillas, 30g oignon.
       </p>
-      <button
-        type="button"
-        onClick={() => toast.info("Bientôt disponible")}
+      <Link
+        href="/dashboard/menu"
         className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary"
       >
         Configurer <ChevronRight className="size-3.5" />
-      </button>
+      </Link>
+      <Link
+        href="/dashboard/inventory/variances"
+        className="mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
+      >
+        Voir les écarts de stock <ChevronRight className="size-3" />
+      </Link>
     </div>
   );
 }

@@ -30,7 +30,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Mise à jour impossible" }, { status: 500 });
   }
 
-  await admin.from("profiles").update({ must_change_password: false }).eq("id", user.id);
+  const { data: profile } = await admin
+    .from("profiles")
+    .update({ must_change_password: false })
+    .eq("id", user.id)
+    .select("role")
+    .single();
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, role: profile?.role ?? null });
 }

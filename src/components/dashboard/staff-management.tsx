@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { initialsOf } from "@/lib/avatar";
 import { formatDateTime } from "@/lib/format";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { staffSchema, type StaffInput } from "@/lib/schemas";
@@ -97,16 +98,6 @@ function displayNameOf(email: string) {
   return local
     .replace(/[._]/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 export function StaffManagement() {

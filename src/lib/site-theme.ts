@@ -24,6 +24,11 @@ export const PREVIEW_COOKIE = "darna_preview";
  * Reading cookies() here makes any [slug] route dynamic (opts out of the
  * full route cache) — an accepted trade-off (plan D5): the underlying data
  * reads stay behind unstable_cache, so DB load is unchanged.
+ *
+ * Confirmed again via a real generateStaticParams + build attempt (see the
+ * comment above generateMetadata in src/app/[slug]/layout.tsx) — this is
+ * the reason ISR/static generation doesn't apply to [slug]/*, not a build
+ * misconfiguration.
  */
 export const getSiteTheme = cache(
   async (restaurant: Pick<Restaurant, "id">): Promise<{ theme: ResolvedTheme; preview: boolean }> => {

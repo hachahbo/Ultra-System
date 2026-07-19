@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { WebVitalsReporter } from "@/components/web-vitals-reporter";
 import { rootFontClassNames } from "@/lib/fonts";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster position="top-center" richColors />
+          <WebVitalsReporter />
         </ThemeProvider>
       </body>
     </html>

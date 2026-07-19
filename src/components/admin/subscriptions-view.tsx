@@ -25,6 +25,7 @@ import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlanBadge } from "@/components/admin/badges";
 import { SubscriptionEditDialog } from "@/components/admin/subscription-edit-dialog";
+import { initialsOf } from "@/lib/avatar";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -69,16 +70,6 @@ const STATUS_DOT_CLASS: Record<Subscription["status"], string> = {
   past_due: "bg-destructive",
   canceled: "bg-muted-foreground",
 };
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function monthlyPrice(priceMad: number, billingCycle: string): number {
   return billingCycle === "yearly" ? priceMad / 12 : priceMad;

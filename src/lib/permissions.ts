@@ -27,6 +27,7 @@ export const ROUTE_ACCESS: { prefix: string; exact?: boolean; roles: Role[] }[] 
   { prefix: "/dashboard/tables", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/menu", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard/reservations", roles: ["owner", "manager", "serveur"] },
+  { prefix: "/dashboard/kds", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard/orders", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard", exact: true, roles: ["owner", "manager"] },
 ];
@@ -73,5 +74,7 @@ export function canWrite(role: Role, resource: Resource): boolean {
 // Safe landing page after a denied route / on login — never a route the
 // role itself can't see.
 export function defaultRouteFor(role: Role): string {
-  return role === "owner" || role === "manager" ? "/dashboard" : "/dashboard/orders";
+  if (role === "owner" || role === "manager") return "/dashboard";
+  if (role === "cuisine") return "/dashboard/kds";
+  return "/dashboard/orders";
 }

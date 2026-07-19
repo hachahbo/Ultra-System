@@ -23,12 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge, PlanBadge } from "@/components/admin/badges";
+import { StatusBadge, PlanBadge, PLAN_COLOR_CLASS } from "@/components/admin/badges";
 import { CreateRestaurantDialog } from "@/components/admin/create-restaurant-dialog";
 import { RestaurantDetailPanel } from "@/components/admin/restaurant-detail-panel";
+import { initialsOf } from "@/lib/avatar";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { AdminRestaurantRow, Plan } from "@/lib/types";
+import type { AdminRestaurantRow } from "@/lib/types";
 
 type Filters = { plan: string; status: string; city: string; q: string };
 
@@ -50,22 +51,6 @@ async function fetchRestaurants(filters: Filters, page: number) {
     limit: number;
     summary: RestaurantsSummary;
   }>;
-}
-
-const PLAN_AVATAR_CLASS: Record<Plan, string> = {
-  free: "bg-muted text-muted-foreground",
-  pro: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  enterprise: "bg-primary/10 text-primary",
-};
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 export function RestaurantsView() {
@@ -225,7 +210,8 @@ export function RestaurantsView() {
                       <div
                         className={cn(
                           "flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[11.5px] font-extrabold",
-                          PLAN_AVATAR_CLASS[r.plan],
+                          PLAN_COLOR_CLASS[r.plan].bg,
+                          PLAN_COLOR_CLASS[r.plan].text,
                         )}
                       >
                         {initialsOf(r.name)}

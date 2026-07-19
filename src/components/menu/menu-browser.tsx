@@ -226,7 +226,7 @@ export function MenuBrowser({
                 {/* ── Bottom Actions (Price Left, Add Right) ── */}
                 <div className="mt-4 flex w-full items-center justify-between z-20">
                   <span className="font-display text-xl font-black text-[#FF6B35]">
-                    {formatPrice(item.base_price, restaurant.currency).replace(".00", "")}
+                    {formatPrice(item.base_price, restaurant.currency)}
                   </span>
                   
                   {item.in_stock && orderingEnabled && (

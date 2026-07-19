@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { PLAN_COLOR_CLASS } from "@/components/admin/badges";
 import { Card } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,14 +27,13 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { initialsOf } from "@/lib/avatar";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Plan, RestaurantStatus } from "@/lib/types";
+import type { Plan } from "@/lib/types";
 
 type AdminAnalytics = {
   restaurantCount: number;
-  statusCounts: Record<RestaurantStatus, number>;
-  planCounts: Record<Plan, number>;
   activeSubscriptions: number;
   mrr: number;
   totalOrders: number;
@@ -99,16 +99,6 @@ const ONBOARDING_CLASS: Record<AdminAnalytics["recentSignups"][number]["onboardi
   menu: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 };
-
-function initialsOf(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function ChartEmpty({ message }: { message: string }) {
   return (
@@ -373,7 +363,82 @@ export function OverviewView() {
 
       {/* Franchises & groupes */}
       <FranchiseTree data={data.franchiseTree} />
+
+      {/* Core Web Vitals (RUM, ROADMAP-PHASE7.md Task 7.4.3) */}
+      <CoreWebVitals />
     </div>
+  );
+}
+
+type WebVitalRow = {
+  surface: string;
+  metric_name: "CLS" | "LCP" | "INP" | "FCP" | "TTFB";
+  p75: number;
+  sample_count: number;
+  good_rate: number;
+};
+
+const VITAL_UNIT: Record<WebVitalRow["metric_name"], "ms" | ""> = {
+  CLS: "",
+  LCP: "ms",
+  INP: "ms",
+  FCP: "ms",
+  TTFB: "ms",
+};
+
+const SURFACE_LABEL: Record<string, string> = {
+  storefront: "Site public",
+  dashboard: "Dashboard",
+  admin: "Super admin",
+  other: "Autre",
+};
+
+async function fetchVitals(): Promise<WebVitalRow[]> {
+  const res = await fetch("/api/admin/analytics/vitals?days=7");
+  if (!res.ok) throw new Error("fetch failed");
+  const body = await res.json();
+  return body.vitals ?? [];
+}
+
+function CoreWebVitals() {
+  const { data, isPending } = useQuery({
+    queryKey: ["admin-web-vitals"],
+    queryFn: fetchVitals,
+  });
+
+  const bySurface = new Map<string, WebVitalRow[]>();
+  for (const row of data ?? []) {
+    const list = bySurface.get(row.surface) ?? [];
+    list.push(row);
+    bySurface.set(row.surface, list);
+  }
+
+  return (
+    <Card className="p-4">
+      <p className="text-sm font-medium">Core Web Vitals — P75, 7 derniers jours</p>
+      {isPending ? (
+        <Skeleton className="mt-3 h-16 w-full rounded-xl" />
+      ) : bySurface.size === 0 ? (
+        <ChartEmpty message="Pas encore de données de performance réelle." />
+      ) : (
+        <div className="mt-3 space-y-2">
+          {[...bySurface.entries()].map(([surface, rows]) => (
+            <div key={surface} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px]">
+              <span className="w-24 shrink-0 font-bold text-foreground">{SURFACE_LABEL[surface] ?? surface}</span>
+              {rows.map((r) => (
+                <span key={r.metric_name} className="flex items-center gap-1 text-muted-foreground">
+                  <span className="font-semibold text-foreground">{r.metric_name}</span>
+                  {r.metric_name === "CLS" ? r.p75.toFixed(2) : `${Math.round(r.p75)}${VITAL_UNIT[r.metric_name]}`}
+                  <span className={r.good_rate >= 0.75 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
+                    ({Math.round(r.good_rate * 100)}% bon)
+                  </span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -453,12 +518,6 @@ function HealthKpi({
   );
 }
 
-const PLAN_PILL_CLASS: Record<Plan, string> = {
-  free: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  pro: "bg-primary/10 text-primary",
-  enterprise: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-};
-
 function FranchiseTree({ data }: { data: AdminAnalytics["franchiseTree"] }) {
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(data.map((p) => [p.id, true])),
@@ -518,7 +577,7 @@ function FranchiseTree({ data }: { data: AdminAnalytics["franchiseTree"] }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={cn("rounded-full font-bold", PLAN_PILL_CLASS[parent.plan])}>{parent.plan}</Badge>
+                      <Badge className={cn("rounded-full font-bold", PLAN_COLOR_CLASS[parent.plan].bg, PLAN_COLOR_CLASS[parent.plan].text)}>{parent.plan}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-bold">{formatPrice(parent.mrr)}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{parent.orders30d}</TableCell>
@@ -533,7 +592,7 @@ function FranchiseTree({ data }: { data: AdminAnalytics["franchiseTree"] }) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={cn("rounded-full font-bold", PLAN_PILL_CLASS[b.plan])}>{b.plan}</Badge>
+                          <Badge className={cn("rounded-full font-bold", PLAN_COLOR_CLASS[b.plan].bg, PLAN_COLOR_CLASS[b.plan].text)}>{b.plan}</Badge>
                         </TableCell>
                         <TableCell className="text-right font-semibold text-muted-foreground">{formatPrice(b.mrr)}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{b.orders30d}</TableCell>

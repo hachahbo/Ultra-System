@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronUp,
+  ClipboardList,
   Pencil,
   Plus,
   Trash2,
@@ -45,15 +46,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ItemFormDialog } from "@/components/dashboard/item-form";
+import { RecipeEditorDialog } from "@/components/dashboard/recipe-editor";
 import { formatPrice } from "@/lib/format";
-import type { Category, Item } from "@/lib/types";
+import type { Category, FeatureKey, Item, MenuItemCost } from "@/lib/types";
 import { canWrite, type Role } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 type MenuData = {
   restaurant_id: string;
   role: Role;
+  features: Record<FeatureKey, boolean>;
   categories: Category[];
   items: Item[];
+  costs: MenuItemCost[];
 };
 
 async function fetchMenu(): Promise<MenuData> {
@@ -79,6 +84,7 @@ export function MenuManager() {
   });
   const [editing, setEditing] = useState<Item | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<Item | null>(null);
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ["dashboard-menu"] });
@@ -134,6 +140,8 @@ export function MenuManager() {
   }
 
   const isOwner = canWrite(data.role, "menu");
+  const showCosts = data.features.recipes;
+  const costByItem = new Map(data.costs.map((c) => [c.menu_item_id, c]));
   const sortedCategories = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
 
   function moveCategory(index: number, dir: -1 | 1) {
@@ -276,6 +284,12 @@ export function MenuManager() {
                     <TableHead className="w-[70px] pl-5">IMAGE</TableHead>
                     <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ARTICLE</TableHead>
                     <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">PRIX</TableHead>
+                    {showCosts && (
+                      <>
+                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">COÛT</TableHead>
+                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">MARGE</TableHead>
+                      </>
+                    )}
                     <TableHead className="w-[120px] text-center font-bold text-[11px] text-muted-foreground uppercase tracking-wider">EN STOCK</TableHead>
                     {isOwner && <TableHead className="w-[200px] text-right pr-5 font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ACTIONS</TableHead>}
                   </TableRow>
@@ -318,6 +332,34 @@ export function MenuManager() {
                           {formatPrice(item.base_price)}
                         </div>
                       </TableCell>
+                      {showCosts && (() => {
+                        const cost = costByItem.get(item.id);
+                        return (
+                          <>
+                            <TableCell className="text-[12.5px] font-semibold text-muted-foreground">
+                              {cost ? formatPrice(cost.computed_cost) : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={cn(
+                                  "text-[12.5px] font-bold",
+                                  cost?.margin_pct === null || cost?.margin_pct === undefined
+                                    ? "text-muted-foreground"
+                                    : cost.margin_pct >= 60
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : cost.margin_pct >= 35
+                                        ? "text-amber-600 dark:text-amber-400"
+                                        : "text-destructive",
+                                )}
+                              >
+                                {cost?.margin_pct === null || cost?.margin_pct === undefined
+                                  ? "—"
+                                  : `${cost.margin_pct.toFixed(0)}%`}
+                              </span>
+                            </TableCell>
+                          </>
+                        );
+                      })()}
                       <TableCell className="text-center">
                         <Switch
                           checked={item.in_stock}
@@ -353,6 +395,17 @@ export function MenuManager() {
                               <ChevronDown className="size-4 text-muted-foreground" />
                             </Button>
                             <div className="w-px h-4 bg-border mx-1" />
+                            {showCosts && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Fiche technique de ${item.name_fr}`}
+                                onClick={() => setEditingRecipe(item)}
+                                className="hover:bg-muted hover:text-foreground text-muted-foreground"
+                              >
+                                <ClipboardList className="size-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -382,7 +435,10 @@ export function MenuManager() {
                   ))}
                   {items.length === 0 && (
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={isOwner ? 5 : 4} className="h-24 text-center text-muted-foreground text-[13px]">
+                      <TableCell
+                        colSpan={4 + (showCosts ? 2 : 0) + (isOwner ? 1 : 0)}
+                        className="h-24 text-center text-muted-foreground text-[13px]"
+                      >
                         Aucun article dans cette catégorie.
                       </TableCell>
                     </TableRow>
@@ -406,6 +462,16 @@ export function MenuManager() {
           onSaved={() => {
             setCreating(false);
             setEditing(null);
+            refresh();
+          }}
+        />
+      )}
+
+      {editingRecipe && (
+        <RecipeEditorDialog
+          item={editingRecipe}
+          onClose={() => {
+            setEditingRecipe(null);
             refresh();
           }}
         />

@@ -53,7 +53,7 @@ export function FormulesSection({
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="font-display text-lg font-black text-primary">
-                    {formatPrice(promotion.price, currency).replace(".00", "")}
+                    {formatPrice(promotion.price, currency)}
                   </span>
                   <motion.span
                     animate={{ rotate: isOpen ? 180 : 0 }}

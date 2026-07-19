@@ -8,6 +8,17 @@ import { buildThemeCss } from "@/lib/theme";
 import { FONT_PAIRS } from "@/lib/fonts";
 import { siteFontClassNames } from "@/lib/fonts-site";
 
+// generateStaticParams + `export const revalidate` were tried here
+// (ROADMAP.md Phase 5, Task 5.2) and reverted: they compiled and correctly
+// listed active restaurant slugs, but built as fully dynamic (ƒ) anyway —
+// getSiteTheme (src/lib/site-theme.ts) reads cookies() unconditionally for
+// the Super Admin theme-preview flow, which forces this whole subtree
+// dynamic regardless of static params. That's an existing, deliberate
+// trade-off ("plan D5" in that file's comment), not a bug. Real ISR here
+// would need the preview mechanism reworked first (e.g. a distinct
+// `/preview/[slug]` route instead of a cookie check on every request) —
+// out of scope for this pass; noted so it isn't silently re-attempted.
+
 export async function generateMetadata({
   params,
 }: {

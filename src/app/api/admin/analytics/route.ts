@@ -4,7 +4,7 @@ import { requireSuperAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLastSignInMap } from "@/lib/auth-users";
 import { computeFinancialSummary, isActiveOrTrialing, monthlyPrice } from "@/lib/analytics-math";
-import { dayBucket, weekBucket, startOfTodayCasa } from "@/lib/time";
+import { weekBucket, startOfTodayCasa } from "@/lib/time";
 import type { Plan, RestaurantStatus } from "@/lib/types";
 
 const DAYS = 30;
@@ -40,7 +40,7 @@ async function computeAnalytics() {
   const [
     { data: restaurants },
     { data: subscriptions },
-    { data: orders },
+    { data: orderAggregates },
     { data: items },
     { data: profiles },
     { data: expiring },
@@ -51,11 +51,10 @@ async function computeAnalytics() {
     admin
       .from("subscriptions")
       .select("restaurant_id, status, plan_tier, billing_cycle, price_mad, created_at, canceled_at"),
-    admin
-      .from("orders")
-      .select("restaurant_id, created_at, total")
-      .gte("created_at", from30.toISOString())
-      .limit(20_000),
+    // get_order_aggregates (0016_analytics_orders_rollup.sql) — one row per
+    // restaurant per active day, pre-summed in Postgres, instead of fetching
+    // up to 20,000 raw order rows just to bucket them here.
+    admin.rpc("get_order_aggregates", { days_back: DAYS }),
     admin.from("items").select("restaurant_id"),
     admin.from("profiles").select("id, restaurant_id, role"),
     admin
@@ -94,15 +93,12 @@ async function computeAnalytics() {
   }));
 
   // --- Restaurant counts -----------------------------------------------
-  const statusCounts: Record<RestaurantStatus, number> = {
-    active: 0,
-    trial: 0,
-    suspended: 0,
-    expired: 0,
-  };
+  // planCounts is intermediate-only (folded into planDistribution below,
+  // which is what the client actually renders) — not sent in the response.
+  // statusCounts was computed and never consumed anywhere; removed outright
+  // rather than shipped as dead payload (ROADMAP.md Phase 5, Task 5.1).
   const planCounts: Record<Plan, number> = { free: 0, pro: 0, enterprise: 0 };
   for (const r of restaurantRows) {
-    statusCounts[r.status] += 1;
     planCounts[r.plan] += 1;
   }
   const planDistribution = (Object.keys(planCounts) as Plan[])
@@ -131,30 +127,45 @@ async function computeAnalytics() {
   const activeSubs = subscriptionRows.filter(isActiveOrTrialing);
   const pastDueSubs = subscriptionRows.filter((s) => s.status === "past_due");
 
-  // --- Orders (30d) ------------------------------------------------------
-  const orderRows = (orders ?? []) as { restaurant_id: string; created_at: string; total: number }[];
+  // --- Orders (30d) — reshaped from get_order_aggregates's per-restaurant,
+  // per-day rows (already summed in Postgres) rather than raw order rows ---
+  const aggregateRows = (orderAggregates ?? []) as {
+    restaurant_id: string;
+    day: string;
+    revenue: number;
+    order_count: number;
+  }[];
   const seriesMap = new Map<string, { revenue: number; orders: number }>();
   const ordersByRestaurant = new Map<string, number>();
   const orders7dByRestaurant = new Map<string, number>();
   let totalOrders = 0;
   let totalRevenue = 0;
-  for (const o of orderRows) {
-    const key = dayBucket(o.created_at);
+  for (const a of aggregateRows) {
+    // a.day is already a Casablanca-local calendar date (get_order_aggregates
+    // buckets in that timezone) — used as the series key directly, not run
+    // through dayBucket() again, which would re-shift an already-local date.
+    const key = a.day;
     const entry = seriesMap.get(key) ?? { revenue: 0, orders: 0 };
-    entry.revenue += Number(o.total);
-    entry.orders += 1;
+    entry.revenue += Number(a.revenue);
+    entry.orders += Number(a.order_count);
     seriesMap.set(key, entry);
-    totalOrders += 1;
-    totalRevenue += Number(o.total);
+    totalOrders += Number(a.order_count);
+    totalRevenue += Number(a.revenue);
 
-    ordersByRestaurant.set(o.restaurant_id, (ordersByRestaurant.get(o.restaurant_id) ?? 0) + 1);
-    if (new Date(o.created_at) >= from7) {
-      orders7dByRestaurant.set(o.restaurant_id, (orders7dByRestaurant.get(o.restaurant_id) ?? 0) + 1);
+    ordersByRestaurant.set(
+      a.restaurant_id,
+      (ordersByRestaurant.get(a.restaurant_id) ?? 0) + Number(a.order_count),
+    );
+    if (new Date(a.day) >= from7) {
+      orders7dByRestaurant.set(
+        a.restaurant_id,
+        (orders7dByRestaurant.get(a.restaurant_id) ?? 0) + Number(a.order_count),
+      );
     }
   }
   const revenueSeries = [...seriesMap.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, v]) => ({ date, ...v }));
+    .map(([date, v]) => ({ date, revenue: Math.round(v.revenue * 100) / 100, orders: v.orders }));
 
   // --- Acquisition vs churn, 8 weeks --------------------------------------
   const acqMap = new Map<string, { new: number; lost: number }>();
@@ -269,8 +280,6 @@ async function computeAnalytics() {
 
   return {
     restaurantCount: restaurantRows.length,
-    statusCounts,
-    planCounts,
     activeSubscriptions: activeSubs.length,
     mrr,
     totalOrders,
