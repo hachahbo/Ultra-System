@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>À propos — rendez-vous</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0c0c10; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0c0c10; z-index: 9999; }
+    #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
+    #__bundler_placeholder { color: #999; font-size: 14px; }
+  </style>
+  <noscript>
+    <style>#__bundler_loading { display: none; }</style>
+    <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
+      This page requires JavaScript to display.
+    </div>
+  </noscript>
+</head>
+<body>
+  <div id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#0c0c10"></rect>
+    <circle cx="50" cy="42" r="10" fill="#ff5a1f"></circle>
+    <rect x="30" y="60" width="40" height="6" rx="3" fill="#fdf1e7"></rect>
+  </svg>
+</div>
+  <div id="__bundler_loading">Unpacking...</div>
+
+  <script>
+    
+document.addEventListener('DOMContentLoaded', async function() {
+  const loading = document.getElementById('__bundler_loading');
+  function setStatus(msg) { if (loading) loading.textContent = msg; }
+
+  const FONT_MIME = /^(font[/]|application[/](x-)?font-|application[/]vnd\.ms-fontobject)/i;
+  const MIME_TOKEN = /^[\w.+-]+[/][\w.+-]+$/;
+  function toBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  // Error sink persists across replaceWith since it's on window, not the DOM.
+  window.addEventListener('error', function(e) {
+    // Failed resource loads (CSP-blocked links, scripts, images) fire plain
+    // events at the element — warn only; real JS errors carry message/error.
+    if (!e.message && !e.error && e.target && e.target !== window) {
+      console.warn('[bundle] resource failed to load:',
+        e.target.tagName, String(e.target.src || e.target.href || ''));
+      return;
+    }
+    var p = document.body || document.documentElement;
+    var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
+    d.id = '__bundler_err';
+    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
+    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
+      '[bundle] ' + (e.message || e.type) +
+      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+  }, true);
+
+  try {
+    const manifestEl = document.querySelector('script[type="__bundler/manifest"]');
+    const templateEl = document.querySelector('script[type="__bundler/template"]');
+    if (!manifestEl || !templateEl) {
+      setStatus('Error: missing bundle data');
+      console.error('[bundler] Missing script tags — manifestEl:', !!manifestEl, 'templateEl:', !!templateEl);
+      return;
+    }
+
+    const manifest = JSON.parse(manifestEl.textContent);
+    let template = JSON.parse(templateEl.textContent);
+
+    const uuids = Object.keys(manifest);
+    setStatus('Unpacking ' + uuids.length + ' assets...');
+
+    const blobUrls = {};
+    const resourceBlobs = {};
+    await Promise.all(uuids.map(async (uuid) => {
+      const entry = manifest[uuid];
+      try {
+        const binaryStr = atob(entry.data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        let finalBytes = bytes;
+        if (entry.compressed) {
+          if (typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            let totalLen = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              totalLen += value.length;
+            }
+            finalBytes = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) { finalBytes.set(chunk, offset); offset += chunk.length; }
+          } else {
+            console.warn('DecompressionStream not available, asset ' + uuid + ' may not render');
+          }
+        }
+
+        if (FONT_MIME.test(entry.mime) && MIME_TOKEN.test(entry.mime)) {
+          // Strict artifact hosts allow font-src data: but not blob:.
+          blobUrls[uuid] = 'data:' + entry.mime + ';base64,' +
+            (entry.compressed ? toBase64(finalBytes) : entry.data);
+        } else {
+          const blob = new Blob([finalBytes], { type: entry.mime });
+          blobUrls[uuid] = URL.createObjectURL(blob);
+          resourceBlobs[blobUrls[uuid]] = blob;
+        }
+      } catch (err) {
+        console.error('Failed to decode asset ' + uuid + ':', err);
+        const blob = new Blob([], { type: entry.mime });
+        blobUrls[uuid] = URL.createObjectURL(blob);
+        resourceBlobs[blobUrls[uuid]] = blob;
+      }
+    }));
+
+    const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
+    const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
+    const resourceMap = {};
+    for (const entry of extResources) {
+      if (blobUrls[entry.uuid]) resourceMap[entry.id] = blobUrls[entry.uuid];
+    }
+
+    // Artifact-host CSP (connect-src 'self') refuses fetch() of blob: URLs —
+    // consumers read these Blobs directly. Survives the swap like the error sink.
+    window.__resourceBlobs = resourceBlobs;
+
+    setStatus('Rendering...');
+    for (const uuid of uuids) template = template.split(uuid).join(blobUrls[uuid]);
+
+    // Strip integrity + crossorigin — blob URLs from a file:// document inherit
+    // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
+    // The manifest bytes are ours; SRI protects against CDN compromise, not this.
+    template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
+
+    const resourceScript = '<script>window.__resources = ' +
+      JSON.stringify(resourceMap).replace(/<\//g, '<\\/') +
+      ';</' + 'script>';
+    // Inject after <head> so the DOCTYPE stays first; prepending the script
+    // would push the parser into quirks mode. DOMParser always emits a <head>
+    // (synthesizing one if the source HTML omitted it) but may carry
+    // attributes through, so match the full opening tag. slice() rather than
+    // replace() keeps us clear of $-pattern substitution in resourceScript.
+    const headOpen = template.match(/<head[^>]*>/i);
+    if (headOpen) {
+      const i = headOpen.index + headOpen[0].length;
+      template = template.slice(0, i) + resourceScript + template.slice(i);
+    }
+
+    // Parse the template and swap the root element. Scripts inserted via
+    // DOMParser/replaceWith are inert per spec — re-create each with
+    // createElement so they execute, awaiting onload for src scripts to
+    // preserve ordering (React before ReactDOM before Babel before text/babel).
+    const doc = new DOMParser().parseFromString(template, 'text/html');
+    document.documentElement.replaceWith(doc.documentElement);
+    const dead = Array.from(document.scripts);
+    for (const old of dead) {
+      const s = document.createElement('script');
+      for (const a of old.attributes) s.setAttribute(a.name, a.value);
+      s.textContent = old.textContent;
+      // text/babel scripts with a src: read and inline. transformScriptTags
+      // does XHR against the src, but blob:null/ from a file:// origin is
+      // silently dropped. Inlining makes it a plain inline babel script,
+      // which transformScriptTags handles unconditionally.
+      if ((s.type === 'text/babel' || s.type === 'text/jsx') && s.src) {
+        const pre = resourceBlobs[s.src.split('#')[0]];
+        s.textContent = pre ? await pre.text() : await (await fetch(s.src)).text();
+        s.removeAttribute('src');
+      }
+      const p = s.src ? new Promise(function(r) { s.onload = s.onerror = r; }) : null;
+      old.replaceWith(s);
+      if (p) await p;
+    }
+    // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
+    // which fired before we swapped the document. Trigger manually if present.
+    if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
+      window.Babel.transformScriptTags();
+    }
+  } catch (err) {
+    setStatus('Error unpacking: ' + err.message);
+    console.error('Bundle unpack error:', err);
+  }
+});
+
+  </script>
+
+  <script type="__bundler/manifest">
+{}
+  </script>
+
+  <script type="__bundler/ext_resources">
+[]
+  </script>
+
+  <script type="__bundler/template">
+"<!DOCTYPE html>\n<html lang=\"fr\"><head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>À propos — rendez-vous<\u002Ftitle>\n\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Helvetica&amp;display=swap\" rel=\"stylesheet\">\n<style>\n  body { margin: 0; background: #fdf1e7; font-family: -apple-system, BlinkMacSystemFont, \"Helvetica Neue\", Arial, sans-serif; }\n  .serif { font-family: \"Playfair Display\", Georgia, serif; }\n  a { color: inherit; text-decoration: none; }\n  .nav-link { color:#c9c9d1; font-size:14px; font-weight:600; }\n  .nav-link:hover { color:#fff; }\n  .btn-ghost:hover { background:#232329; }\n  .btn-white:hover, .btn-outline:hover, .btn-outline-navy:hover, .btn-dark:hover { opacity:0.85; }\n<\u002Fstyle>\n<\u002Fhead>\n<body>\n\n<div style=\"background:#fdf1e7; width:100%; overflow:hidden;\">\n\n  <!-- Navbar -->\n  <div style=\"background:#0c0c10; display:flex; align-items:center; justify-content:space-between; padding:20px 48px;\">\n    <div style=\"display:flex; gap:32px;\">\n      <a href=\"#\" class=\"nav-link\">Menu<\u002Fa>\n      <a href=\"#\" class=\"nav-link\">Events<\u002Fa>\n      <a href=\"#\" class=\"nav-link\">Gallery<\u002Fa>\n      <a href=\"#\" style=\"color:#fff; font-size:14px; font-weight:600;\">About<\u002Fa>\n      <a href=\"#\" class=\"nav-link\">Contact<\u002Fa>\n    <\u002Fdiv>\n    <div style=\"display:flex; align-items:center; gap:8px;\">\n      <div style=\"width:20px; height:20px; border-radius:50%; background:#ff5a1f;\"><\u002Fdiv>\n      <span style=\"color:#fff; font-size:16px; font-weight:700;\">rendez-vous<\u002Fspan>\n    <\u002Fdiv>\n    <div style=\"display:flex; align-items:center; gap:14px;\">\n      <div style=\"width:34px; height:34px; border-radius:50%; background:#1b1b22; display:flex; align-items:center; justify-content:center;\">\n        <div style=\"width:14px; height:14px; border-radius:50%; background:transparent; box-shadow:5px -1px 0 0 #cfcfd6;\"><\u002Fdiv>\n      <\u002Fdiv>\n      <div class=\"btn-white\" style=\"background:#fff; color:#0c0c10; font-size:14px; font-weight:700; padding:11px 22px; border-radius:24px; cursor:pointer;\">Book a table<\u002Fdiv>\n    <\u002Fdiv>\n  <\u002Fdiv>\n\n  <!-- Hero -->\n  <div style=\"background:#0c0c10; padding:64px 48px 90px; text-align:center;\">\n    <h1 class=\"serif\" style=\"color:#fff; font-size:48px; font-weight:700; margin:0 0 18px;\">Qui sommes-nous<\u002Fh1>\n    <p style=\"color:#9a9aa3; font-size:17px; margin:0 0 28px;\">Les meilleurs tacos de Tanger depuis 2015.<\u002Fp>\n    <div style=\"display:flex; gap:12px; justify-content:center;\">\n      <div class=\"btn-ghost\" style=\"border:1px solid #33333b; color:#e6e6ea; font-size:14px; font-weight:600; padding:12px 24px; border-radius:24px; cursor:pointer;\">Voir le menu<\u002Fdiv>\n      <div class=\"btn-white\" style=\"background:#fff; color:#0c0c10; font-size:14px; font-weight:600; padding:12px 24px; border-radius:24px; cursor:pointer;\">Réserver une table<\u002Fdiv>\n    <\u002Fdiv>\n  <\u002Fdiv>\n\n  <!-- Intro -->\n  <div style=\"max-width:1180px; margin:0 auto; padding:90px 48px 60px; display:flex; gap:64px; flex-wrap:wrap;\">\n    <h2 class=\"serif\" style=\"flex:1 1 400px; font-size:46px; font-weight:700; color:#171314; margin:0; line-height:1.15;\">Bienvenue chez rendez-vous.<\u002Fh2>\n    <div style=\"flex:1 1 420px; color:#3b3736; font-size:16px; line-height:1.7;\">\n      <p style=\"font-weight:600; margin:0 0 14px;\">Un lieu pensé comme une maison pour que vous vous y sentiez bien à tout moment.<\u002Fp>\n      <p style=\"margin:0;\">À vous de décider où vous préférez vous installer pour vous restaurer&nbsp;: dans notre salon, notre jardin d'hiver, sous notre verrière, ou sur notre terrasse, nous vous accueillons toute la journée pour partager avec vous notre passion du bien manger. Dans notre épicerie pensée et menuisée comme une bibliothèque, vous pouvez retrouver tous les produits que vous avez dégustés, ainsi que ceux réalisés par les producteurs et artisans avec lesquels nous collaborons.<\u002Fp>\n    <\u002Fdiv>\n  <\u002Fdiv>\n\n  <!-- Navy feature block -->\n  <div style=\"max-width:1180px; margin:0 auto 32px; padding:0 48px;\">\n    <div style=\"position:relative; background:#10243f; border-radius:28px; display:flex; flex-wrap:wrap; overflow:hidden;\">\n      <div style=\"flex:1 1 380px; min-height:340px; background:repeating-linear-gradient(135deg, #1a3457, #1a3457 12px, #16304f 12px, #16304f 24px); display:flex; align-items:center; justify-content:center; color:#9fb3cc; font-family:monospace; font-size:13px; margin:24px; border-radius:20px;\">table photo<\u002Fdiv>\n      <div style=\"flex:1 1 380px; padding:48px 48px 48px 8px; display:flex; flex-direction:column; justify-content:center; gap:16px;\">\n        <h3 class=\"serif\" style=\"color:#fff; font-size:34px; font-weight:700; margin:0;\">Bienvenue à la maison !<\u002Fh3>\n        <p style=\"color:#b9c4d3; font-size:15px; line-height:1.7; margin:0;\">Nous vous accueillons toute la journée, en coup de vent ou plus longtemps, seul, en famille ou entre amis. Venez vous attabler et passer un joli moment autour d'un verre, d'un café ou d'un thé et ainsi partager notre passion du bien manger.<\u002Fp>\n        <div class=\"btn-outline-navy\" style=\"align-self:flex-start; background:transparent; border:1px solid #4a6180; color:#fff; font-size:13px; font-weight:700; letter-spacing:0.4px; padding:13px 22px; border-radius:24px; cursor:pointer; margin-top:8px;\">DÉCOUVREZ NOTRE MAISON<\u002Fdiv>\n      <\u002Fdiv>\n\n      <div style=\"position:absolute; right:28px; top:28px; background:#fff; border-radius:16px; padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:0 8px 24px rgba(0,0,0,0.25);\">\n        <div style=\"display:flex; align-items:center; gap:6px;\">\n          <span style=\"font-size:20px; font-weight:700; color:#171314;\">4.7<\u002Fspan>\n          <span style=\"color:#ff5a1f; font-size:18px;\">★<\u002Fspan>\n        <\u002Fdiv>\n        <div style=\"width:1px; height:26px; background:#eee;\"><\u002Fdiv>\n        <span style=\"font-size:12px; color:#6b6b76;\">518 avis clients<\u002Fspan>\n      <\u002Fdiv>\n    <\u002Fdiv>\n  <\u002Fdiv>\n\n  <!-- Two cards row -->\n  <div style=\"max-width:1180px; margin:0 auto; padding:0 48px 100px; display:flex; gap:24px; flex-wrap:wrap;\">\n    <div style=\"flex:1 1 340px; background:#f9dede; border-radius:28px; padding:40px; display:flex; flex-direction:column; gap:16px;\">\n      <h3 class=\"serif\" style=\"font-size:26px; font-weight:700; color:#171314; margin:0; line-height:1.25;\">Petit déjeuner, déjeuner, goûter, apéro, brunch, café, ...<\u002Fh3>\n      <p style=\"color:#5a4f4d; font-size:14px; line-height:1.6; margin:0;\">Votre bonheur à n'importe quel moment de la journée. Notre carte évolue tous les 15 jours avec des ingrédients frais et locaux.<\u002Fp>\n      <div class=\"btn-dark\" style=\"align-self:flex-start; background:#171314; color:#fff; font-size:12px; font-weight:700; letter-spacing:0.4px; padding:12px 20px; border-radius:22px; cursor:pointer; margin-top:6px;\">VOIR LE MENU<\u002Fdiv>\n      <div style=\"margin-top:12px; height:150px; border-radius:18px; background:repeating-linear-gradient(135deg, #f0c6c6, #f0c6c6 12px, #ecbcbc 12px, #ecbcbc 24px); display:flex; align-items:center; justify-content:center; color:#a56464; font-family:monospace; font-size:13px;\">dish photo<\u002Fdiv>\n    <\u002Fdiv>\n\n    <div style=\"flex:1 1 340px; background:#b5651d; border-radius:28px; padding:40px; display:flex; flex-direction:column; gap:16px;\">\n      <div style=\"height:150px; border-radius:18px; background:repeating-linear-gradient(135deg, #c47934, #c47934 12px, #bd6f28 12px, #bd6f28 24px); display:flex; align-items:center; justify-content:center; color:#f2d9bd; font-family:monospace; font-size:13px;\">interior photo<\u002Fdiv>\n      <h3 class=\"serif\" style=\"font-size:26px; font-weight:700; color:#fff; margin:0;\">Privatisation<\u002Fh3>\n      <p style=\"color:#f3ddc7; font-size:14px; line-height:1.6; margin:0;\">Besoin d'organiser un événement mémorable, un déjeuner d'affaires réussi ou une fête d'anniversaire ? N'hésitez pas à nous contacter.<\u002Fp>\n      <div class=\"btn-outline\" style=\"align-self:flex-start; background:transparent; border:1px solid rgba(255,255,255,0.5); color:#fff; font-size:12px; font-weight:700; letter-spacing:0.4px; padding:12px 20px; border-radius:22px; cursor:pointer; margin-top:6px;\">DEMANDE DE PRIVATISATION<\u002Fdiv>\n    <\u002Fdiv>\n  <\u002Fdiv>\n\n  <!-- Footer -->\n  <div style=\"background:#0c0c10; padding:56px 48px 32px;\">\n    <div style=\"max-width:1180px; margin:0 auto; display:flex; justify-content:space-between; flex-wrap:wrap; gap:40px; padding-bottom:36px; border-bottom:1px solid #232329;\">\n      <div style=\"display:flex; align-items:center; gap:8px;\">\n        <div style=\"width:20px; height:20px; border-radius:50%; background:#ff5a1f;\"><\u002Fdiv>\n        <span style=\"color:#fff; font-size:16px; font-weight:700;\">rendez-vous<\u002Fspan>\n      <\u002Fdiv>\n      <div>\n        <div style=\"color:#8f8f99; font-size:12px; font-weight:700; letter-spacing:0.5px; margin-bottom:14px;\">NAVIGATION<\u002Fdiv>\n        <div style=\"color:#c9c9d1; font-size:14px; line-height:2.2;\">Menu<br>Events<br>Gallery<\u002Fdiv>\n      <\u002Fdiv>\n      <div>\n        <div style=\"color:#8f8f99; font-size:12px; font-weight:700; letter-spacing:0.5px; margin-bottom:14px;\">DISHES<\u002Fdiv>\n        <div style=\"color:#c9c9d1; font-size:14px; line-height:2.2;\">Fish &amp; Viggies<\u002Fdiv>\n      <\u002Fdiv>\n      <div>\n        <div style=\"color:#8f8f99; font-size:12px; font-weight:700; letter-spacing:0.5px; margin-bottom:14px;\">FOLLOW US<\u002Fdiv>\n        <div style=\"color:#c9c9d1; font-size:14px;\">Instagram<\u002Fdiv>\n      <\u002Fdiv>\n    <\u002Fdiv>\n    <div style=\"max-width:1180px; margin:0 auto; padding-top:20px; color:#5a5a63; font-size:12px;\">© 2026 rendez-vous. Tous droits réservés.<\u002Fdiv>\n  <\u002Fdiv>\n\n<\u002Fdiv>\n\n\n<\u002Fbody><\u002Fhtml>"
+  </script>
+</body>
+</html>
