@@ -18,8 +18,16 @@ export function Footer({
         <div className="absolute left-4 right-4 top-0 -translate-y-1/2 mx-auto max-w-5xl z-10">
           <div className="relative overflow-hidden rounded-3xl shadow-xl">
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: "url('/images/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg')" }}
+              className={
+                theme.hero_image_urls[0]
+                  ? "absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  : "absolute inset-0 bg-gradient-to-br from-primary to-primary/60"
+              }
+              style={
+                theme.hero_image_urls[0]
+                  ? { backgroundImage: `url('${theme.hero_image_urls[0]}')` }
+                  : undefined
+              }
             />
           {/* Dark overlay removed */}
           <div className="relative z-10 px-6 py-12 text-center sm:px-12 sm:py-16">
@@ -56,7 +64,7 @@ export function Footer({
           </svg>
         </div>
 
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-4 lg:gap-8 relative z-10">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-8 relative z-10">
           {/* Column 1: Logo, Text, Hours */}
           <div className="space-y-6">
             <div className="flex items-center min-w-0 mb-2">
@@ -105,32 +113,30 @@ export function Footer({
             </ul>
           </div>
 
-          {/* Column 3: Dishes */}
-          <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Dishes</h3>
-            <ul className="space-y-4 text-xs font-medium text-muted-foreground">
-              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Fish & Viggies</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Tofu Chili</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Egg & Cocumber</Link></li>
-              <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Lumpia w/Suace</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 4: Follow Us */}
-          <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Follow Us</h3>
-            <div className="flex gap-4">
-              <a href="#" aria-label="Facebook" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              </a>
-              <a href="#" aria-label="Instagram" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              </a>
-              <a href="#" aria-label="Twitter" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
-              </a>
+          {/* Column 3: Follow Us — icons only render for URLs the operator
+              has actually set (0019); no dead href="#" links. */}
+          {(theme.social_facebook_url || theme.social_instagram_url || theme.social_twitter_url) && (
+            <div>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Follow Us</h3>
+              <div className="flex gap-4">
+                {theme.social_facebook_url && (
+                  <a href={theme.social_facebook_url} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  </a>
+                )}
+                {theme.social_instagram_url && (
+                  <a href={theme.social_instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  </a>
+                )}
+                {theme.social_twitter_url && (
+                  <a href={theme.social_twitter_url} target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom Bar */}

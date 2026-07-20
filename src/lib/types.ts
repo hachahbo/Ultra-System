@@ -54,13 +54,14 @@ export const FONT_PAIR_KEYS = [
 ] as const;
 export type FontPairKey = (typeof FONT_PAIR_KEYS)[number];
 
-// The 3 sections that actually render today. Additional keys (chef,
-// testimonials, gallery) are reserved so the builder's toggle/reorder
-// machinery is future-proof — they simply have no renderer yet.
+// The 5 sections that actually render today. "gallery" is still reserved —
+// no renderer yet — so the builder's toggle/reorder machinery stays
+// future-proof for it.
 export const SECTION_KEYS = [
   "hero",
   "specials",
   "welcome",
+  "values",
   "chef",
   "testimonials",
   "gallery",
@@ -74,10 +75,24 @@ export const COPY_KEYS = [
   "specials_heading",
   "specials_sub",
   "welcome_heading",
+  "about_bento_heading",
+  "about_bento_body",
+  "about_daypart_heading",
+  "about_daypart_body",
+  "about_promo_heading",
+  "about_promo_body",
 ] as const;
 export type CopyKey = (typeof COPY_KEYS)[number];
 
 export type ThemeSection = { key: SectionKey; enabled: boolean };
+
+// One card in the homepage Values section (0019). Rendered only while
+// non-empty — see ValuesSection.
+export type ValueItem = { image_url: string; title: string; body: string };
+
+// One card in the homepage Testimonials section (0019). `author` is
+// optional — the original hardcoded copy this replaces had none.
+export type Testimonial = { text: string; author?: string };
 
 // Raw DB row (service-role reads only — draft is never exposed publicly).
 export type RestaurantTheme = {
@@ -94,6 +109,20 @@ export type RestaurantTheme = {
   address: string | null;
   sections: ThemeSection[];
   custom_copy: Partial<Record<CopyKey, string>>;
+  // 0019 — storefront de-hardcoding. All empty/null by default; every
+  // component consuming these treats "no data" as "render nothing", never
+  // as "fall back to another restaurant's demo content".
+  welcome_gallery_urls: string[];
+  values_items: ValueItem[];
+  testimonials: Testimonial[];
+  about_gallery_urls: string[];
+  about_rating: number | null;
+  about_review_count: number | null;
+  about_map_url: string | null;
+  specials_image_url: string | null;
+  social_facebook_url: string | null;
+  social_instagram_url: string | null;
+  social_twitter_url: string | null;
   draft: Partial<ThemeDraftFields> | null;
   updated_at: string;
 };

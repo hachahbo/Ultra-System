@@ -15,6 +15,12 @@ const COPY_LABELS: Record<CopyKey, { label: string; placeholder: string }> = {
   specials_heading: { label: "Titre — Plats vedettes", placeholder: "Our Special Dishes" },
   specials_sub: { label: "Sous-titre — Plats vedettes", placeholder: "Une phrase d'accroche courte…" },
   welcome_heading: { label: "Titre — Bienvenue", placeholder: "Welcome to Our Restaurant" },
+  about_bento_heading: { label: "À propos — titre carte d'accueil", placeholder: "Bienvenue chez nous !" },
+  about_bento_body: { label: "À propos — texte carte d'accueil", placeholder: "Une phrase d'accroche courte…" },
+  about_daypart_heading: { label: "À propos — titre carte horaires", placeholder: "Petit déjeuner, déjeuner, café, ..." },
+  about_daypart_body: { label: "À propos — texte carte horaires", placeholder: "Une phrase d'accroche courte…" },
+  about_promo_heading: { label: "À propos — titre carte privatisation", placeholder: "Privatisation" },
+  about_promo_body: { label: "À propos — texte carte privatisation", placeholder: "Une phrase d'accroche courte…" },
 };
 
 export function PanelContent({ form }: { form: UseFormReturn<ThemeDraftInput> }) {

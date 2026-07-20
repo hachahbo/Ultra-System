@@ -274,6 +274,21 @@ export const themeSectionSchema = z.object({
   enabled: z.boolean(),
 });
 
+// 0019 — storefront de-hardcoding content types. No admin UI writes these
+// yet (draft/publish still only exposes color/font/hero/about/address/
+// sections/custom_copy in the builder), but validating them here means a
+// future site-builder panel needs no further schema work.
+const valueItemSchema = z.object({
+  image_url: z.string().url(),
+  title: z.string().trim().min(1).max(60),
+  body: z.string().trim().min(1).max(500),
+});
+
+const testimonialSchema = z.object({
+  text: z.string().trim().min(1).max(500),
+  author: z.string().trim().max(80).optional(),
+});
+
 // All fields optional: a draft save is a partial patch (the builder only
 // sends the panel being edited), but every key it DOES send is fully
 // validated — including duplicate-section detection and per-key copy length.
@@ -294,6 +309,17 @@ export const themeDraftSchema = z.object({
     .refine((s) => new Set(s.map((x) => x.key)).size === s.length, "Sections dupliquées")
     .optional(),
   custom_copy: z.partialRecord(z.enum(COPY_KEYS), z.string().trim().max(300)).optional(),
+  welcome_gallery_urls: z.array(z.string().url()).max(8).optional(),
+  values_items: z.array(valueItemSchema).max(6).optional(),
+  testimonials: z.array(testimonialSchema).max(9).optional(),
+  about_gallery_urls: z.array(z.string().url()).max(8).optional(),
+  about_rating: z.number().min(0).max(5).nullable().optional(),
+  about_review_count: z.number().int().min(0).nullable().optional(),
+  about_map_url: z.string().url().nullable().optional(),
+  specials_image_url: z.string().url().nullable().optional(),
+  social_facebook_url: z.string().url().nullable().optional(),
+  social_instagram_url: z.string().url().nullable().optional(),
+  social_twitter_url: z.string().url().nullable().optional(),
 });
 export type ThemeDraftInput = z.infer<typeof themeDraftSchema>;
 

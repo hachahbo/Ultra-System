@@ -1,6 +1,13 @@
 import Image from "next/image";
+import type { ValueItem } from "@/lib/types";
 
-export function ValuesSection() {
+// The card image alternates image-top/text-bottom vs text-top/image-bottom
+// per column purely for visual rhythm — cosmetic, not content-driven.
+const COLUMN_LAYOUT = ["normal", "reverse", "normal"] as const;
+
+export function ValuesSection({ items }: { items: ValueItem[] }) {
+  if (items.length === 0) return null;
+
   return (
     <section className="relative overflow-hidden bg-[#fdf8f4] dark:bg-background px-6 py-20 md:px-12 md:py-32">
       {/* Background SVGs */}
@@ -16,65 +23,48 @@ export function ValuesSection() {
 
       <div className="relative mx-auto max-w-7xl z-10">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8 lg:gap-16">
-          {/* Column 1: Partage (Image Top, Text Bottom) */}
-          <div className="flex flex-col gap-6">
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-b-2xl rounded-t-[150px] shadow-sm">
-              <Image
-                src="/images/orendezvous.tanger_1770820323_3830240942847468663_73557593345.jpg"
-                alt="Partage"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <h3 className="mb-4 font-serif text-3xl font-bold text-[#b85a30] dark:text-[#df7a4d] md:text-4xl">
-                Partage
-              </h3>
-              <p className="font-sans text-base leading-relaxed text-[#5e3b2b] dark:text-stone-300">
-                Chez Maison Loko, le partage est au cœur de notre philosophie. Notre lieu est un espace où chacun peut trouver son bonheur, que ce soit pour savourer un café, un repas, ou simplement pour se détendre. Notre ambition est de créer des moments uniques de convivialité et de partage.
-              </p>
-            </div>
-          </div>
-
-          {/* Column 2: Bienveillance (Text Top, Image Bottom) */}
-          <div className="flex flex-col-reverse gap-6 md:flex-col">
-            <div>
-              <h3 className="mb-4 font-serif text-3xl font-bold text-[#b85a30] dark:text-[#df7a4d] md:text-4xl">
-                Bienveillance
-              </h3>
-              <p className="font-sans text-base leading-relaxed text-[#5e3b2b] dark:text-stone-300">
-                La bienveillance guide chaque action chez Maison Loko. De l'accueil chaleureux à notre engagement pour l'environnement, nous veillons à prendre soin de nos clients comme de notre planète. Chez nous, vous êtes plus que des visiteurs, vous êtes des amis.
-              </p>
-            </div>
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-b-[150px] rounded-t-2xl shadow-sm">
-              <Image
-                src="/images/orendezvous.tanger_1773861948_3855755933193214716_73557593345.jpg"
-                alt="Bienveillance"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Column 3: Exigence (Image Top, Text Bottom) */}
-          <div className="flex flex-col gap-6">
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-b-2xl rounded-t-[150px] shadow-sm">
-              <Image
-                src="/images/orendezvous.tanger_1770820323_3830240943015229907_73557593345.jpg"
-                alt="Exigence"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <h3 className="mb-4 font-serif text-3xl font-bold text-[#b85a30] dark:text-[#df7a4d] md:text-4xl">
-                Exigence
-              </h3>
-              <p className="font-sans text-base leading-relaxed text-[#5e3b2b] dark:text-stone-300">
-                L'exigence est le maître-mot de notre cuisine. Chez Maison Loko, nous sommes fiers de servir des plats faits maison, élaborés avec des produits de saison et de haute qualité. Chaque assiette reflète notre passion pour l'excellence culinaire, pour le plaisir de vos papilles.
-              </p>
-            </div>
-          </div>
+          {items.slice(0, 3).map((item, i) => {
+            const reverse = COLUMN_LAYOUT[i % COLUMN_LAYOUT.length] === "reverse";
+            const image = (
+              <div
+                className={
+                  reverse
+                    ? "relative aspect-[4/5] w-full overflow-hidden rounded-b-[150px] rounded-t-2xl shadow-sm"
+                    : "relative aspect-[4/5] w-full overflow-hidden rounded-b-2xl rounded-t-[150px] shadow-sm"
+                }
+              >
+                <Image src={item.image_url} alt={item.title} fill className="object-cover" />
+              </div>
+            );
+            const text = (
+              <div>
+                <h3 className="mb-4 font-serif text-3xl font-bold text-[#b85a30] dark:text-[#df7a4d] md:text-4xl">
+                  {item.title}
+                </h3>
+                <p className="font-sans text-base leading-relaxed text-[#5e3b2b] dark:text-stone-300">
+                  {item.body}
+                </p>
+              </div>
+            );
+            return (
+              <div
+                key={item.title}
+                className={reverse ? "flex flex-col-reverse gap-6 md:flex-col" : "flex flex-col gap-6"}
+              >
+                {reverse ? (
+                  <>
+                    {text}
+                    {image}
+                  </>
+                ) : (
+                  <>
+                    {image}
+                    {text}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

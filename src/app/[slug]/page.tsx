@@ -33,9 +33,11 @@ export default async function HomePage({
   const base = `/${restaurant.slug}`;
 
   // Renderers keyed by section — theme.sections controls order + which are
-  // enabled. Reserved keys (chef/testimonials/gallery) have no renderer yet
-  // and are simply skipped: the toggle/reorder machinery is future-proof
-  // without needing those sections built.
+  // enabled. "gallery" is still reserved — no renderer yet — so the
+  // toggle/reorder machinery stays future-proof without needing it built.
+  // values/testimonials/welcome all additionally self-skip when their
+  // underlying content is empty, so an enabled-by-default section with no
+  // data yet renders nothing rather than falling back to demo content.
   const renderers: Partial<Record<SectionKey, React.ReactNode>> = {
     hero: (
       <HeroSection
@@ -54,11 +56,18 @@ export default async function HomePage({
           currency={restaurant.currency}
           heading={theme.custom_copy.specials_heading}
           sub={theme.custom_copy.specials_sub}
+          imageUrl={theme.specials_image_url}
         />
       ) : null,
     welcome: theme.about_body ? (
-      <WelcomeSection base={base} heading={theme.custom_copy.welcome_heading ?? theme.about_title ?? undefined} body={theme.about_body} />
+      <WelcomeSection
+        heading={theme.custom_copy.welcome_heading ?? theme.about_title ?? undefined}
+        body={theme.about_body}
+        images={theme.welcome_gallery_urls}
+      />
     ) : null,
+    values: <ValuesSection items={theme.values_items} />,
+    testimonials: <TestimonialsSection items={theme.testimonials} />,
   };
 
   return (
@@ -69,8 +78,6 @@ export default async function HomePage({
           const node = renderers[s.key];
           return node ? <Fragment key={s.key}>{node}</Fragment> : null;
         })}
-      <ValuesSection />
-      <TestimonialsSection />
     </>
   );
 }

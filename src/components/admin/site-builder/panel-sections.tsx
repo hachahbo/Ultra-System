@@ -13,6 +13,7 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   hero: "Hero",
   specials: "Plats vedettes",
   welcome: "Bienvenue",
+  values: "Nos valeurs",
   chef: "Chef",
   testimonials: "Témoignages",
   gallery: "Galerie",

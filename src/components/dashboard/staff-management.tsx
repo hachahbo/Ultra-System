@@ -436,7 +436,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
           <Input
             id="staff-email"
             type="email"
-            placeholder="prenom@orendezvous.ma"
+            placeholder="prenom@votre-restaurant.ma"
             className="h-11 rounded-[11px] border-border bg-background text-[13.5px]"
             {...form.register("email")}
           />

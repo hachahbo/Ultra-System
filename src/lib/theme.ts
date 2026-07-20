@@ -12,6 +12,12 @@ export const DEFAULT_SECTIONS: ThemeSection[] = [
   { key: "hero", enabled: true },
   { key: "specials", enabled: true },
   { key: "welcome", enabled: true },
+  // Enabled by default but harmless while values_items/testimonials are
+  // empty — the renderers (ValuesSection/TestimonialsSection) skip an
+  // enabled-but-empty section, so a restaurant with no content set yet
+  // simply shows nothing, not a toggle an operator has to remember to flip.
+  { key: "values", enabled: true },
+  { key: "testimonials", enabled: true },
 ];
 
 const DEFAULT_THEME: Omit<ResolvedTheme, "restaurant_id"> = {
@@ -27,6 +33,17 @@ const DEFAULT_THEME: Omit<ResolvedTheme, "restaurant_id"> = {
   address: null,
   sections: DEFAULT_SECTIONS,
   custom_copy: {},
+  welcome_gallery_urls: [],
+  values_items: [],
+  testimonials: [],
+  about_gallery_urls: [],
+  about_rating: null,
+  about_review_count: null,
+  about_map_url: null,
+  specials_image_url: null,
+  social_facebook_url: null,
+  social_instagram_url: null,
+  social_twitter_url: null,
   updated_at: new Date(0).toISOString(),
 };
 
