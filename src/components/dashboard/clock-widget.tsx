@@ -22,8 +22,7 @@ async function fetchActive(): Promise<ActiveShift> {
 // by canAccessRoute the way pages are, it's a per-person action available
 // regardless of what the rest of the dashboard shows this role.
 export function ClockWidget() {
-  const { state, isMobile } = useSidebar();
-  const collapsed = state === "collapsed" && !isMobile;
+  const { isMobile } = useSidebar();
   const queryClient = useQueryClient();
   // Ticks once a minute purely to force a re-render so the elapsed-time
   // label below stays current — formatDistanceToNowStrict reads the clock
@@ -74,26 +73,25 @@ export function ClockWidget() {
   const active = !!shift;
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className="w-full">
       <SidebarMenuButton
         onClick={() => (active ? clockOut.mutate() : clockIn.mutate())}
         disabled={clockIn.isPending || clockOut.isPending}
         tooltip={active ? "Terminer le service" : "Commencer le service"}
         className={cn(
           "min-h-[44px] rounded-[14px] px-3.5 font-semibold transition-all duration-300",
+          "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
           active
             ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
             : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
         )}
       >
-        <Clock className={cn("size-[18px] mr-1.5", active && "fill-current")} />
-        {!collapsed && (
-          <span className="text-[13.5px]">
-            {active && shift
-              ? `En service · ${formatDistanceToNowStrict(new Date(shift.clock_in), { locale: fr })}`
-              : "Commencer le service"}
-          </span>
-        )}
+        <Clock className={cn("size-[18px] mr-1.5 shrink-0 group-data-[collapsible=icon]:mr-0", active && "fill-current")} />
+        <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">
+          {active && shift
+            ? `En service · ${formatDistanceToNowStrict(new Date(shift.clock_in), { locale: fr })}`
+            : "Commencer le service"}
+        </span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

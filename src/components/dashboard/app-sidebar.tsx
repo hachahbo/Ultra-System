@@ -113,9 +113,9 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon" className="border-r-border dark:border-r-0 rounded-r-lg overflow-hidden dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
-      <SidebarHeader className="p-4 pb-2">
-        <div className="flex items-center gap-3">
-          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground">
+      <SidebarHeader className="p-4 pb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-4">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground group-data-[collapsible=icon]:mx-auto">
             {restaurantName.charAt(0).toUpperCase()}
           </div>
           {!collapsed && (
@@ -126,9 +126,9 @@ export function AppSidebar({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 pt-2">
+      <SidebarContent className="px-2 pt-2 group-data-[collapsible=icon]:px-0">
         {visibleGroups.map((group) => (
-          <SidebarGroup key={group.label} className="pt-2 pb-1">
+          <SidebarGroup key={group.label} className="pt-2 pb-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2">
             <SidebarGroupLabel className="px-3 text-[10px] font-bold tracking-[1.2px] text-muted-foreground uppercase">
               {group.label}
             </SidebarGroupLabel>
@@ -146,14 +146,15 @@ export function AppSidebar({
                         tooltip={item.label}
                         className={cn(
                           "min-h-[44px] rounded-[14px] px-3.5 transition-all duration-300",
+                          "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
                           active
                             ? "bg-primary text-primary-foreground font-bold shadow-[0_6px_16px_rgba(var(--primary-rgb),0.4)] dark:bg-white/10 dark:text-white dark:shadow-none hover:bg-primary/90 hover:text-primary-foreground dark:hover:bg-white/15 dark:hover:text-white"
                             : "text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground"
                         )}
                       >
-                        <Link href={item.href} className="flex items-center gap-3">
-                          <item.icon className="size-[18px]" />
-                          <span className="text-[13.5px]">{item.label}</span>
+                        <Link href={item.href} className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
+                          <item.icon className="size-[18px] shrink-0" />
+                          <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -165,17 +166,20 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <SidebarMenu>
+      <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pb-4">
+        <SidebarMenu className="group-data-[collapsible=icon]:items-center">
           <ClockWidget />
-          <SidebarMenuItem>
+          <SidebarMenuItem className="w-full">
             <SidebarMenuButton
               onClick={signOut}
               tooltip="Déconnexion"
-              className="min-h-[44px] rounded-[14px] px-3.5 text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground transition-all duration-300"
+              className={cn(
+                "min-h-[44px] rounded-[14px] px-3.5 text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground transition-all duration-300",
+                "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+              )}
             >
-              <LogOut className="size-[18px] mr-1.5" />
-              <span className="text-[13.5px]">Déconnexion</span>
+              <LogOut className="size-[18px] mr-1.5 group-data-[collapsible=icon]:mr-0 shrink-0" />
+              <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">Déconnexion</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -185,7 +189,7 @@ export function AppSidebar({
             onClick={toggleSidebar}
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
-            className="flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3.5 text-[13.5px] font-semibold text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden mt-1"
+            className="flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3.5 text-[13.5px] font-semibold text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden mt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:mx-auto"
           >
             {collapsed ? <ChevronRight className="size-4 shrink-0" /> : <ChevronLeft className="size-4 shrink-0" />}
             {!collapsed && <span>Réduire le menu</span>}
