@@ -1,21 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/dashboard";
 
 function csvEscape(value: string) {
   return /[",\n;]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
 // One-click CSV export of the customer list (plan.md §3E). RLS ("customers
-// owner read", 0008_team_roles.sql) restricts the select to owner/manager of
-// the caller's own restaurant — serveur/cuisine get zero rows.
+// owner read", 0001_init.sql) restricts the select to the owner of the
+// caller's own restaurant — matched here with requireRole(["owner"]) rather
+// than a bare auth check, so a manager gets an honest 403 instead of a
+// silently-empty CSV (RLS would just return zero rows for them).
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return new Response("Non autorisé", { status: 401 });
-  }
+  const guard = await requireRole(["owner"]);
+  if ("response" in guard) return guard.response;
 
+  const supabase = await createClient();
   const { data: customers, error } = await supabase
     .from("customers")
     .select("name, phone, order_count, first_seen, last_order")

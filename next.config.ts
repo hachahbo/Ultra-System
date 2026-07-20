@@ -34,6 +34,44 @@ const nextConfig: NextConfig = {
     ],
     webVitalsAttribution: ["CLS", "LCP", "INP"],
   },
+  // Security headers. Deliberately not a nonce-based CSP (the App Router
+  // guide's recommended approach): that requires forcing every page to
+  // dynamic rendering via proxy.ts, which would break this app's static
+  // routes and ISR. 'unsafe-inline' on style-src is needed for the two
+  // legitimate dangerouslySetInnerHTML sites (chart.tsx's CSS vars,
+  // [slug]/layout.tsx's per-restaurant theme CSS — both sanitized at the
+  // source, see src/lib/theme.ts's safeHex()). connect-src/img-src allow
+  // Supabase (API + Storage + Realtime websockets) and the Unsplash source
+  // already in remotePatterns above.
+  async headers() {
+    const isDev = process.env.NODE_ENV === "development";
+    const csp = [
+      "default-src 'self'",
+      `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; ");
+
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Content-Security-Policy", value: csp },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireSession } from "@/lib/dashboard";
 
 const patchSchema = z.object({
   status: z.enum(["new", "preparing", "done"]),
@@ -14,13 +15,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const guard = await requireSession();
+  if ("response" in guard) return guard.response;
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
 
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireSession } from "@/lib/dashboard";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// GET — kitchen/orders feed (existing, unchanged)
+// GET — kitchen/orders feed. All 4 roles can read (ROUTE_ACCESS), so
+// requireSession() (not requireRole) — it also enforces must_change_password
+// and the suspended-tenant block that a bare auth.getUser() check skipped.
 // ---------------------------------------------------------------------------
 export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const guard = await requireSession();
+  if ("response" in guard) return guard.response;
 
+  const supabase = await createClient();
   const { data: orders, error } = await supabase
     .from("orders")
     .select("*")
@@ -47,13 +46,10 @@ const staffOrderSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const guard = await requireSession();
+  if ("response" in guard) return guard.response;
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
 
   let body: unknown;
   try {
@@ -70,24 +66,14 @@ export async function POST(request: Request) {
     );
   }
   const input = parsed.data;
-
-  // Resolve caller's restaurant via RLS-scoped profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("restaurant_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile?.restaurant_id) {
-    return NextResponse.json({ error: "Restaurant introuvable" }, { status: 403 });
-  }
+  const restaurantId = guard.ctx.restaurant.id;
 
   // Recompute prices from DB — staff can't tamper with them either
   const itemIds = [...new Set(input.lines.map((l) => l.item_id))];
   const { data: items } = await supabase
     .from("items")
     .select("id, name_fr, base_price, in_stock, customization_groups")
-    .eq("restaurant_id", profile.restaurant_id)
+    .eq("restaurant_id", restaurantId)
     .in("id", itemIds);
 
   const itemsById = new Map((items ?? []).map((i) => [i.id, i]));
@@ -137,7 +123,7 @@ export async function POST(request: Request) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
-      restaurant_id: profile.restaurant_id,
+      restaurant_id: restaurantId,
       type: dbType,
       table_number: input.type === "dine_in" ? (input.table_number ?? null) : null,
       customer_name: input.customer_name ?? null,
