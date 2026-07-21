@@ -65,6 +65,8 @@ export function HeroSection({
 
       {/* 2. Timeline Navigation - Completely separated, direct child of section, positioned on viewport edge */}
       <div className="hidden xl:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col gap-6 text-[11px] font-black tracking-[0.25em] uppercase select-none z-30">
+        
+        
         {steps.map((_, idx) => {
           const isActive = activeStep === idx;
           const label = idx === 0 ? "REVEAL" : idx === 1 ? "ASSEMBLE" : "SETTLE";
