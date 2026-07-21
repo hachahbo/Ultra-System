@@ -18,11 +18,11 @@ const itemVariants: Variants = {
 
 export function HeroImages({
   images,
-  activeStep,
+  activeStep = 0,
 }: {
   images?: string[];
-  activeStep: number;
-  setActiveStep: (step: number) => void;
+  activeStep?: number;
+  setActiveStep?: (step: number) => void;
 }) {
   // Step 0 images
   const main0 = images?.[0] ?? "/images/hero-default.webp";
