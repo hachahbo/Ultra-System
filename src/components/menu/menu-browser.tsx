@@ -171,11 +171,17 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-6 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white to-[#FF6B35]/15 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-[#FF6B35]/10 dark:border-[#FF6B35]/20 dark:from-black/60 dark:to-[#FF6B35]/15 dark:shadow-none ${
+                className={`group relative mt-6 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-[#FF6B35]/10 dark:border-[#FF6B35]/20 dark:shadow-none ${
                   item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
                 }`}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
+                {/* Blurred background layer, kept off the animated/transformed
+                    element: iOS Safari fails to composite backdrop-filter on a
+                    layer that Framer Motion is also transforming (y/scale on
+                    mount, whileHover, whileTap), rendering it invisible. */}
+                <div className="absolute inset-0 -z-10 rounded-[32px] bg-gradient-to-br from-white to-[#FF6B35]/15 backdrop-blur-xl dark:from-black/60 dark:to-[#FF6B35]/15" />
+
                 {/* ── Floating Image Top Right ── */}
                 <div className="absolute right-2 -top-8 z-10 flex size-[140px] items-center justify-center sm:right-4 sm:-top-8 sm:size-[140px] lg:-top-10 lg:size-[140px]">
                   <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">

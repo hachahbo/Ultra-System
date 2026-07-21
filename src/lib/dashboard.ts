@@ -9,6 +9,7 @@ export type SessionContext = {
   profile: Profile;
   restaurant: Restaurant;
   features: Record<FeatureKey, boolean>;
+  themeLogoUrl: string | null;
 };
 
 // Resolves the logged-in dashboard user and their tenant. RLS already keys
@@ -36,9 +37,10 @@ export async function getSessionContext(): Promise<SessionContext | null> {
 
   // Both only depend on profile.restaurant_id, not on each other — fetch in
   // parallel instead of two sequential round-trips.
-  const [{ data: restaurant, error: restaurantError }, { data: overrides }] = await Promise.all([
+  const [{ data: restaurant, error: restaurantError }, { data: overrides }, { data: theme }] = await Promise.all([
     supabase.from("restaurants").select("*").eq("id", profile.restaurant_id).maybeSingle(),
     supabase.from("restaurant_features").select("*").eq("restaurant_id", profile.restaurant_id),
+    supabase.from("restaurant_theme").select("logo_url").eq("restaurant_id", profile.restaurant_id).maybeSingle(),
   ]);
 
   if (restaurantError) {
@@ -49,7 +51,12 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   const restaurantRow = restaurant as Restaurant;
   const features = resolveFeatures(restaurantRow.plan, (overrides ?? []) as RestaurantFeature[]);
 
-  return { profile: profile as Profile, restaurant: restaurantRow, features };
+  return { 
+    profile: profile as Profile, 
+    restaurant: restaurantRow, 
+    features,
+    themeLogoUrl: theme?.logo_url ?? null
+  };
 }
 
 /** Suspended or expired-trial restaurants lose dashboard access entirely. */

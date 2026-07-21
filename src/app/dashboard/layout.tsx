@@ -58,6 +58,7 @@ export default async function DashboardLayout({
       <SidebarProvider defaultOpen={sidebarOpen}>
         <AppSidebar
           restaurantName={ctx.restaurant.name}
+          logoUrl={ctx.themeLogoUrl}
           role={ctx.profile.role}
           features={ctx.features}
         />

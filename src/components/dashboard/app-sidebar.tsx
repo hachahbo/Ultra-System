@@ -86,10 +86,12 @@ const groups: Group[] = [
 
 export function AppSidebar({
   restaurantName,
+  logoUrl,
   role,
   features,
 }: {
   restaurantName: string;
+  logoUrl?: string | null;
   role: Role;
   features: Record<FeatureKey, boolean>;
 }) {
@@ -115,8 +117,12 @@ export function AppSidebar({
     <Sidebar collapsible="icon" className="border-r-border dark:border-r-0 rounded-r-lg overflow-hidden dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
       <SidebarHeader className="p-4 pb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-4">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground group-data-[collapsible=icon]:mx-auto">
-            {restaurantName.charAt(0).toUpperCase()}
+          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground group-data-[collapsible=icon]:mx-auto overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt={restaurantName} className="size-full object-contain bg-white" />
+            ) : (
+              restaurantName.charAt(0).toUpperCase()
+            )}
           </div>
           {!collapsed && (
             <p className="truncate font-display text-[16px] font-extrabold tracking-tight">
