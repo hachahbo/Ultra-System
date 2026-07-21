@@ -144,7 +144,7 @@ export function NavBar({
           </Button>
 
           {/* Mobile CTA */}
-          <Button asChild size="sm" className="md:hidden rounded-md shadow-md">
+          <Button asChild className="md:hidden rounded-xl px-6 py-5 shadow-md font-bold text-base">
             <Link href={`${base}/reservation`}>Book</Link>
           </Button>
         </div>
