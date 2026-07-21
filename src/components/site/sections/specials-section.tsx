@@ -56,7 +56,7 @@ export function SpecialsSection({
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
-        className="relative mx-auto max-w-[1400px] px-4 xl:px-8"
+        className="relative mx-auto max-w-[1600px] px-4 xl:px-8"
       >
         <motion.div variants={itemVariants} className="mx-auto mb-16 max-w-xl text-center">
           <h2 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">

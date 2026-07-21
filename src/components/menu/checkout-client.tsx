@@ -111,7 +111,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   return (
     <div className="mt-8 space-y-8 pb-24">
       {isDineIn && (
-        <p className="rounded-2xl bg-primary/10 text-primary px-6 py-4 text-sm font-medium border border-primary/20">
+        <p className="rounded-2xl bg-primary/10 text-primary px-6 py-4 text-sm font-medium border border-primary/20 bg-white dark:bg-primary/10">
           Commande sur place — <strong>table {table}</strong>. Aucune coordonnée requise.
         </p>
       )}
@@ -119,7 +119,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       {/* Lines */}
       <ul className="space-y-4">
         {lines.map((l) => (
-          <li key={l.key} className="flex items-center gap-4 rounded-[24px] bg-card/50 p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md">
+          <li key={l.key} className="flex items-center gap-4 rounded-[24px] bg-white dark:bg-card/50 p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md">
             <div className="relative size-20 shrink-0 rounded-2xl overflow-hidden bg-muted/50 border border-border/50">
               {l.image_url ? (
                 <Image
@@ -174,7 +174,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       </ul>
 
       {/* Totals */}
-      <div className="rounded-[24px] bg-card p-6 ring-1 ring-border/50 space-y-3 shadow-sm">
+      <div className="rounded-[24px] bg-white dark:bg-card p-6 ring-1 ring-border/50 space-y-3 shadow-sm">
         <div className="flex justify-between text-muted-foreground font-medium">
           <span>Sous-total</span>
           <span>{formatPrice(subtotal, restaurant.currency)}</span>
@@ -206,7 +206,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Sans oignons, bien cuit…"
-              className="min-h-[120px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+              className="min-h-[120px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
           </div>
           <Button
@@ -231,7 +231,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
               autoComplete="name"
               aria-invalid={!!form.formState.errors.customer_name}
               {...form.register("customer_name")}
-              className="h-14 rounded-2xl bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+              className="h-14 rounded-2xl bg-white dark:bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
             <FieldError message={form.formState.errors.customer_name?.message} />
           </div>
@@ -245,7 +245,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
               placeholder="06 12 34 56 78"
               aria-invalid={!!form.formState.errors.customer_phone}
               {...form.register("customer_phone")}
-              className="h-14 rounded-2xl bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+              className="h-14 rounded-2xl bg-white dark:bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
             <FieldError
               message={form.formState.errors.customer_phone?.message}
@@ -259,7 +259,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
               placeholder="Rue, immeuble, étage, quartier…"
               aria-invalid={!!form.formState.errors.address}
               {...form.register("address")}
-              className="min-h-[100px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+              className="min-h-[100px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
             <FieldError message={form.formState.errors.address?.message} />
           </div>
@@ -268,7 +268,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             <Textarea 
               id="note" 
               {...form.register("note")} 
-              className="min-h-[100px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+              className="min-h-[100px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
           </div>
           

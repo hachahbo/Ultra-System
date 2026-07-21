@@ -24,7 +24,7 @@ export function ValuesSection({ items }: { items: ValueItem[] }) {
         <Image src="/images/Group (5).svg" alt="" width={450} height={450} />
       </div>
 
-      <div className="relative mx-auto max-w-7xl z-10">
+      <div className="relative mx-auto max-w-[1600px] z-10">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8 lg:gap-16">
           {items.slice(0, 3).map((item, i) => {
             const reverse = COLUMN_LAYOUT[i % COLUMN_LAYOUT.length] === "reverse";

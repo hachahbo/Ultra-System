@@ -17,7 +17,7 @@ export function TestimonialsSection({ items }: { items: Testimonial[] }) {
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-12 lg:px-16">
+      <div className="relative z-10 mx-auto max-w-[1600px] px-6 md:px-12 lg:px-16">
         <div className="text-center mb-16 sr-only">
           <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl">
             Ce que nos clients en disent

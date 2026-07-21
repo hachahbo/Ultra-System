@@ -23,11 +23,11 @@ export default async function MenuPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 pb-28">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+    <div className="mx-auto max-w-[1180px] px-4 py-8 pb-28 md:px-8">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#FF6B35]">
         {menu.restaurant.name}
       </p>
-      <h1 className="mt-1.5 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+      <h1 className="mt-1.5 font-serif text-3xl font-semibold tracking-tight md:text-5xl">
         Notre carte
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">

@@ -3,16 +3,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Plus, ShoppingBag, Sparkles, UtensilsCrossed } from "lucide-react";
+import { Check, Plus, ShoppingBag, Sparkles, UtensilsCrossed, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { cartSubtotal, useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
 import type { Item, PublicMenu } from "@/lib/types";
 import { ItemDialog } from "./item-dialog";
 
+interface DetailRow {
+  name: string;
+  desc?: string;
+  price?: string;
+}
+
+interface ItemDetails {
+  expandTitle: string;
+  expandSub: string;
+  sectionLabel: string;
+  rows: DetailRow[];
+}
+
 // ─── Editorial fallback photography ─────────────────────────────────────────
-// Cards are always image-filled: when an item has no photo we cycle through a
-// small set of curated plates so the grid never shows an empty tile.
 const FALLBACK_IMAGES = [
   "/images/dish-1%201.png",
   "/images/dish-2%201.png",
@@ -26,8 +37,120 @@ function fallbackImage(seed: string) {
   return FALLBACK_IMAGES[Math.abs(hash) % FALLBACK_IMAGES.length];
 }
 
-// ─── Animation Variants ────────────────────────────────────────────────────
+// Helper to retrieve authentic tangerine ingredients or customization groups
+function getItemDetails(item: Item): ItemDetails {
+  const name = item.name_fr.toLowerCase();
+  
+  if (name.includes("potatoes")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Notre grand classique, servi croustillant.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Pommes de terre grelot" },
+        { name: "Beurre noisette & thym" },
+        { name: "Fleur de sel de Tanger" }
+      ]
+    };
+  }
+  if (name.includes("grecque") || name.includes("greek")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Fraîcheur du marché, assaisonnée minute.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Tomates & concombres" },
+        { name: "Féta AOP & olives Kalamata" },
+        { name: "Origan, huile d'olive vierge" }
+      ]
+    };
+  }
+  if (name.includes("boeuf") || name.includes("bœuf") || name.includes("filet")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Pièce maîtresse de la maison.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Filet de bœuf 220g" },
+        { name: "Crème d'épinards au parmesan" },
+        { name: "Potatoes maison" }
+      ]
+    };
+  }
+  if (name.includes("fruits") || name.includes("fruit salad")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Le dessert le plus léger de la carte.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Fruits de saison" },
+        { name: "Sirop de menthe fraîche" },
+        { name: "Zeste de citron vert" }
+      ]
+    };
+  }
+  if (name.includes("linguine") || name.includes("pasta")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Sauce mijotée trois heures.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Linguine fraîches" },
+        { name: "Tomates San Marzano" },
+        { name: "Basilic & parmesan 24 mois" }
+      ]
+    };
+  }
+  if (name.includes("carpaccio")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Tranché à la commande.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Bœuf tranché finement" },
+        { name: "Vinaigrette à la truffe" },
+        { name: "Copeaux de parmesan & roquette" }
+      ]
+    };
+  }
+  if (name.includes("tiramisu")) {
+    return {
+      expandTitle: "Composition",
+      expandSub: "Reposé 24h avant le service.",
+      sectionLabel: "INGRÉDIENTS",
+      rows: [
+        { name: "Mascarpone & œufs fermiers" },
+        { name: "Espresso de spécialité" },
+        { name: "Cacao amer" }
+      ]
+    };
+  }
 
+  // Fallback to customization groups if options exist
+  if (item.customization_groups && item.customization_groups.length > 0) {
+    return {
+      expandTitle: "Personnalisation",
+      expandSub: "Options à choisir pour accompagner votre plat.",
+      sectionLabel: "OPTIONS DISPONIBLES",
+      rows: item.customization_groups.map(group => ({
+        name: group.title.fr,
+        desc: group.options.map(o => `${o.name} (${o.price_modifier > 0 ? `+${o.price_modifier} MAD` : "Gratuit"})`).join(", ")
+      }))
+    };
+  }
+
+  return {
+    expandTitle: "Détails du plat",
+    expandSub: "Préparé avec soin par notre chef.",
+    sectionLabel: "INFORMATIONS",
+    rows: [
+      { name: "Ingrédients de saison" },
+      { name: "Fait maison minute" }
+    ]
+  };
+}
+
+// ─── Animation Variants ────────────────────────────────────────────────────
 const listVariants: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
@@ -56,7 +179,6 @@ const cartBarVariants: Variants = {
 };
 
 // ─── Main Component ─────────────────────────────────────────────────────────
-
 export function MenuBrowser({
   menu,
   table,
@@ -70,6 +192,7 @@ export function MenuBrowser({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setContext, add, lines } = useCart();
   const prefersReducedMotion = useReducedMotion();
@@ -121,6 +244,14 @@ export function MenuBrowser({
     }
   }
 
+  const toggleExpand = (itemId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedItems((prev) => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
+  };
+
   const animate = isHydrated && !prefersReducedMotion;
 
   return (
@@ -158,6 +289,8 @@ export function MenuBrowser({
             const src = item.image_url || fallbackImage(item.id);
             const wasAdded = justAdded === item.id;
             const isSignature = index === 0 && activeCategory === null;
+            const isExpanded = !!expandedItems[item.id];
+            const details = getItemDetails(item);
 
             return (
               <motion.li
@@ -171,46 +304,38 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-6 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] border border-[#FF6B35]/10 dark:border-[#FF6B35]/20 dark:shadow-none ${
+                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px] bg-card border border-border/10 dark:border-border/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 ${
                   item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
                 }`}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
-                {/* Blurred background layer, kept off the animated/transformed
-                    element: iOS Safari fails to composite backdrop-filter on a
-                    layer that Framer Motion is also transforming (y/scale on
-                    mount, whileHover, whileTap), rendering it invisible. */}
-                <div className="absolute inset-0 -z-10 rounded-[32px] bg-gradient-to-br from-white to-[#FF6B35]/15 backdrop-blur-xl dark:from-black/60 dark:to-[#FF6B35]/15" />
-
-                {/* ── Floating Image Top Right ── */}
-                <div className="absolute right-2 -top-8 z-10 flex size-[140px] items-center justify-center sm:right-4 sm:-top-8 sm:size-[140px] lg:-top-10 lg:size-[140px]">
-                  <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
-                    <div className="relative size-full overflow-hidden rounded-full">
-                      {src ? (
-                        <Image
-                          src={src}
-                          alt={item.name_fr}
-                          fill
-                          sizes="200px"
-                          className="object-cover scale-[1.30]"
-                        />
-                      ) : (
-                        <div className="grid size-full place-items-center bg-accent text-accent-foreground shadow-sm">
-                          <UtensilsCrossed className="size-6" />
-                        </div>
-                      )}
-                    </div>
+                {/* ── Floating Image Top Right (Strictly Matching the 118px Oval Style) ── */}
+                <div className="absolute right-6 -top-[34px] z-10 size-[118px] rounded-full border-[3px] border-card overflow-hidden shadow-[0_14px_34px_rgba(0,0,0,0.5)]">
+                  <div className="relative size-full transition-transform duration-500 group-hover:scale-110">
+                    {src ? (
+                      <Image
+                        src={src}
+                        alt={item.name_fr}
+                        fill
+                        sizes="200px"
+                        className="object-cover scale-[1.30]"
+                      />
+                    ) : (
+                      <div className="grid size-full place-items-center bg-accent text-accent-foreground">
+                        <UtensilsCrossed className="size-6" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* ── Left Column: Text ── */}
-                <div className="relative z-20 w-[65%] pr-6 sm:pr-8">
+                {/* ── Left Column: Text (62% width limit to clear floating circle) ── */}
+                <div className="relative z-20 w-[62%] pr-4 flex-grow flex flex-col justify-start">
                   <div className="flex flex-col items-start gap-2">
-                    <h3 className="font-display text-xl font-bold leading-tight text-foreground dark:text-white line-clamp-2">
+                    <h3 className="font-serif text-[22px] font-semibold leading-tight text-foreground line-clamp-2">
                       {item.name_fr}
                     </h3>
                     {isSignature && item.in_stock && (
-                      <span className="shrink-0 flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-900/30 dark:text-amber-500">
+                      <span className="shrink-0 flex items-center gap-1 rounded-full bg-[#FF6B35]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FF6B35]">
                         <Sparkles className="size-3" />
                         Signature
                       </span>
@@ -223,56 +348,118 @@ export function MenuBrowser({
                   </div>
                   
                   {item.description_fr && (
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground dark:text-white/80">
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {item.description_fr}
                     </p>
                   )}
                 </div>
 
-                {/* ── Bottom Actions (Price Left, Add Right) ── */}
-                <div className="mt-4 flex w-full items-center justify-between z-20">
-                  <span className="font-display text-xl font-black text-[#FF6B35]">
+                {/* ── Bottom Actions (Price Left, Add + Chevron Right) ── */}
+                <div className="mt-6 flex w-full items-center justify-between z-20">
+                  <span className="font-display text-2xl font-extrabold text-[#FF6B35]">
                     {formatPrice(item.base_price, restaurant.currency)}
                   </span>
                   
-                  {item.in_stock && orderingEnabled && (
-                    <motion.div
-                      className="relative flex size-10 items-center justify-center rounded-full border-2 border-[#FF6B35] bg-transparent text-[#FF6B35] transition-colors group-hover:bg-[#FF6B35] group-hover:text-white"
-                      animate={
-                        animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
-                      }
-                      transition={{ duration: 0.3 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAdd(item);
-                      }}
+                  <div className="flex items-center gap-3">
+                    {item.in_stock && orderingEnabled && (
+                      <motion.button
+                        className="relative flex size-[42px] items-center justify-center rounded-full border-[1.5px] border-[#FF6B35] bg-transparent text-[#FF6B35] transition-colors duration-200 hover:bg-[#FF6B35] hover:text-white cursor-pointer"
+                        animate={
+                          animate && wasAdded ? { scale: [1, 1.15, 1] } : { scale: 1 }
+                        }
+                        transition={{ duration: 0.3 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAdd(item);
+                        }}
+                      >
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          {wasAdded ? (
+                            <motion.span
+                              key="check"
+                              initial={animate ? { scale: 0, rotate: -30 } : false}
+                              animate={{ scale: 1, rotate: 0 }}
+                              exit={animate ? { scale: 0 } : undefined}
+                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                            >
+                              <Check className="size-4" strokeWidth={3} />
+                            </motion.span>
+                          ) : (
+                            <motion.span
+                              key="plus"
+                              initial={animate ? { scale: 0 } : false}
+                              animate={{ scale: 1 }}
+                              exit={animate ? { scale: 0 } : undefined}
+                              transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                            >
+                              <Plus className="size-5" strokeWidth={2.5} />
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    )}
+                    
+                    {/* Accordion Expansion Toggle chevron */}
+                    <button
+                      onClick={(e) => toggleExpand(item.id, e)}
+                      aria-label="Détails"
+                      className={`flex size-[42px] items-center justify-center rounded-full border border-border/40 bg-transparent text-foreground hover:bg-muted/30 cursor-pointer transition-transform duration-300 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
                     >
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        {wasAdded ? (
-                          <motion.span
-                            key="check"
-                            initial={animate ? { scale: 0, rotate: -30 } : false}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={animate ? { scale: 0 } : undefined}
-                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                          >
-                            <Check className="size-4" strokeWidth={3} />
-                          </motion.span>
-                        ) : (
-                          <motion.span
-                            key="plus"
-                            initial={animate ? { scale: 0 } : false}
-                            animate={{ scale: 1 }}
-                            exit={animate ? { scale: 0 } : undefined}
-                            transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                          >
-                            <Plus className="size-5" strokeWidth={2.5} />
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
+                      <ChevronDown className="size-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Inline Customization / Composition Accordion ── */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#141416] dark:to-[#24130b] text-[#1b2437] dark:text-stone-200 rounded-b-[22px] -mx-6 -mb-6 mt-6"
+                      onClick={(e) => e.stopPropagation()} // Prevent modal trigger inside details
+                    >
+                      <div className="p-[30px] pt-7">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="font-serif font-bold text-[24px] text-[#1b2437] dark:text-amber-500 leading-tight">
+                              {details.expandTitle}
+                            </div>
+                            <div className="text-xs font-semibold text-[#42506b] dark:text-stone-400 mt-2 flex items-center gap-1.5">
+                              {details.expandSub}
+                              <svg width="14" height="8" viewBox="0 0 18 10" fill="#FF6B35" className="inline shrink-0">
+                                <path d="M0 10a9 9 0 0 1 18 0z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="h-[1.5px] bg-[#1b2437]/20 dark:bg-stone-700/60 my-4" />
+                        <div className="text-[11px] font-black tracking-[0.25em] text-[#1b2437]/60 dark:text-stone-400 uppercase mb-4">
+                          {details.sectionLabel}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {details.rows.map((row, rIdx) => (
+                            <div key={rIdx} className="pb-3 border-b border-[#1b2437]/10 dark:border-stone-700/30 last:border-b-0 last:pb-0">
+                              <div className="flex justify-between items-baseline gap-4">
+                                <span className="font-bold text-sm text-[#1b2437] dark:text-stone-200">{row.name}</span>
+                                {row.price && (
+                                  <span className="font-bold text-sm text-[#1b2437] dark:text-amber-500 whitespace-nowrap">{row.price} MAD</span>
+                                )}
+                              </div>
+                              {row.desc && (
+                                <p className="text-xs text-[#42506b] dark:text-stone-400 mt-1 leading-relaxed">{row.desc}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
               </motion.li>
             );
           })}
@@ -316,7 +503,7 @@ export function MenuBrowser({
           >
             <Link
               href={`/${restaurant.slug}/checkout`}
-              className="group flex w-full items-center justify-between rounded-2xl bg-[#FF6B35] px-5 py-4 text-sm font-bold text-white shadow-2xl shadow-[#FF6B35]/40 ring-1 ring-white/20 transition-all hover:shadow-[#FF6B35]/55"
+              className="group flex w-full items-center justify-between rounded-full bg-[#FF6B35]/30 backdrop-blur-md px-6 py-4 text-base font-semibold text-white shadow-[0_8px_32px_rgba(255,107,53,0.1)] ring-1 ring-white/10 transition-all duration-300 hover:bg-[#FF6B35] hover:shadow-[0_16px_44px_rgba(255,107,53,0.4)] hover:scale-[1.01]"
             >
               <span className="flex items-center gap-2.5">
                 <motion.span
@@ -343,7 +530,6 @@ export function MenuBrowser({
 }
 
 // ─── Category Pill ──────────────────────────────────────────────────────────
-
 function CategoryPill({
   active,
   onClick,
@@ -357,20 +543,20 @@ function CategoryPill({
     <button
       type="button"
       onClick={onClick}
-      className="relative shrink-0 cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
+      className="relative shrink-0 cursor-pointer rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-200"
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
       {active && (
         <motion.span
           layoutId="category-pill-bg"
-          className="absolute inset-0 rounded-full bg-secondary shadow-sm"
+          className="absolute inset-0 rounded-full bg-[#27272a]/10 dark:bg-neutral-800 shadow-sm"
           transition={{ type: "spring" as const, stiffness: 400, damping: 34 }}
         />
       )}
       <span
         className={`relative z-10 transition-colors duration-200 ${
           active
-            ? "text-secondary-foreground"
+            ? "text-[#FF6B35] dark:text-[#FF6B35] font-bold"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >

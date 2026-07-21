@@ -3,118 +3,173 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-import { motion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15 },
+    transition: { staggerChildren: 0.12 },
   },
 };
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export function HeroContent({
   base,
-  headline,
-  sub,
+  activeStep,
+  steps,
   ctaLabel,
 }: {
   base: string;
-  headline?: string;
-  sub?: string;
+  activeStep: number;
+  steps: Array<{ title: string; highlightWord: string; subtitle: string; label: string }>;
   ctaLabel?: string;
 }) {
+  const currentStep = steps[activeStep] ?? steps[0];
+
+  const renderHeadline = (text: string, highlight: string) => {
+    if (text.includes("\n")) {
+      const lines = text.split("\n");
+      return (
+        <>
+          {lines.map((line, idx) => {
+            const hasHighlight = line.toLowerCase().includes(highlight.toLowerCase());
+            if (hasHighlight) {
+              const parts = line.split(new RegExp(`(${highlight})`, "i"));
+              return (
+                <span key={idx} className="block">
+                  {parts.map((p, pIdx) => 
+                    p.toLowerCase() === highlight.toLowerCase() ? (
+                      <span key={pIdx} className="text-[#FF6B35] italic font-serif font-normal lowercase tracking-wide">{p}</span>
+                    ) : p
+                  )}
+                </span>
+              );
+            }
+            return (
+              <span key={idx} className="block">
+                {line}
+              </span>
+            );
+          })}
+        </>
+      );
+    }
+
+    if (text.toLowerCase().includes(highlight.toLowerCase())) {
+      const parts = text.split(new RegExp(`(${highlight})`, "i"));
+      return (
+        <>
+          {parts.map((part, i) => 
+            part.toLowerCase() === highlight.toLowerCase() ? (
+              <span key={i} className="text-[#FF6B35] italic font-serif font-normal lowercase tracking-wide">{part}</span>
+            ) : part
+          )}
+        </>
+      );
+    }
+    return text;
+  };
+
   return (
     <motion.div 
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full"
+      className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-[50%] h-full min-h-[420px]"
     >
-      {/* 1. Title */}
-      <motion.h1
-        variants={itemVariants}
-        className="font-display ml-3 text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-foreground md:text-7xl"
-      >
-        {headline ?? (
-          <>
-            We provide the <br />{" "}
-            <span className="text-[oklch(0.685_0.165_45)] lg:text-inherit">
-              best food
-            </span>{" "}
-            for you
-          </>
-        )}
-      </motion.h1>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeStep}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -15 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          className="flex flex-col items-start"
+        >
+          {/* 0. Top Label Tag */}
+          <div className="ml-3 text-[11px] md:text-xs tracking-[0.25em] font-black text-[#FF6B35] uppercase mb-3 flex items-center gap-2">
+            <span className="h-[2px] w-8 bg-[#FF6B35] inline-block shrink-0 rounded-full" />
+            {currentStep.label}
+          </div>
 
-      {/* 4. Description & Opening Hours */}
-      <motion.div
-        variants={itemVariants}
-        className="hidden lg:block mt-4 md:mt-6 max-w-md"
-      >
-        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg mb-8">
-          {sub ??
-            "consectetur adipiscing dolore magna aliqua Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
-        </p>
+          {/* 1. Title with adaptive Light / Dark text color */}
+          <h1 
+            className="font-serif ml-3 font-medium leading-[1.05] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
+            style={{ 
+              fontSize: "clamp(44px, 5.4vw, 76px)" 
+            }}
+          >
+            {renderHeadline(currentStep.title, currentStep.highlightWord)}
+          </h1>
 
-      </motion.div>
+          {/* 4. Description */}
+          <div className="hidden lg:block mt-3 max-w-md">
+            <p className="ml-3 text-base leading-relaxed text-muted-foreground/90 sm:text-lg mb-5">
+              {currentStep.subtitle}
+            </p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* 2. Buttons */}
       <motion.div
         variants={itemVariants}
-        className="mt-8 md:mt-10 ml-3 flex flex-wrap gap-4"
+        className="mt-4 md:mt-5 ml-3 flex flex-wrap gap-4"
       >
         <Button
           asChild
-          className="rounded-full bg-foreground px-8 py-6 text-base font-semibold text-background hover:bg-foreground/90 shadow-lg"
+          className="rounded-full bg-foreground px-9 py-6 text-base font-semibold text-background hover:bg-foreground/90 shadow-lg transition-all"
         >
           <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
         <Button
           asChild
-          className="rounded-full bg-[oklch(0.685_0.165_45)] px-8 py-6 text-base font-semibold text-white hover:opacity-90 shadow-lg"
+          className="rounded-full bg-[#FF6B35] px-9 py-6 text-base font-semibold text-white hover:bg-[#FF6B35]/90 shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] group transition-all duration-300 flex items-center gap-2"
         >
-          <Link href={`${base}/reservation`}>Book a table</Link>
+          <Link href={`${base}/reservation`}>
+            Book a table <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>
+          </Link>
         </Button>
       </motion.div>
-        <motion.div variants={itemVariants} className="hidden lg:flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
-          <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-semobold tracking-[0.2em] text-foreground">
-              Opening hours
-            </h4>
-            <p className="text-muted-foreground text-base sm:text-md">
-              lun–dim · 11h00 – 23h00
-            </p>
-          </div>
-          
-          <div className="hidden sm:block w-[1px] bg-border/80 self-stretch" />
-          
-          <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-bold tracking-[0.2em] text-foreground ">
-              Location
-            </h4>
-            <p className="text-muted-foreground text-md sm:text-md flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Rue Lafayette, Tanger
-            </p>
-          </div>
-        </motion.div>
 
-      {/* 3. Socials */}
+      {/* 3. Opening Hours & Location Info */}
+      <motion.div variants={itemVariants} className="hidden lg:flex flex-col sm:flex-row gap-8 sm:gap-12 mt-8 ml-3">
+        <div className="flex flex-col gap-1">
+          <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
+            Opening hours
+          </h4>
+          <p className="text-muted-foreground font-medium text-sm md:text-base">
+            lun–dim · 11h00 – 23h00
+          </p>
+        </div>
+        
+        <div className="hidden sm:block w-[1px] bg-border/40 self-stretch" />
+        
+        <div className="flex flex-col gap-1">
+          <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
+            Location
+          </h4>
+          <p className="text-muted-foreground font-medium text-sm md:text-base flex items-center gap-2">
+            <MapPin className="h-4.5 w-4.5 text-[#FF6B35]" />
+            Rue Lafayette, Tanger
+          </p>
+        </div>
+      </motion.div>
+
+      {/* 5. Socials & Horizontal Line */}
       <motion.div
         variants={itemVariants}
-        className="hidden lg:flex mt-5 md:mt-20 items-center gap-4"
+        className="hidden lg:flex mt-10 items-center gap-6 w-full max-w-sm ml-3"
       >
-        <div className="flex gap-3">
+        <div className="flex gap-4 shrink-0">
           <a
             href="#"
-            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-colors hover:bg-muted"
+            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-all duration-300 hover:border-[#FF6B35] hover:text-[#FF6B35] hover:bg-muted"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +187,7 @@ export function HeroContent({
           </a>
           <a
             href="#"
-            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-colors hover:bg-muted"
+            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-all duration-300 hover:border-[#FF6B35] hover:text-[#FF6B35] hover:bg-muted"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -152,7 +207,7 @@ export function HeroContent({
           </a>
           <a
             href="#"
-            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-colors hover:bg-muted"
+            className="flex size-10 items-center justify-center rounded-full border border-border/80 text-foreground transition-all duration-300 hover:border-[#FF6B35] hover:text-[#FF6B35] hover:bg-muted"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -169,7 +224,7 @@ export function HeroContent({
             </svg>
           </a>
         </div>
-        <div className="h-[2px] w-16 bg-border/80"></div>
+        <div className="h-[1px] flex-1 bg-border/40" />
       </motion.div>
     </motion.div>
   );

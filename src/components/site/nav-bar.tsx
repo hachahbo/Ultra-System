@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
@@ -43,10 +42,8 @@ export function NavBar({
   }, [pathname]);
 
   return (
-    <header 
-      className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
-    >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 relative">
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8 relative">
         {/* Left: Mobile Burger & Desktop Logo */}
         <div className="flex flex-1 items-center justify-start gap-2">
           {/* Mobile Menu */}
@@ -139,12 +136,12 @@ export function NavBar({
           </div>
           
           {/* Desktop CTA */}
-          <Button asChild className="hidden md:inline-flex rounded-full px-8 py-6 text-base font-semibold shadow-md">
+          <Button asChild className="hidden md:inline-flex rounded-full px-8 py-6 text-base font-semibold bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] transition-all duration-300">
             <Link href={`${base}/reservation`}>Book a table</Link>
           </Button>
 
           {/* Mobile CTA */}
-          <Button asChild className="md:hidden rounded-xl px-6 py-5 shadow-md font-bold text-base">
+          <Button asChild className="md:hidden rounded-xl px-6 py-5 font-bold text-base bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_8px_16px_rgba(255,107,53,0.25)] transition-all">
             <Link href={`${base}/reservation`}>Book</Link>
           </Button>
         </div>

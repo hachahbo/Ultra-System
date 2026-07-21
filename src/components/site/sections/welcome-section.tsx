@@ -12,7 +12,7 @@ export function WelcomeSection({
 }) {
   return (
     <section className="hidden md:block bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1600px]">
         {/* Text Content */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-16 lg:gap-24">
           {/* Title */}
@@ -30,10 +30,7 @@ export function WelcomeSection({
           </div>
         </div>
 
-        {/* Image Grid — theme-driven (0019); the section itself is only
-            rendered by the caller when `body` is set, so `images` may still
-            legitimately be empty (an owner filled in copy but no gallery
-            yet) — skip the grid entirely rather than show empty tiles. */}
+        {/* Image Grid */}
         {images.length > 0 && (
           <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {images.slice(0, 4).map((src, i) => (
