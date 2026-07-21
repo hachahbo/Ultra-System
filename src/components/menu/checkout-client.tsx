@@ -109,59 +109,60 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   }
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-8 space-y-8 pb-24">
       {isDineIn && (
-        <p className="rounded-lg bg-accent px-4 py-3 text-sm">
-          Commande sur place — <strong>table {table}</strong>. Aucune
-          coordonnée requise.
+        <p className="rounded-2xl bg-primary/10 text-primary px-6 py-4 text-sm font-medium border border-primary/20">
+          Commande sur place — <strong>table {table}</strong>. Aucune coordonnée requise.
         </p>
       )}
 
       {/* Lines */}
-      <ul className="space-y-3">
+      <ul className="space-y-4">
         {lines.map((l) => (
-          <li key={l.key} className="flex items-center gap-4 rounded-xl bg-card p-3 ring-1 ring-border/60">
-            <div className="relative size-16 shrink-0 rounded-lg overflow-hidden bg-muted border border-border">
+          <li key={l.key} className="flex items-center gap-4 rounded-[24px] bg-card/50 p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md">
+            <div className="relative size-20 shrink-0 rounded-2xl overflow-hidden bg-muted/50 border border-border/50">
               {l.image_url ? (
                 <Image
                   src={l.image_url}
                   alt={l.name}
                   fill
-                  sizes="64px"
-                  className="object-contain drop-shadow-sm"
+                  sizes="80px"
+                  className="object-contain drop-shadow-sm p-1"
                 />
               ) : (
                 <div className="grid size-full place-items-center">
-                  <UtensilsCrossed className="size-5 text-muted-foreground/40" />
+                  <UtensilsCrossed className="size-6 text-muted-foreground/40" />
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{l.name}</p>
+              <p className="truncate font-bold text-base">{l.name}</p>
               {l.options.length > 0 && (
-                <p className="line-clamp-2 text-xs text-muted-foreground mt-0.5">
+                <p className="line-clamp-2 text-xs text-muted-foreground mt-1">
                   {l.options.join(" · ")}
                 </p>
               )}
-              <p className="mt-1 text-sm font-semibold text-primary">
+              <p className="mt-2 text-sm font-black text-[#FF6B35]">
                 {formatPrice(l.unit_price * l.quantity, restaurant.currency)}
               </p>
             </div>
-            <div className="flex items-center gap-1 rounded-lg border">
+            <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1 ring-1 ring-border/50">
               <Button
                 variant="ghost"
                 size="icon"
+                className="size-8 rounded-full hover:bg-background hover:shadow-sm"
                 aria-label={`Retirer un ${l.name}`}
                 onClick={() => decrement(l.key)}
               >
                 <Minus className="size-4" />
               </Button>
-              <span className="w-7 text-center text-sm font-medium">
+              <span className="w-6 text-center text-sm font-bold tabular-nums">
                 {l.quantity}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
+                className="size-8 rounded-full hover:bg-background hover:shadow-sm"
                 aria-label={`Ajouter un ${l.name}`}
                 onClick={() => increment(l.key)}
               >
@@ -173,43 +174,44 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       </ul>
 
       {/* Totals */}
-      <div className="space-y-1.5 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Sous-total</span>
+      <div className="rounded-[24px] bg-card p-6 ring-1 ring-border/50 space-y-3 shadow-sm">
+        <div className="flex justify-between text-muted-foreground font-medium">
+          <span>Sous-total</span>
           <span>{formatPrice(subtotal, restaurant.currency)}</span>
         </div>
         {!isDineIn && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Livraison</span>
+          <div className="flex justify-between text-muted-foreground font-medium">
+            <span>Livraison</span>
             <span>{formatPrice(deliveryFee, restaurant.currency)}</span>
           </div>
         )}
-        <Separator className="my-2" />
-        <div className="flex justify-between text-base font-semibold">
+        <Separator className="my-3 opacity-50" />
+        <div className="flex justify-between text-xl font-black">
           <span>Total</span>
-          <span>{formatPrice(total, restaurant.currency)}</span>
+          <span className="text-[#FF6B35]">{formatPrice(total, restaurant.currency)}</span>
         </div>
         {!isDineIn && (
-          <p className="pt-1 text-xs text-muted-foreground">
+          <p className="pt-2 text-xs font-medium text-muted-foreground">
             Paiement à la livraison, en espèces.
           </p>
         )}
       </div>
 
       {isDineIn ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="dine-note">Note pour la cuisine (optionnel)</Label>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="dine-note" className="text-base font-semibold">Note pour la cuisine (optionnel)</Label>
             <Textarea
               id="dine-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Sans oignons, bien cuit…"
+              className="min-h-[120px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
             />
           </div>
           <Button
             size="lg"
-            className="w-full"
+            className="w-full rounded-full h-14 text-lg font-bold shadow-xl"
             disabled={submitting}
             onClick={() => submitOrder()}
           >
@@ -219,21 +221,22 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       ) : (
         <form
           onSubmit={form.handleSubmit((values) => submitOrder(values))}
-          className="space-y-4"
+          className="space-y-6"
           noValidate
         >
-          <div className="space-y-2">
-            <Label htmlFor="customer_name">Nom *</Label>
+          <div className="space-y-3">
+            <Label htmlFor="customer_name" className="text-sm font-semibold text-muted-foreground ml-1">Nom *</Label>
             <Input
               id="customer_name"
               autoComplete="name"
               aria-invalid={!!form.formState.errors.customer_name}
               {...form.register("customer_name")}
+              className="h-14 rounded-2xl bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
             />
             <FieldError message={form.formState.errors.customer_name?.message} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="customer_phone">Téléphone *</Label>
+          <div className="space-y-3">
+            <Label htmlFor="customer_phone" className="text-sm font-semibold text-muted-foreground ml-1">Téléphone *</Label>
             <Input
               id="customer_phone"
               type="tel"
@@ -242,31 +245,40 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
               placeholder="06 12 34 56 78"
               aria-invalid={!!form.formState.errors.customer_phone}
               {...form.register("customer_phone")}
+              className="h-14 rounded-2xl bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
             />
             <FieldError
               message={form.formState.errors.customer_phone?.message}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Adresse de livraison *</Label>
+          <div className="space-y-3">
+            <Label htmlFor="address" className="text-sm font-semibold text-muted-foreground ml-1">Adresse de livraison *</Label>
             <Textarea
               id="address"
               autoComplete="street-address"
               placeholder="Rue, immeuble, étage, quartier…"
               aria-invalid={!!form.formState.errors.address}
               {...form.register("address")}
+              className="min-h-[100px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
             />
             <FieldError message={form.formState.errors.address?.message} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="note">Note (optionnel)</Label>
-            <Textarea id="note" {...form.register("note")} />
+          <div className="space-y-3">
+            <Label htmlFor="note" className="text-sm font-semibold text-muted-foreground ml-1">Note (optionnel)</Label>
+            <Textarea 
+              id="note" 
+              {...form.register("note")} 
+              className="min-h-[100px] rounded-2xl bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent transition-all"
+            />
           </div>
-          <Button size="lg" className="w-full" type="submit" disabled={submitting}>
-            {submitting
-              ? "Envoi…"
-              : `Commander · ${formatPrice(total, restaurant.currency)}`}
-          </Button>
+          
+          <div className="pt-4">
+            <Button size="lg" className="w-full rounded-full h-14 text-lg font-bold shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]" type="submit" disabled={submitting}>
+              {submitting
+                ? "Envoi…"
+                : `Commander · ${formatPrice(total, restaurant.currency)}`}
+            </Button>
+          </div>
         </form>
       )}
     </div>
