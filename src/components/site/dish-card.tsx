@@ -18,7 +18,7 @@ export function DishCard({
   return (
     <Link
       href={`/${slug}/menu`}
-      className="group relative mt-16 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none"
+      className="group relative mt-8 sm:mt-10 lg:mt-12 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none"
     >
       {/* Floating Image Top Right */}
       <div className="absolute -right-2 -top-8 z-10 flex size-[110px] items-center justify-center sm:-right-4 sm:-top-10 sm:size-[120px] lg:-top-12 lg:size-[130px]">

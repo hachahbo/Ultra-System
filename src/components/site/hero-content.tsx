@@ -4,6 +4,21 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { motion, type Variants } from "framer-motion";
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+
 export function HeroContent({
   base,
   headline,
@@ -16,9 +31,15 @@ export function HeroContent({
   ctaLabel?: string;
 }) {
   return (
-    <div className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-1/2 h-full"
+    >
       {/* 1. Title */}
-      <h1
+      <motion.h1
+        variants={itemVariants}
         className="font-display ml-3 text-4xl font-bold leading-[1.1] tracking-tight text-white lg:text-foreground md:text-7xl"
       >
         {headline ?? (
@@ -30,10 +51,11 @@ export function HeroContent({
             for you
           </>
         )}
-      </h1>
+      </motion.h1>
 
       {/* 4. Description & Opening Hours */}
-      <div
+      <motion.div
+        variants={itemVariants}
         className="hidden lg:block mt-4 md:mt-6 max-w-md"
       >
         <p className="text-base leading-relaxed text-muted-foreground sm:text-lg mb-8">
@@ -41,10 +63,11 @@ export function HeroContent({
             "consectetur adipiscing dolore magna aliqua Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
         </p>
 
-      </div>
+      </motion.div>
 
       {/* 2. Buttons */}
-      <div
+      <motion.div
+        variants={itemVariants}
         className="mt-8 md:mt-10 ml-3 flex flex-wrap gap-4"
       >
         <Button
@@ -59,8 +82,8 @@ export function HeroContent({
         >
           <Link href={`${base}/reservation`}>Book a table</Link>
         </Button>
-      </div>
-        <div className="hidden lg:flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
+      </motion.div>
+        <motion.div variants={itemVariants} className="hidden lg:flex flex-col sm:flex-row gap-6 sm:gap-10 mt-8">
           <div className="flex flex-col gap-2">
             <h4 className="text-sm font-semobold tracking-[0.2em] text-foreground">
               Opening hours
@@ -81,10 +104,11 @@ export function HeroContent({
               Rue Lafayette, Tanger
             </p>
           </div>
-        </div>
+        </motion.div>
 
       {/* 3. Socials */}
-      <div
+      <motion.div
+        variants={itemVariants}
         className="hidden lg:flex mt-5 md:mt-20 items-center gap-4"
       >
         <div className="flex gap-3">
@@ -146,7 +170,7 @@ export function HeroContent({
           </a>
         </div>
         <div className="h-[2px] w-16 bg-border/80"></div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { motion, type Variants } from "framer-motion";
 import { DishCard } from "@/components/site/dish-card";
 import type { Item } from "@/lib/types";
 
@@ -6,6 +9,19 @@ import type { Item } from "@/lib/types";
 // elsewhere on the site (welcome grid, about gallery) rather than curated
 // per-item photography tied to one restaurant's menu.
 const FALLBACK_DISH_IMAGE = "/images/hero-default.webp";
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
 
 export function SpecialsSection({
   items,
@@ -35,8 +51,14 @@ export function SpecialsSection({
         <Image src="/images/Group (6).svg" alt="" width={77} height={78} className="h-auto w-full" />
       </div>
 
-      <div className="relative mx-auto max-w-[1400px] px-4 xl:px-8">
-        <div className="mx-auto mb-16 max-w-xl text-center">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        className="relative mx-auto max-w-[1400px] px-4 xl:px-8"
+      >
+        <motion.div variants={itemVariants} className="mx-auto mb-16 max-w-xl text-center">
           <h2 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
             {heading ?? "Our Special Dishes"}
           </h2>
@@ -44,16 +66,16 @@ export function SpecialsSection({
             {sub ??
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
           </p>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] shadow-2xl">
+        <motion.div variants={itemVariants} className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] shadow-2xl">
           {/* Left Side: Featured Image */}
-          <div className="w-full lg:w-[45%] p-4 sm:p-8 lg:p-12">
-            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-[32px] shadow-xl">
+          <div className="w-full lg:w-[45%] lg:p-12">
+            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-b-[40px] lg:rounded-[32px] shadow-xl lg:shadow-xl">
               <Image
                 src={imageUrl || FALLBACK_DISH_IMAGE}
                 fill
-                sizes="(min-width: 1024px) 45vw, 90vw"
+                sizes="(min-width: 1024px) 45vw, 100vw"
                 className="object-cover object-center hover:scale-105 transition-transform duration-500"
                 alt="Nos plats"
               />
@@ -69,13 +91,21 @@ export function SpecialsSection({
                   image_url: item.image_url || FALLBACK_DISH_IMAGE,
                 };
                 return (
-                  <DishCard key={item.id} item={itemWithImage} slug={slug} currency={currency} />
+                  <motion.div 
+                    key={item.id} 
+                    variants={itemVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-20px" }}
+                  >
+                    <DishCard item={itemWithImage} slug={slug} currency={currency} />
+                  </motion.div>
                 );
               })}
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

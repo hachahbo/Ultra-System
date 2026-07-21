@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
 import type { ValueItem } from "@/lib/types";
 
 // The card image alternates image-top/text-bottom vs text-top/image-bottom
@@ -47,8 +50,12 @@ export function ValuesSection({ items }: { items: ValueItem[] }) {
               </div>
             );
             return (
-              <div
+              <motion.div
                 key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: i * 0.1 }}
+                viewport={{ once: true, margin: "-20px" }}
                 className={reverse ? "flex flex-col-reverse gap-6 md:flex-col" : "flex flex-col gap-6"}
               >
                 {reverse ? (
@@ -62,7 +69,7 @@ export function ValuesSection({ items }: { items: ValueItem[] }) {
                     {text}
                   </>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
