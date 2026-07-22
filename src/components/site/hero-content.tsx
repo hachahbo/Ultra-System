@@ -41,18 +41,20 @@ export function HeroContent({
             if (hasHighlight) {
               const parts = line.split(new RegExp(`(${highlight})`, "i"));
               return (
-                <span key={idx} className="block">
+                <span key={idx} className="inline md:block">
                   {parts.map((p, pIdx) => 
                     p.toLowerCase() === highlight.toLowerCase() ? (
                       <span key={pIdx} className="text-[#FF6B35] italic font-serif font-normal lowercase tracking-wide">{p}</span>
                     ) : p
                   )}
+                  {idx < lines.length - 1 && <span className="inline md:hidden"> </span>}
                 </span>
               );
             }
             return (
-              <span key={idx} className="block">
+              <span key={idx} className="inline md:block">
                 {line}
+                {idx < lines.length - 1 && <span className="inline md:hidden"> </span>}
               </span>
             );
           })}
@@ -80,7 +82,7 @@ export function HeroContent({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-[50%] h-full min-h-[420px]"
+      className="relative z-10 flex w-full flex-col justify-end lg:justify-center lg:w-[50%] h-full mt-auto lg:mt-0 pb-2 sm:pb-4 lg:pb-0"
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -97,11 +99,11 @@ export function HeroContent({
             {currentStep.label}
           </div>
 
-          {/* 1. Title with adaptive Light / Dark text color */}
+          {/* 1. Title: 2 lines on mobile, 4 lines on desktop */}
           <h1 
-            className="font-serif ml-3 font-medium leading-[1.05] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
+            className="font-serif ml-3 font-medium leading-[1.08] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
             style={{ 
-              fontSize: "clamp(44px, 5.4vw, 76px)" 
+              fontSize: "clamp(32px, 7.5vw, 76px)" 
             }}
           >
             {renderHeadline(currentStep.title, currentStep.highlightWord)}
@@ -119,17 +121,17 @@ export function HeroContent({
       {/* 2. Buttons */}
       <motion.div
         variants={itemVariants}
-        className="mt-4 md:mt-5 ml-3 flex flex-wrap gap-4"
+        className="mt-4 sm:mt-5 ml-3 flex flex-row items-center gap-3 sm:gap-4 flex-nowrap"
       >
         <Button
           asChild
-          className="rounded-full bg-foreground px-9 py-6 text-base font-semibold text-background hover:bg-foreground/90 shadow-lg transition-all"
+          className="rounded-full bg-[#F4ECE3] px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold text-[#1c1712] hover:bg-[#F4ECE3]/90 shadow-md transition-all shrink-0"
         >
           <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
         <Button
           asChild
-          className="rounded-full bg-[#FF6B35] px-9 py-6 text-base font-semibold text-white hover:bg-[#FF6B35]/90 shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] group transition-all duration-300 flex items-center gap-2"
+          className="rounded-full bg-[#FF6B35] px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold text-white hover:bg-[#FF6B35]/90 shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] group transition-all duration-300 flex items-center gap-2 shrink-0"
         >
           <Link href={`${base}/reservation`}>
             Book a table <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>

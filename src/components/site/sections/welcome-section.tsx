@@ -1,6 +1,13 @@
 import React from "react";
 import Image from "next/image";
 
+const DEFAULT_WELCOME_IMAGES = [
+  "/images/about/about-5.webp",
+  "/images/about/about-2.webp",
+  "/images/about/about-3.webp",
+  "/images/about/about-4.webp",
+];
+
 export function WelcomeSection({
   heading,
   body,
@@ -8,8 +15,16 @@ export function WelcomeSection({
 }: {
   heading?: string;
   body: string;
-  images: string[];
+  images?: string[];
 }) {
+  // Use custom images if present and not containing legacy demo placeholders, otherwise fallback to DEFAULT_WELCOME_IMAGES
+  const hasCustomImages =
+    images &&
+    images.length >= 4 &&
+    images.every((url) => url.startsWith("http") || url.startsWith("/images/about/"));
+
+  const displayImages = hasCustomImages ? images : DEFAULT_WELCOME_IMAGES;
+
   return (
     <section className="hidden md:block bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1600px]">
@@ -31,11 +46,11 @@ export function WelcomeSection({
         </div>
 
         {/* Image Grid */}
-        {images.length > 0 && (
+        {displayImages.length > 0 && (
           <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {images.slice(0, 4).map((src, i) => (
+            {displayImages.slice(0, 4).map((src, i) => (
               <div
-                key={src}
+                key={`${src}-${i}`}
                 className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]"
               >
                 <Image

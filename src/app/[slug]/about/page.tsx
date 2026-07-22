@@ -8,6 +8,13 @@ import { getSiteTheme } from "@/lib/site-theme";
 
 export const metadata: Metadata = { title: "Qui sommes-nous" };
 
+const DEFAULT_ABOUT_GALLERY = [
+  "/images/about/about-storefront.webp",
+  "/images/about/about-2.webp",
+  "/images/about/about-5.webp",
+  "/images/about/about-4.webp",
+];
+
 export default async function AboutPage({
   params,
 }: {
@@ -17,6 +24,14 @@ export default async function AboutPage({
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) notFound();
   const { theme } = await getSiteTheme(restaurant);
+
+  const hasCustomGallery =
+    theme.about_gallery_urls &&
+    theme.about_gallery_urls.length >= 4 &&
+    theme.about_gallery_urls.every((url) => url.startsWith("http"));
+
+  const galleryImages = hasCustomGallery ? theme.about_gallery_urls : DEFAULT_ABOUT_GALLERY;
+  const bentoCardImage = "/images/about/about-3.webp";
 
   return (
     <div className="min-h-[80vh] bg-background py-16 md:py-32 overflow-hidden px-4 sm:px-6 lg:px-8">
@@ -40,13 +55,12 @@ export default async function AboutPage({
           )}
         </div>
 
-        {/* Image Grid — theme-driven (0019); skipped entirely when the
-            operator hasn't set gallery photos for this restaurant yet. */}
-        {theme.about_gallery_urls.length > 0 && (
+        {/* Image Grid */}
+        {galleryImages.length > 0 && (
           <div className="mt-16 md:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {theme.about_gallery_urls.slice(0, 4).map((src, i) => (
+            {galleryImages.slice(0, 4).map((src, i) => (
               <div
-                key={src}
+                key={`${src}-${i}`}
                 className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-muted shadow-md transition-transform duration-500 hover:scale-[1.02]"
               >
                 <Image
@@ -61,15 +75,12 @@ export default async function AboutPage({
           </div>
         )}
 
-        {/* Bento Layout Section — every card is theme-driven (0019); the
-            top card only renders once at least a bento heading/body is set
-            (custom_copy), same "no data → render nothing" rule as the rest
-            of this page. */}
+        {/* Bento Layout Section */}
         {(theme.custom_copy.about_bento_heading || theme.custom_copy.about_bento_body) && (
           <div className="mt-24 md:mt-32 flex flex-col gap-6">
             {/* Top Card */}
             <div className="flex flex-col md:flex-row bg-[#0B1A28] dark:bg-slate-900 rounded-[2rem] p-6 md:p-10 gap-8 items-center text-white relative shadow-md">
-              {/* Rating pill — only when the operator has set a rating */}
+              {/* Rating pill */}
               {theme.about_rating != null && (
                 <div className="absolute top-6 right-6 md:top-10 md:right-10 bg-white dark:bg-background text-black dark:text-foreground px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg z-10">
                   <span className="font-bold text-base">{theme.about_rating.toFixed(1)}</span>
@@ -82,17 +93,15 @@ export default async function AboutPage({
                 </div>
               )}
 
-              {theme.about_gallery_urls[0] && (
-                <div className="relative w-full md:w-1/2 aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 dark:border-border/50">
-                  <Image
-                    src={theme.about_gallery_urls[0]}
-                    alt={restaurant.name}
-                    fill
-                    sizes="(min-width: 768px) 45vw, 90vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
+              <div className="relative w-full md:w-1/2 aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 dark:border-border/50">
+                <Image
+                  src={bentoCardImage}
+                  alt={restaurant.name}
+                  fill
+                  sizes="(min-width: 768px) 45vw, 90vw"
+                  className="object-cover"
+                />
+              </div>
 
               <div className="w-full md:w-1/2 flex flex-col justify-center items-start pt-6 md:pt-0">
                 <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
@@ -135,10 +144,10 @@ export default async function AboutPage({
 
               {(theme.custom_copy.about_promo_heading || theme.custom_copy.about_promo_body) && (
                 <div className="bg-[#cd6133] dark:bg-[#7c3a21] rounded-[2rem] p-8 md:p-12 flex flex-col text-white shadow-md">
-                  {theme.about_gallery_urls[1] && (
+                  {galleryImages[1] && (
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 dark:border-border/50 mb-8">
                       <Image
-                        src={theme.about_gallery_urls[1]}
+                        src={galleryImages[1]}
                         alt={theme.custom_copy.about_promo_heading ?? restaurant.name}
                         fill
                         sizes="(min-width: 768px) 45vw, 90vw"

@@ -75,8 +75,10 @@ export function HeroImages({
                 fill
                 priority
                 sizes="(min-width: 1024px) 45vw, 90vw"
-                className="object-cover"
+                className="object-cover brightness-[0.80] lg:brightness-100 transition-all duration-300"
               />
+              {/* Dark overlay specifically on mobile for extra contrast */}
+              <div className="absolute inset-0 bg-black/35 lg:hidden pointer-events-none" />
             </motion.div>
           </AnimatePresence>
         </div>

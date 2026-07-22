@@ -25,12 +25,12 @@ export default function RootLayout({
       className={`${rootFontClassNames} h-full antialiased overflow-x-hidden`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans transition-colors duration-500 overflow-x-hidden">
+      <body className="min-h-full flex flex-col font-sans transition-colors duration-500 overflow-x-hidden" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange={false} // Allow CSS transitions when switching themes
+          disableTransitionOnChange={false}
         >
           {children}
           <Toaster position="top-center" richColors />
