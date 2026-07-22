@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { motion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { DishCard } from "@/components/site/dish-card";
 import type { Item } from "@/lib/types";
 
@@ -38,6 +40,10 @@ export function SpecialsSection({
   sub?: string;
   imageUrl?: string | null;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const displayedItems = isExpanded ? items : items.slice(0, 1);
+
   return (
     <section className="relative overflow-hidden bg-background py-20 md:py-28">
       {/* Decorative Botanicals */}
@@ -68,10 +74,10 @@ export function SpecialsSection({
           </p>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] shadow-2xl">
+        <motion.div variants={itemVariants} className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] dark:bg-[#0c1824] shadow-2xl">
           {/* Left Side: Featured Image */}
           <div className="w-full lg:w-[45%] lg:p-12">
-            <div className="relative w-full h-full min-h-[400px] overflow-hidden rounded-b-[40px] lg:rounded-[32px] shadow-xl lg:shadow-xl">
+            <div className="relative w-full h-full min-h-[340px] lg:min-h-[400px] overflow-hidden rounded-b-[40px] lg:rounded-[32px] shadow-xl">
               <Image
                 src={imageUrl || FALLBACK_DISH_IMAGE}
                 fill
@@ -82,27 +88,61 @@ export function SpecialsSection({
             </div>
           </div>
 
-          {/* Right Side: 2x2 Grid of Dishes */}
+          {/* Right Side: Dishes list with Framer Motion expand */}
           <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
-            <div className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-14 sm:grid-cols-2 mt-8">
-              {items.map((item) => {
-                const itemWithImage = {
-                  ...item,
-                  image_url: item.image_url || FALLBACK_DISH_IMAGE,
-                };
-                return (
-                  <motion.div 
-                    key={item.id} 
-                    variants={itemVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-20px" }}
+            <motion.div layout className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-10 sm:grid-cols-2 mt-4">
+              <AnimatePresence initial={false}>
+                {displayedItems.map((item, index) => {
+                  const itemWithImage = {
+                    ...item,
+                    image_url: item.image_url || FALLBACK_DISH_IMAGE,
+                  };
+                  return (
+                    <motion.div 
+                      key={item.id} 
+                      layout
+                      initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, y: -15 }}
+                      transition={{ 
+                        duration: 0.45, 
+                        ease: [0.16, 1, 0.3, 1],
+                        delay: isExpanded && index > 0 ? (index - 1) * 0.08 : 0
+                      }}
+                    >
+                      <DishCard item={itemWithImage} slug={slug} currency={currency} />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Expand / Collapse Action Button */}
+            {items.length > 1 && (
+              <motion.div 
+                layout 
+                className="mt-8 flex justify-center lg:justify-start"
+              >
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  aria-expanded={isExpanded}
+                  className="group relative inline-flex items-center gap-3 rounded-full bg-[#FF6B35]/20 text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white px-8 py-3.5 text-sm font-bold tracking-wide backdrop-blur-md border border-[#FF6B35]/40 shadow-[0_8px_20px_rgba(255,107,53,0.2)] hover:shadow-[0_12px_28px_rgba(255,107,53,0.4)] transition-all duration-300 active:scale-95 cursor-pointer outline-none select-none"
+                >
+                  <span>
+                    {isExpanded
+                      ? "Voir moins"
+                      : `Voir toutes les spécialités (${items.length})`}
+                  </span>
+                  <motion.span
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="inline-flex items-center justify-center"
                   >
-                    <DishCard item={itemWithImage} slug={slug} currency={currency} />
-                  </motion.div>
-                );
-              })}
-            </div>
+                    <ChevronDown className="h-4 w-4 stroke-[3]" />
+                  </motion.span>
+                </button>
+              </motion.div>
+            )}
           </div>
         </motion.div>
       </motion.div>
