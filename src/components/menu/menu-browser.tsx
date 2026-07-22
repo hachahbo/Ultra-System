@@ -40,7 +40,7 @@ function fallbackImage(seed: string) {
 // Helper to retrieve authentic tangerine ingredients or customization groups
 function getItemDetails(item: Item): ItemDetails {
   const name = item.name_fr.toLowerCase();
-  
+
   if (name.includes("potatoes")) {
     return {
       expandTitle: "Composition",
@@ -304,9 +304,8 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px] bg-card border border-border/10 dark:border-border/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 ${
-                  item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
-                }`}
+                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px] bg-card border border-border/10 dark:border-border/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 ${item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
+                  }`}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right (Strictly Matching the 118px Oval Style) ── */}
@@ -346,7 +345,7 @@ export function MenuBrowser({
                       </span>
                     )}
                   </div>
-                  
+
                   {item.description_fr && (
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {item.description_fr}
@@ -359,7 +358,7 @@ export function MenuBrowser({
                   <span className="font-display text-2xl font-extrabold text-[#FF6B35]">
                     {formatPrice(item.base_price, restaurant.currency)}
                   </span>
-                  
+
                   <div className="flex items-center gap-3">
                     {item.in_stock && orderingEnabled && (
                       <motion.button
@@ -398,14 +397,13 @@ export function MenuBrowser({
                         </AnimatePresence>
                       </motion.button>
                     )}
-                    
+
                     {/* Accordion Expansion Toggle chevron */}
                     <button
                       onClick={(e) => toggleExpand(item.id, e)}
                       aria-label="Détails"
-                      className={`flex size-[42px] items-center justify-center rounded-full border border-border/40 bg-transparent text-foreground hover:bg-muted/30 cursor-pointer transition-transform duration-300 ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
+                      className={`flex size-[42px] items-center justify-center rounded-full border border-border/40 bg-transparent text-foreground hover:bg-muted/30 cursor-pointer transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
+                        }`}
                     >
                       <ChevronDown className="size-5" />
                     </button>
@@ -420,7 +418,7 @@ export function MenuBrowser({
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#141416] dark:to-[#24130b] text-[#1b2437] dark:text-stone-200 rounded-b-[22px] -mx-6 -mb-6 mt-6"
+                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#141416] dark:to-[#24130b] text-[#1b2437] dark:text-stone-200 rounded-[28px] -mx-6 -mb-6 mt-6"
                       onClick={(e) => e.stopPropagation()} // Prevent modal trigger inside details
                     >
                       <div className="p-[30px] pt-7">
@@ -554,11 +552,10 @@ function CategoryPill({
         />
       )}
       <span
-        className={`relative z-10 transition-colors duration-200 ${
-          active
+        className={`relative z-10 transition-colors duration-200 ${active
             ? "text-[#FF6B35] dark:text-[#FF6B35] font-bold"
             : "text-muted-foreground hover:text-foreground"
-        }`}
+          }`}
       >
         {children}
       </span>
