@@ -99,7 +99,7 @@ async function seedRestaurantsAndSubscriptions() {
   // seeded here purely so the demo public sites aren't blank; a real operator
   // would set these via the Site Builder instead.
   const themes = [
-    { restaurant_id: TACOS, address: "Avenue Mohammed VI, Tanger", about_body: "Les meilleurs tacos de Tanger depuis 2015." },
+    { restaurant_id: TACOS, address: "Avenue Mohammed VI, Tanger", about_body: "Un lieu pensé comme une maison pour que vous vous y sentiez bien à tout moment.\n\nÀ vous de décider où vous préférez vous installer pour vous restaurer : dans notre salon, notre jardin d’hiver, sous notre verrière, ou sur notre terrasse, nous vous accueillons toute la journée pour partager avec vous notre passion du bien manger. Dans notre épicerie pensée et menuisée comme une bibliothèque, vous pouvez retrouver tous les produits que vous avez dégustés, ainsi que ceux réalisés par les producteurs et artisans avec lesquels nous collaborons." },
     { restaurant_id: DAR_LAHWA, address: "Boulevard Pasteur, Tanger", about_body: "Cuisine marocaine traditionnelle." },
     { restaurant_id: PIZZA_RIF, address: "Avenue Hassan II, Tétouan", about_body: "Pizzas au feu de bois." },
     { restaurant_id: SUSHI_BAY, address: "Marina, Tanger", about_body: "Sushi avec vue sur la baie." },

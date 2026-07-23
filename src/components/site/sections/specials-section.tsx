@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { DishCard } from "@/components/site/dish-card";
 import type { Item } from "@/lib/types";
@@ -42,7 +42,7 @@ export function SpecialsSection({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const displayedItems = isExpanded ? items : items.slice(0, 1);
+  if (!items || items.length === 0) return null;
 
   return (
     <section className="relative overflow-hidden bg-background py-20 md:py-28">
@@ -88,40 +88,57 @@ export function SpecialsSection({
             </div>
           </div>
 
-          {/* Right Side: Dishes list with Framer Motion expand */}
+          {/* Right Side: Dishes grid */}
           <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
-            <motion.div layout className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-10 sm:grid-cols-2 mt-4">
-              <AnimatePresence initial={false}>
-                {displayedItems.map((item, index) => {
-                  const itemWithImage = {
-                    ...item,
-                    image_url: item.image_url || FALLBACK_DISH_IMAGE,
-                  };
+            <div className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-10 sm:grid-cols-2 mt-4">
+              {items.map((item, index) => {
+                const itemWithImage = {
+                  ...item,
+                  image_url: item.image_url || FALLBACK_DISH_IMAGE,
+                };
+
+                // Dish 1: Always fully visible
+                if (index === 0) {
                   return (
                     <motion.div 
                       key={item.id} 
-                      layout
                       initial={{ opacity: 0, scale: 0.92, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.92, y: -15 }}
-                      transition={{ 
-                        duration: 0.45, 
-                        ease: [0.16, 1, 0.3, 1],
-                        delay: isExpanded && index > 0 ? (index - 1) * 0.08 : 0
-                      }}
+                      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <DishCard item={itemWithImage} slug={slug} currency={currency} />
                     </motion.div>
                   );
-                })}
-              </AnimatePresence>
-            </motion.div>
+                }
 
-            {/* Expand / Collapse Action Button */}
+                // Dishes 2..N: Smooth collapse/expand on mobile, fully visible in 2x2 grid on desktop
+                return (
+                  <motion.div 
+                    key={item.id}
+                    initial={false}
+                    animate={{
+                      height: isExpanded ? "auto" : 0,
+                      opacity: isExpanded ? 1 : 0,
+                      scale: isExpanded ? 1 : 0.95,
+                    }}
+                    transition={{ 
+                      duration: 0.4, 
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: isExpanded ? (index - 1) * 0.08 : 0,
+                    }}
+                    className="overflow-hidden sm:!h-auto sm:!opacity-100 sm:!scale-100 sm:!overflow-visible"
+                  >
+                    <DishCard item={itemWithImage} slug={slug} currency={currency} />
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Expand / Collapse Action Button (Mobile Only) */}
             {items.length > 1 && (
               <motion.div 
                 layout 
-                className="mt-8 flex justify-center lg:justify-start"
+                className="mt-8 flex justify-center sm:hidden"
               >
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}

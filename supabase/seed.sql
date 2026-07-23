@@ -22,7 +22,9 @@ insert into public.restaurant_theme (restaurant_id, address, about_body)
 values (
   '11111111-1111-1111-1111-111111111111',
   'Avenue Mohammed VI, Tanger',
-  'Depuis 2015, Tacos Al Amin sert les meilleurs tacos de Tanger. Des produits frais, des sauces maison et un accueil familial.'
+  'Un lieu pensé comme une maison pour que vous vous y sentiez bien à tout moment.
+
+À vous de décider où vous préférez vous installer pour vous restaurer : dans notre salon, notre jardin d’hiver, sous notre verrière, ou sur notre terrasse, nous vous accueillons toute la journée pour partager avec vous notre passion du bien manger. Dans notre épicerie pensée et menuisée comme une bibliothèque, vous pouvez retrouver tous les produits que vous avez dégustés, ainsi que ceux réalisés par les producteurs et artisans avec lesquels nous collaborons.'
 );
 
 insert into public.categories (id, restaurant_id, name_fr, name_ar, sort_order) values
