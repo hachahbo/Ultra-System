@@ -101,6 +101,7 @@ export function AppSidebar({
   const collapsed = state === "collapsed" && !isMobile;
 
   async function signOut() {
+    if (isMobile) setOpenMobile(false);
     await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();
@@ -158,7 +159,11 @@ export function AppSidebar({
                             : "text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground"
                         )}
                       >
-                        <Link href={item.href} className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
+                        <Link
+                          href={item.href}
+                          onClick={() => isMobile && setOpenMobile(false)}
+                          className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0"
+                        >
                           <item.icon className="size-[18px] shrink-0" />
                           <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">{item.label}</span>
                         </Link>
