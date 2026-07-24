@@ -10,6 +10,7 @@ export type SessionContext = {
   restaurant: Restaurant;
   features: Record<FeatureKey, boolean>;
   themeLogoUrl: string | null;
+  userEmail: string | null;
 };
 
 // Resolves the logged-in dashboard user and their tenant. RLS already keys
@@ -55,7 +56,8 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     profile: profile as Profile, 
     restaurant: restaurantRow, 
     features,
-    themeLogoUrl: theme?.logo_url ?? null
+    themeLogoUrl: theme?.logo_url ?? null,
+    userEmail: user.email ?? null
   };
 }
 

@@ -168,7 +168,7 @@ export function MenuManager() {
   }
 
   return (
-    <div className="-mx-4 px-4 md:-mx-8 md:px-8 w-full space-y-8">
+    <div className="w-full space-y-8">
       {/* Header section matches Commandes aesthetic */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
         <div>

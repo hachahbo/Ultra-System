@@ -97,7 +97,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { state, toggleSidebar, isMobile } = useSidebar();
+  const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
 
   async function signOut() {

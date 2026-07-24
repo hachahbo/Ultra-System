@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardProviders } from "@/components/dashboard/providers";
 import { SuspendedNotice } from "@/components/dashboard/suspended-notice";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getSessionContext, isSuspended } from "@/lib/dashboard";
 import { getAdminContext } from "@/lib/admin-auth";
 import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
@@ -63,12 +64,12 @@ export default async function DashboardLayout({
           features={ctx.features}
         />
         <SidebarInset>
-          <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur md:hidden">
-            <SidebarTrigger />
-            <p className="truncate font-display text-base font-semibold">
-              {ctx.restaurant.name}
-            </p>
-          </header>
+          <DashboardHeader
+            restaurantName={ctx.restaurant.name}
+            logoUrl={ctx.themeLogoUrl}
+            role={ctx.profile.role}
+            email={ctx.userEmail ?? ""}
+          />
           <main className="mx-auto w-full flex-1 space-y-8 px-4 py-6 md:px-8 md:py-8">
             {children}
           </main>
@@ -77,3 +78,4 @@ export default async function DashboardLayout({
     </DashboardProviders>
   );
 }
+

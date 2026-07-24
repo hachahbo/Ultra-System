@@ -126,7 +126,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
   const totalSeats = list.reduce((sum, t) => sum + t.seats, 0);
 
   return (
-    <div className="-mx-4 px-4 md:-mx-8 md:px-8 w-full space-y-10 pb-20">
+    <div className="w-full space-y-10 pb-20">
 
       {/* Header section matches Commandes/Menu aesthetic */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">

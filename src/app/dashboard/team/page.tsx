@@ -15,7 +15,7 @@ export default async function TeamPage() {
   if (ctx.profile.role !== "owner") redirect(defaultRouteFor(ctx.profile.role));
 
   return (
-    <div className="w-full -mx-4 px-4 md:-mx-8 md:px-8">
+    <div className="w-full">
       <h1 className="font-display text-3xl font-bold text-foreground">Équipe</h1>
       <p className="mt-1 text-[13.5px] font-medium text-muted-foreground">
         Invitez des managers, serveurs et membres de cuisine, et gérez leur accès.
