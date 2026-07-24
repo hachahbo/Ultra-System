@@ -538,6 +538,83 @@ export function OrdersView() {
         {/* Datatable */}
         <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col shadow-sm overflow-hidden">
           <div className="flex-1 overflow-auto">
+            {/* Mobile: card list */}
+            <div className="flex flex-col gap-3 p-3.5 md:hidden">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => {
+                  const order = row.original;
+                  const code = "CMD-" + order.id.slice(0, 4).toUpperCase();
+                  const d = new Date(order.created_at);
+                  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  const badge = getStatusBadge(order.status as string);
+                  const totalQty = order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                  const firstItemName = order.items?.[0]?.name || "Article";
+                  const extraItems = (order.items?.length || 0) - 1;
+                  return (
+                    <div
+                      key={row.id}
+                      className="rounded-xl border border-border bg-card p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-[14px] font-extrabold text-foreground">{code}</div>
+                          <div className="text-[11.5px] text-muted-foreground mt-0.5">{time}</div>
+                        </div>
+                        <span
+                          className="inline-flex shrink-0 items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold"
+                          style={{ background: badge.bg, color: badge.color }}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-[13.5px] font-bold text-foreground truncate">{firstItemName}</div>
+                      <div className="text-[11.5px] text-muted-foreground mt-0.5">
+                        {extraItems > 0
+                          ? `+ ${extraItems} autre${extraItems > 1 ? "s" : ""} article${extraItems > 1 ? "s" : ""}`
+                          : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-semibold text-foreground truncate">
+                            {order.customer_name || "Sur place"}
+                          </div>
+                          <div className="text-[11.5px] text-muted-foreground">
+                            {order.type === "dine_in"
+                              ? `Sur place${order.table_number ? ` · T${order.table_number}` : ""}`
+                              : "Livraison"}
+                          </div>
+                        </div>
+                        <div className="text-[15px] font-extrabold text-primary shrink-0">
+                          {formatPrice(Number(order.total), "MAD")}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(order)}
+                          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-muted transition-colors"
+                        >
+                          <Pencil className="size-3.5" /> Modifier
+                        </button>
+                        <button
+                          onClick={() => setSelectedOrderForDelete(order)}
+                          aria-label="Supprimer la commande"
+                          className="flex size-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="size-4 stroke-[#ef4444]" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="py-12 text-center text-[13.5px] text-muted-foreground">
+                  Aucune commande ne correspond.
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block">
             <Table>
               <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -581,6 +658,7 @@ export function OrdersView() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </div>
 
           {/* Table Pagination */}

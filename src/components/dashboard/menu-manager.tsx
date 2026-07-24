@@ -279,6 +279,110 @@ export function MenuManager() {
 
             {/* Items Datatable */}
             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+              {/* Mobile: card list */}
+              <div className="flex flex-col gap-3 p-3.5 md:hidden">
+                {items.length === 0 ? (
+                  <div className="py-8 text-center text-[13px] text-muted-foreground">
+                    Aucun article dans cette catégorie.
+                  </div>
+                ) : (
+                  items.map((item, itemIndex) => {
+                    const cost = showCosts ? costByItem.get(item.id) : undefined;
+                    return (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "rounded-xl border border-border bg-card p-4 shadow-sm",
+                          !item.in_stock && "opacity-60 grayscale-[0.2]",
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative flex size-[46px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border/50 bg-background shadow-sm">
+                            {item.image_url ? (
+                              <Image src={item.image_url} alt={item.name_fr} fill sizes="46px" className="object-cover" />
+                            ) : (
+                              <ImageIcon className="size-5 text-muted-foreground/50" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[14px] font-extrabold text-foreground">{item.name_fr}</div>
+                            {item.description_fr && (
+                              <div className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{item.description_fr}</div>
+                            )}
+                          </div>
+                          <Switch
+                            checked={item.in_stock}
+                            aria-label={`${item.name_fr} en stock`}
+                            disabled={!isOwner}
+                            onCheckedChange={(checked) => toggleStock.mutate({ id: item.id, in_stock: checked })}
+                            className="shrink-0 data-[state=checked]:bg-emerald-500"
+                          />
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 text-[12.5px]">
+                          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 font-bold text-primary">
+                            {formatPrice(item.base_price)}
+                          </span>
+                          {showCosts && (
+                            <>
+                              <span className="text-muted-foreground">
+                                Coût {cost ? formatPrice(cost.computed_cost) : "—"}
+                              </span>
+                              <span
+                                className={cn(
+                                  "font-bold",
+                                  cost?.margin_pct === null || cost?.margin_pct === undefined
+                                    ? "text-muted-foreground"
+                                    : cost.margin_pct >= 60
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : cost.margin_pct >= 35
+                                        ? "text-amber-600 dark:text-amber-400"
+                                        : "text-destructive",
+                                )}
+                              >
+                                {cost?.margin_pct === null || cost?.margin_pct === undefined
+                                  ? "—"
+                                  : `Marge ${cost.margin_pct.toFixed(0)}%`}
+                              </span>
+                            </>
+                          )}
+                          {isOwner && (
+                            <div className="ml-auto flex items-center gap-0.5">
+                              <Button variant="ghost" size="icon-sm" aria-label="Monter" disabled={itemIndex === 0} onClick={() => moveItem(items, itemIndex, -1)} className="hover:bg-muted">
+                                <ChevronUp className="size-4 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" aria-label="Descendre" disabled={itemIndex === items.length - 1} onClick={() => moveItem(items, itemIndex, 1)} className="hover:bg-muted">
+                                <ChevronDown className="size-4 text-muted-foreground" />
+                              </Button>
+                              {showCosts && (
+                                <Button variant="ghost" size="icon-sm" aria-label={`Fiche technique de ${item.name_fr}`} onClick={() => setEditingRecipe(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                                  <ClipboardList className="size-4" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="icon-sm" aria-label="Modifier" onClick={() => setEditing(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Supprimer"
+                                className="text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => {
+                                  if (confirm(`Supprimer « ${item.name_fr} » ?`)) deleteItem.mutate(item.id);
+                                }}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border">
@@ -446,6 +550,7 @@ export function MenuManager() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </section>
         );

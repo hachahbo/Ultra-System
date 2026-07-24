@@ -221,6 +221,69 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                 </p>
               </div>
             ) : (
+              <>
+              {/* Mobile: card list */}
+              <div className="flex flex-col gap-3 p-3.5 md:hidden">
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => {
+                    const c = row.original;
+                    const name = c.name || "Inconnu";
+                    const initials = name
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase();
+                    return (
+                      <button
+                        key={row.id}
+                        type="button"
+                        onClick={() => setSelected(c)}
+                        className="w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-[13px] font-extrabold text-white shadow-sm">
+                            {initials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[14px] font-extrabold text-foreground">{name}</div>
+                            <div className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-muted-foreground">
+                              <CalendarDays className="size-3" /> Client depuis {formatDateTime(c.first_seen).split(" ")[0]}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[13px] font-extrabold text-foreground">
+                            <ShoppingBag className="size-3.5 text-primary" />
+                            {c.order_count}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                          <a
+                            href={`tel:${c.phone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-muted/40 px-2.5 py-1.5 text-[12.5px] font-bold text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <Phone className="size-3.5 text-primary" />
+                            {c.phone}
+                          </a>
+                          <div className="text-right">
+                            <div className="text-[10.5px] font-bold tracking-wide text-muted-foreground">DERNIÈRE COMMANDE</div>
+                            <div className="text-[12.5px] font-semibold text-foreground">
+                              {c.last_order ? formatDateTime(c.last_order).split(" ")[0] : "—"}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="py-12 text-center text-[13.5px] text-muted-foreground">
+                    Aucun client ne correspond à votre recherche.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block">
               <Table>
                 <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -265,6 +328,8 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                   )}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
           </div>
 

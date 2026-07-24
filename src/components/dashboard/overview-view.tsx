@@ -62,6 +62,7 @@ export function OverviewView({
   const panierMoyen = ordersToday > 0 ? revenueToday / ordersToday : 0;
   const [timeRange, setTimeRange] = useState<"today" | "week">("today");
   const [hoveredSegment, setHoveredSegment] = useState<"sur_place" | "livraison" | "a_emporter" | null>(null);
+  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
 
   const dataToday = [
     { time: "11h", value: 30, orders: 12 },
@@ -144,31 +145,32 @@ export function OverviewView({
       {/* MIDDLE ROW: Custom Charts matching the new design */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-6">
         <FadeUp delay={0.16} className="lg:col-span-2">
-          <div className="flex h-full flex-col rounded-[24px] border bg-card p-6 shadow-sm">
-            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex h-full flex-col rounded-[28px] border bg-card p-5 sm:p-6 shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-display text-xl font-bold text-foreground">Rythme de la journée</h2>
-                <p className="text-sm text-muted-foreground mt-1">Commandes par créneau</p>
+                <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">Rythme de la journée</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Commandes par créneau</p>
               </div>
-              <div className="flex items-center rounded-xl border border-border/50 bg-background dark:bg-neutral-900/50 p-1 shadow-sm">
+              <div className="flex items-center rounded-xl border border-border/50 bg-background/80 dark:bg-neutral-900/60 p-1 shadow-sm w-fit">
                 <button
-                  onClick={() => setTimeRange("today")}
+                  onClick={() => { setTimeRange("today"); setActiveBarIndex(null); }}
                   className={cn(
-                    "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                    "rounded-lg px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold transition-colors",
                     timeRange === "today"
-                      ? "bg-[#e36329] text-white shadow-sm"
-                      : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      ? "bg-[#e36329] text-white shadow-md"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Aujourd'hui
                 </button>
                 <button
-                  onClick={() => setTimeRange("week")}
+                  onClick={() => { setTimeRange("week"); setActiveBarIndex(null); }}
                   className={cn(
-                    "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                    "rounded-lg px-3.5 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold transition-colors",
                     timeRange === "week"
-                      ? "bg-[#e36329] text-white shadow-sm"
-                      : "text-muted-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      ? "bg-[#e36329] text-white shadow-md"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Semaine
@@ -176,37 +178,56 @@ export function OverviewView({
               </div>
             </div>
 
-            <div className="flex-1 flex items-end justify-between gap-1 px-1 sm:gap-2 sm:px-2 pt-10 pb-2 relative h-[250px]">
-              {currentData.map((item, i) => {
-                const isHighlight = item.value === maxVal;
-                return (
-                  <div key={i} className="flex flex-col items-center gap-4 flex-1 group h-full justify-end cursor-pointer">
-                    <div className="relative flex w-full justify-center h-full items-end">
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-12 opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300 pointer-events-none bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-[12px] sm:text-[13px] font-bold px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full z-10 shadow-md whitespace-nowrap">
-                        {item.orders} cmd
+            {/* Chart Area */}
+            <div className="flex-1 flex flex-col justify-end pt-8 pb-1">
+              <div className="flex items-end justify-between gap-1 sm:gap-2 h-[190px] sm:h-[230px] px-0.5 sm:px-2 relative">
+                {currentData.map((item, i) => {
+                  const isPeak = item.value === maxVal;
+                  const isSelected = activeBarIndex === i || (activeBarIndex === null && isPeak);
+
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => setActiveBarIndex(i)}
+                      onMouseEnter={() => setActiveBarIndex(i)}
+                      className="flex flex-col items-center flex-1 h-full justify-end group cursor-pointer relative"
+                    >
+                      {/* Floating Tooltip Badge */}
+                      {isSelected && (
+                        <div className="absolute -top-10 z-20 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-[11px] sm:text-xs font-extrabold px-2.5 py-1 rounded-full shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-white/10 dark:border-black/10">
+                          {item.orders} cmd
+                        </div>
+                      )}
+
+                      {/* Bar Pill */}
+                      <div className="w-full max-w-[40px] sm:max-w-[48px] h-full flex items-end">
+                        <div
+                          className={cn(
+                            "w-full rounded-t-xl sm:rounded-t-2xl transition-all duration-300 ease-out min-h-[18px]",
+                            isSelected
+                              ? "bg-[#e36329] shadow-[0_4px_16px_rgba(227,99,41,0.45)] scale-x-105"
+                              : "bg-[#f2d1c3] dark:bg-[#e36329]/25 hover:bg-[#eb9d7a] dark:hover:bg-[#e36329]/45"
+                          )}
+                          style={{ height: `${Math.max(16, item.value)}%` }}
+                        />
                       </div>
 
-                      <div
+                      {/* Time Label */}
+                      <span
                         className={cn(
-                          "w-full max-w-[48px] rounded-t-[8px] sm:rounded-t-[12px] transition-all duration-700 ease-out",
-                          isHighlight
-                            ? "bg-[#e36329]"
-                            : "bg-[#f2d1c3] dark:bg-[#e36329]/20 group-hover:bg-[#eb9d7a] dark:group-hover:bg-[#e36329]/40"
+                          "mt-2.5 text-[10px] sm:text-xs font-bold transition-colors",
+                          isSelected
+                            ? "text-[#e36329]"
+                            : "text-muted-foreground group-hover:text-foreground",
+                          i % 2 !== 0 && "max-sm:hidden"
                         )}
-                        style={{ height: `${item.value}%` }}
-                      />
+                      >
+                        {item.time}
+                      </span>
                     </div>
-                    {/* Only show alternating labels on mobile, all on desktop to prevent crowding */}
-                    <span className={cn(
-                      "text-[10px] sm:text-[13px] font-medium text-muted-foreground transition-colors group-hover:text-foreground",
-                      i % 2 !== 0 && "max-sm:hidden"
-                    )}>
-                      {item.time}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </FadeUp>

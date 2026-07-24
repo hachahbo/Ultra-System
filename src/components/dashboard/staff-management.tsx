@@ -228,7 +228,7 @@ export function StaffManagement() {
 
       {/* Datatable */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="grid grid-cols-[2.4fr_1.1fr_1fr_1.3fr_44px] gap-4 border-b border-border bg-muted/30 px-6 py-3.5">
+        <div className="hidden grid-cols-[2.4fr_1.1fr_1fr_1.3fr_44px] gap-4 border-b border-border bg-muted/30 px-6 py-3.5 md:grid">
           <div className="text-[11px] font-bold tracking-wider text-muted-foreground">UTILISATEUR</div>
           <div className="text-[11px] font-bold tracking-wider text-muted-foreground">RÔLE</div>
           <div className="text-[11px] font-bold tracking-wider text-muted-foreground">STATUT</div>
@@ -257,11 +257,12 @@ export function StaffManagement() {
             <div
               key={s.id}
               className={cn(
-                "grid grid-cols-[2.4fr_1.1fr_1fr_1.3fr_44px] items-center gap-4 border-b border-border px-6 py-3.5 last:border-b-0",
+                "relative flex flex-col gap-3 border-b border-border p-4 last:border-b-0",
+                "md:grid md:grid-cols-[2.4fr_1.1fr_1fr_1.3fr_44px] md:items-center md:gap-4 md:p-0 md:px-6 md:py-3.5",
                 !s.active && "opacity-60",
               )}
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3 pr-10 md:pr-0">
                 <div
                   className={cn(
                     "flex size-10 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold",
@@ -277,13 +278,16 @@ export function StaffManagement() {
                 </div>
               </div>
 
-              <div>
+              <div className="flex items-center justify-between md:block">
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">RÔLE</span>
                 <Badge className={cn("rounded-full font-bold", colors.bg, colors.text)}>
                   {ROLE_LABELS[s.role]}
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between md:block">
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">STATUT</span>
+                <div className="flex items-center gap-2">
                 <span
                   className={cn(
                     "size-2 rounded-full ring-3",
@@ -293,11 +297,15 @@ export function StaffManagement() {
                 <span className={cn("text-[13px] font-semibold", s.active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
                   {s.active ? "Actif" : "Inactif"}
                 </span>
+                </div>
               </div>
 
-              <div className="text-[13px] text-muted-foreground">{formatDateTime(s.created_at)}</div>
+              <div className="flex items-center justify-between md:block">
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">AJOUTÉ LE</span>
+                <span className="text-[13px] text-muted-foreground">{formatDateTime(s.created_at)}</span>
+              </div>
 
-              <div className="flex justify-end">
+              <div className="absolute right-3 top-3 flex justify-end md:static md:right-auto md:top-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button

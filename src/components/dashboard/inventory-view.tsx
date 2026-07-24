@@ -287,7 +287,7 @@ function InventoryContent({
               </div>
             </div>
 
-            <div className="grid grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] gap-2.5 border-b border-border/70 px-5 py-2.5 text-[10.5px] font-bold tracking-wide text-muted-foreground">
+            <div className="hidden grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] gap-2.5 border-b border-border/70 px-5 py-2.5 text-[10.5px] font-bold tracking-wide text-muted-foreground md:grid">
               <div>ARTICLE</div>
               <div>UNITÉ</div>
               <div>STOCK ACTUEL</div>
@@ -303,7 +303,7 @@ function InventoryContent({
               return (
                 <div key={cat.id}>
                   <div
-                    className="grid cursor-pointer grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] items-center gap-2.5 bg-muted/40 px-5 py-3 border-b border-border/70"
+                    className="flex cursor-pointer items-center gap-2.5 bg-muted/40 px-5 py-3 border-b border-border/70 md:grid md:grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr]"
                     onClick={() => onToggleCategory(cat.id)}
                   >
                     <div className="flex items-center gap-2">
@@ -374,26 +374,35 @@ function ItemRow({
   return (
     <div
       className={cn(
-        "grid grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] items-center gap-2.5 px-5 py-3",
+        "flex flex-col gap-2 px-5 py-4 md:grid md:grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] md:items-center md:gap-2.5 md:py-3",
         !isLast && "border-b border-border/50",
       )}
     >
-      <div className="pl-7 text-[13.5px] font-semibold text-foreground">{item.name}</div>
-      <div className="text-[12.5px] text-muted-foreground">{item.unit}</div>
-      <div
-        className={cn(
-          "text-[13px] font-bold",
-          status === "in" && "text-foreground",
-          status === "low" && "text-amber-600 dark:text-amber-400",
-          status === "out" && "text-destructive",
-        )}
-      >
-        {item.stock} {item.unit}
+      <div className="text-[14px] font-bold text-foreground md:pl-7 md:text-[13.5px] md:font-semibold">{item.name}</div>
+      <div className="flex items-center justify-between md:block">
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">UNITÉ</span>
+        <span className="text-[12.5px] text-muted-foreground">{item.unit}</span>
       </div>
-      <div className="text-[12.5px] text-muted-foreground">
-        {item.min_threshold} {item.unit}
+      <div className="flex items-center justify-between md:block">
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">STOCK ACTUEL</span>
+        <span
+          className={cn(
+            "text-[13px] font-bold",
+            status === "in" && "text-foreground",
+            status === "low" && "text-amber-600 dark:text-amber-400",
+            status === "out" && "text-destructive",
+          )}
+        >
+          {item.stock} {item.unit}
+        </span>
       </div>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-between md:block">
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">SEUIL MIN</span>
+        <span className="text-[12.5px] text-muted-foreground">
+          {item.min_threshold} {item.unit}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-2 md:justify-end">
         <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", STATUS_CLASSES[status])}>
           {STOCK_STATUS_LABEL[status]}
         </span>
