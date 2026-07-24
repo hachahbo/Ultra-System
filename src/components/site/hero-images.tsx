@@ -19,10 +19,12 @@ const itemVariants: Variants = {
 export function HeroImages({
   images,
   activeStep = 0,
+  className,
 }: {
   images?: string[];
   activeStep?: number;
   setActiveStep?: (step: number) => void;
+  className?: string;
 }) {
   // Step 0 images
   const main0 = images?.[0] ?? "/images/hero-default.webp";
@@ -54,12 +56,12 @@ export function HeroImages({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="absolute inset-0 z-0 flex w-full items-center justify-center lg:relative lg:mt-0 lg:w-1/2 lg:justify-end lg:pr-44"
+      className={`absolute inset-0 z-0 flex w-full items-center justify-center lg:relative lg:mt-0 lg:w-1/2 lg:justify-end lg:pr-44 ${className ?? ""}`}
     >
-      {/* Inner Images block shifted to left (center) by parent's lg:pr-44 padding */}
-      <div className="relative flex h-full min-h-[500px] w-full max-w-[400px] items-center justify-center lg:h-[600px]">
+      {/* Inner Images block */}
+      <div className="relative flex h-full min-h-[520px] w-full max-w-[420px] items-center justify-center lg:h-[620px]">
         {/* === Phase 2: Midground Layer (z-index: 10) Main Reveal === */}
-        <div className="relative z-10 h-full w-[90%] overflow-hidden rounded-t-[100px] rounded-br-[60px] rounded-bl-[20px] shadow-2xl">
+        <div className="relative z-10 h-full w-[90%] overflow-hidden rounded-t-[150px] rounded-br-[70px] rounded-bl-[35px] shadow-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep}
@@ -84,7 +86,7 @@ export function HeroImages({
         </div>
 
         {/* === Phase 3: Foreground Layer (z-index: 20) Pop === */}
-        <div className="hidden lg:block absolute -left-12 bottom-[15%] z-20 w-[65%] sm:-left-20">
+        <div className="hidden lg:block absolute -left-14 bottom-[18%] z-20 w-[58%] sm:-left-20">
           <div className="relative aspect-square w-full overflow-hidden rounded-full shadow-2xl ring-4 ring-background">
             <AnimatePresence mode="wait">
               <motion.div

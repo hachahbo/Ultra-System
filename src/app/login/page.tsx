@@ -179,8 +179,8 @@ function LoginForm() {
       </div>
 
       {/* Right Side: HeroImages */}
-      <div className="hidden w-1/2 items-center justify-center bg-zinc-50 dark:bg-zinc-950/50 lg:flex">
-        <HeroImages />
+      <div className="hidden w-1/2 items-center justify-center bg-zinc-50 dark:bg-zinc-950/50 lg:flex overflow-hidden relative">
+        <HeroImages className="lg:w-full lg:justify-center lg:pr-0" />
       </div>
     </main>
   );
