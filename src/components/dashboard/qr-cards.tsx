@@ -31,19 +31,19 @@ export function QrCards({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-semibold">QR codes</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Un QR par table, plus un QR promo pour les sacs de livraison.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()}>
+        <Button variant="outline" size="sm" onClick={() => window.print()} className="w-full sm:w-auto">
           <Printer className="size-4" /> Imprimer tout
         </Button>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 print:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 print:grid-cols-2">
         {tables.map((t) => {
           const url = `${origin}/${restaurantSlug}/menu?table=${encodeURIComponent(t.number)}`;
           return (
@@ -65,7 +65,7 @@ export function QrCards({
               <Button
                 variant="ghost"
                 size="sm"
-                className="print:hidden rounded-lg font-bold text-muted-foreground hover:text-foreground mt-2"
+                className="print:hidden w-full rounded-lg font-bold text-muted-foreground hover:text-foreground mt-2"
                 onClick={() => {
                   const canvas = canvasRefs.current[t.id];
                   if (canvas) download(canvas, `table-${t.number}.png`);
@@ -90,7 +90,7 @@ export function QrCards({
           <Button
             variant="ghost"
             size="sm"
-            className="print:hidden rounded-lg font-bold text-primary hover:text-primary hover:bg-primary/10 mt-2"
+            className="print:hidden w-full rounded-lg font-bold text-primary hover:text-primary hover:bg-primary/10 mt-2"
             onClick={() => {
               if (promoRef.current) download(promoRef.current, "promo-livraison.png");
             }}

@@ -129,10 +129,10 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
     <div className="w-full space-y-10 pb-20">
 
       {/* Header section matches Commandes/Menu aesthetic */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mt-2">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Tables & Plan</h1>
-          <p className="text-[13.5px] text-muted-foreground mt-1 font-medium">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Tables &amp; Plan</h1>
+          <p className="text-xs sm:text-[13.5px] text-muted-foreground mt-0.5 sm:mt-1 font-medium">
             Gérez vos tables, générez les QR codes et ajustez le plan de salle.
           </p>
         </div>
@@ -140,7 +140,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button
-                className="bg-primary text-primary-foreground font-bold rounded-full px-6 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2 w-full sm:w-auto"
+                className="bg-primary text-primary-foreground font-bold rounded-full px-6 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2 w-full sm:w-auto text-xs sm:text-sm"
               >
                 <Plus className="size-4" /> Nouvelle table
               </Button>
@@ -157,14 +157,14 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Tables</p>
-          <p className="text-3xl font-display font-bold text-foreground">{list.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="bg-card border border-border p-4 sm:p-5 rounded-2xl shadow-sm">
+          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Tables</p>
+          <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">{list.length}</p>
         </div>
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Capacité totale</p>
-          <p className="text-3xl font-display font-bold text-primary">{totalSeats} <span className="text-sm text-muted-foreground lowercase tracking-normal font-medium">places</span></p>
+        <div className="bg-card border border-border p-4 sm:p-5 rounded-2xl shadow-sm">
+          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Capacité totale</p>
+          <p className="text-2xl sm:text-3xl font-display font-bold text-primary">{totalSeats} <span className="text-xs sm:text-sm text-muted-foreground lowercase tracking-normal font-medium">places</span></p>
         </div>
       </div>
 
@@ -173,10 +173,10 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
       {/* Floor Plan */}
       <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
-        <h2 className="font-display text-xl font-bold text-foreground mb-4">Plan de salle</h2>
+        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Plan de salle</h2>
         <div className="rounded-[24px] bg-card border border-border p-2 sm:p-4 shadow-xl overflow-hidden relative group">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-          <div className="relative z-10 w-full overflow-x-auto rounded-xl ring-1 ring-border/50 bg-background/50 backdrop-blur-sm">
+          <div className="relative z-10 w-full rounded-xl ring-1 ring-border/50 bg-background/50 backdrop-blur-sm">
             <FloorPlanMap
               tables={list}
               mode="edit"
@@ -192,9 +192,9 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
       {/* Tables List */}
       <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-        <h2 className="font-display text-xl font-bold text-foreground mb-4">Liste des tables</h2>
+        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Liste des tables</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {list.map((t) => (
             <div
               key={t.id}
