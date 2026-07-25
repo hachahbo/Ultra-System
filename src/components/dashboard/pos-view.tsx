@@ -193,7 +193,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
           </div>
 
           {/* Responsive Menu Items Grid */}
-          <div className="flex-1 overflow-y-auto pb-20 lg:pb-6">
+          <div className="flex-1 overflow-y-auto pb-20 lg:pb-6 custom-scrollbar pr-4 sm:pr-6">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -201,7 +201,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
                 {visibleItems.map((item) => (
                   <div
                     key={item.id}

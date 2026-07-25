@@ -9,6 +9,7 @@ import type {
   PublicMenu,
   ResolvedTheme,
   Restaurant,
+  RestaurantEvent,
   RestaurantFeature,
 } from "@/lib/types";
 
@@ -107,6 +108,26 @@ export const getPublicFeatures = unstable_cache(
   },
   ["public-features"],
   { revalidate: 60, tags: ["menu"] },
+);
+
+// Public events for the /[slug]/events page. `events` has no anon RLS read
+// policy (dashboard-only "tenant read"), so this uses the service role
+// read-only, scoped to one restaurant. Cancelled/completed events are hidden
+// from the public list. Cached + tagged "events"; dashboard writes call
+// revalidateTag("events", "max").
+export const getPublicEvents = unstable_cache(
+  async (restaurantId: string): Promise<RestaurantEvent[]> => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("events")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .in("status", ["upcoming", "sold_out"])
+      .order("start_date", { ascending: true });
+    return (data ?? []) as RestaurantEvent[];
+  },
+  ["public-events"],
+  { revalidate: 60, tags: ["events"] },
 );
 
 // Theme (branding) read for the public site. restaurant_theme has RLS enabled

@@ -21,6 +21,7 @@ export const PLAN_DEFAULTS: Record<Plan, Record<FeatureKey, boolean>> = {
     inventory: false,
     recipes: false,
     kds: false,
+    events: true,
   },
   pro: {
     online_ordering: true,
@@ -33,6 +34,7 @@ export const PLAN_DEFAULTS: Record<Plan, Record<FeatureKey, boolean>> = {
     inventory: true,
     recipes: false,
     kds: false,
+    events: true,
   },
   enterprise: {
     online_ordering: true,
@@ -45,6 +47,7 @@ export const PLAN_DEFAULTS: Record<Plan, Record<FeatureKey, boolean>> = {
     inventory: true,
     recipes: true,
     kds: true,
+    events: true,
   },
 };
 

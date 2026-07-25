@@ -11,6 +11,7 @@ import {
   LineChart,
   LogOut,
   Package,
+  PartyPopper,
   Settings,
   ShoppingBag,
   Users,
@@ -64,6 +65,7 @@ const groups: Group[] = [
     label: "Contenu",
     items: [
       { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, feature: "menu_editor" },
+      { href: "/dashboard/events", label: "Événements", icon: PartyPopper, feature: "events" },
       { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid, feature: "floor_plan" },
     ],
   },

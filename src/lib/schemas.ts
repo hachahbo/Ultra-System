@@ -62,6 +62,67 @@ export const reservationSchema = z.object({
 
 export type ReservationInput = z.infer<typeof reservationSchema>;
 
+// ── Events ───────────────────────────────────────────────────────────────
+export const eventCategorySchema = z.enum([
+  "live_music",
+  "theme_night",
+  "tasting",
+  "dj_set",
+  "special_menu",
+]);
+export const eventStatusSchema = z.enum([
+  "upcoming",
+  "sold_out",
+  "cancelled",
+  "completed",
+]);
+
+// Dashboard create/update. Slug is derived server-side from the title.
+export const eventSchema = z.object({
+  title: z.string().trim().min(1, "Titre requis").max(160),
+  tagline: z.string().trim().max(200).optional().or(z.literal("")),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  category: eventCategorySchema,
+  status: eventStatusSchema.default("upcoming"),
+  cover_image: z.string().trim().url("URL invalide").max(600).optional().or(z.literal("")),
+  badge_label: z.string().trim().max(40).optional().or(z.literal("")),
+  start_date: z.string().min(1, "Date de début requise"),
+  end_date: z.string().optional().or(z.literal("")),
+  doors_open: z.string().regex(/^\d{2}:\d{2}$/, "Heure invalide").optional().or(z.literal("")),
+  is_free_entry: z.boolean().default(true),
+  ticket_price: z.coerce.number().min(0).max(100000).default(0),
+  currency: z.string().trim().max(8).default("MAD"),
+  minimum_spend_per_person: z.coerce.number().min(0).max(100000).default(0),
+  max_seats: z.coerce.number().int().min(0).max(100000).optional(),
+  reserved_seats: z.coerce.number().int().min(0).max(100000).optional(),
+});
+
+export type EventInput = z.infer<typeof eventSchema>;
+
+// Public status update from the dashboard.
+export const eventInquiryStatusSchema = z.enum([
+  "pending",
+  "contacted",
+  "approved",
+  "rejected",
+]);
+
+// Public POST — private venue-hire / large-group request.
+export const eventInquirySchema = z.object({
+  restaurant_slug: z.string().min(1),
+  event_type: z.enum(["birthday", "corporate", "wedding", "privatization", "other"]),
+  full_name: z.string().trim().min(1, "Nom requis").max(120),
+  email: z.string().trim().email("E-mail invalide").max(160),
+  phone: phoneSchema,
+  preferred_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide").optional().or(z.literal("")),
+  preferred_time_slot: z.enum(["lunch", "evening", "full_day"]).optional(),
+  guest_count: z.coerce.number().int().min(1, "Minimum 1 personne").max(1000),
+  budget_estimated_mad: z.coerce.number().min(0).max(10000000).optional(),
+  special_requests: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+
+export type EventInquiryInput = z.infer<typeof eventInquirySchema>;
+
 export const loginSchema = z.object({
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Mot de passe trop court"),

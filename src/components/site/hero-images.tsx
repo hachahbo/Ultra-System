@@ -26,17 +26,17 @@ export function HeroImages({
   setActiveStep?: (step: number) => void;
   className?: string;
 }) {
-  // Step 0 images
-  const main0 = images?.[0] ?? "/images/hero-default.webp";
-  const pop0 = images?.[1] ?? "/images/hero-pop-default.webp";
+  // Default high quality O Rendez-Vous images
+  const main0 = images?.[0] ?? "/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg";
+  const pop0 = images?.[1] ?? "/images/orendezvous/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg";
 
-  // Step 1 images (Kitchen / Cooking visual)
-  const main1 = "/images/welcome-chicken.png";
-  const pop1 = images?.[2] ?? "/images/dish-2 1.png";
+  // Step 1 images (Kitchen / Dining visual)
+  const main1 = images?.[2] ?? "/images/orendezvous/orendezvous.tanger_1782412303_3927481511788834209_73557593345.jpg";
+  const pop1 = images?.[3] ?? "/images/orendezvous/orendezvous.tanger_1770820323_3830240942847468663_73557593345.jpg";
 
   // Step 2 images (Restaurant Interior visual)
-  const main2 = "/images/hero-interior.png";
-  const pop2 = images?.[3] ?? "/images/dish-3 1.png";
+  const main2 = images?.[4] ?? "/images/orendezvous/orendezvous.tanger_1782412303_3927481512191507130_73557593345.jpg";
+  const pop2 = images?.[5] ?? "/images/orendezvous/orendezvous.tanger_1783019424_3932574417688072480_73557593345.jpg";
 
   const getImagesForStep = () => {
     switch (activeStep) {

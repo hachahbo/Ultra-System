@@ -26,6 +26,7 @@ export const ROUTE_ACCESS: { prefix: string; exact?: boolean; roles: Role[] }[] 
   { prefix: "/dashboard/inventory", roles: ["owner", "manager", "cuisine"] },
   { prefix: "/dashboard/tables", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/menu", roles: ["owner", "manager", "serveur", "cuisine"] },
+  { prefix: "/dashboard/events", roles: ["owner", "manager"] },
   { prefix: "/dashboard/reservations", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/kds", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard/orders", roles: ["owner", "manager", "serveur", "cuisine"] },

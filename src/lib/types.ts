@@ -147,6 +147,7 @@ export const FEATURE_KEYS = [
   "inventory",
   "recipes",
   "kds",
+  "events",
 ] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
@@ -299,6 +300,54 @@ export type Reservation = {
   note: string | null;
   assigned_table_number: string | null;
   status: "new" | "confirmed" | "declined";
+  created_at: string;
+};
+
+export type EventCategory =
+  | "live_music"
+  | "theme_night"
+  | "tasting"
+  | "dj_set"
+  | "special_menu";
+export type EventStatus = "upcoming" | "sold_out" | "cancelled" | "completed";
+
+export type RestaurantEvent = {
+  id: string;
+  restaurant_id: string;
+  slug: string;
+  title: string;
+  tagline: string | null;
+  description: string | null;
+  category: EventCategory;
+  status: EventStatus;
+  cover_image: string | null;
+  badge_label: string | null;
+  start_date: string;
+  end_date: string | null;
+  doors_open: string | null;
+  is_free_entry: boolean;
+  ticket_price: number;
+  currency: string;
+  minimum_spend_per_person: number;
+  max_seats: number | null;
+  reserved_seats: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventInquiry = {
+  id: string;
+  restaurant_id: string;
+  event_type: "birthday" | "corporate" | "wedding" | "privatization" | "other";
+  full_name: string;
+  email: string;
+  phone: string;
+  preferred_date: string | null;
+  preferred_time_slot: "lunch" | "evening" | "full_day" | null;
+  guest_count: number;
+  budget_estimated_mad: number | null;
+  special_requests: string | null;
+  status: "pending" | "contacted" | "approved" | "rejected";
   created_at: string;
 };
 

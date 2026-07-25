@@ -1,12 +1,21 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { CalendarCheck, Calendar as CalendarIcon, Armchair, Clock } from "lucide-react";
+import {
+  CalendarCheck,
+  Calendar as CalendarIcon,
+  Armchair,
+  Clock,
+  MapPin,
+  Phone,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +65,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function ReservationForm({ slug }: { slug: string }) {
+interface ReservationFormProps {
+  slug: string;
+  restaurantName?: string;
+  address?: string | null;
+  hours?: string | null;
+  phone?: string | null;
+  whatsappNumber?: string | null;
+  featureImage?: string | null;
+}
+
+export function ReservationForm({
+  slug,
+  restaurantName,
+  address,
+  hours,
+  phone,
+  whatsappNumber,
+  featureImage,
+}: ReservationFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -94,141 +121,283 @@ export function ReservationForm({ slug }: { slug: string }) {
     }
   }
 
-  if (done) {
-    return (
-      <div className="flex flex-col items-center py-16 text-center">
-        <CalendarCheck className="size-16 text-primary" />
-        <h2 className="mt-4 font-display text-2xl font-semibold">
-          Demande envoyée !
-        </h2>
-        <p className="mt-2 max-w-sm text-muted-foreground">
-          Le restaurant vous confirmera votre table très vite par téléphone ou
-          WhatsApp.
-        </p>
-      </div>
-    );
-  }
-
   const errors = form.formState.errors;
 
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="mt-8 space-y-5"
-      noValidate
-    >
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="date" className="font-bold text-foreground dark:text-white">Date <span className="ml-2 inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
-          <Controller
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-white dark:bg-[#18181A] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-[#202024] hover:text-foreground dark:hover:text-white rounded-xl h-12 text-foreground dark:text-white px-4",
-                      !field.value && "text-muted-foreground",
-                      errors.date && "border-destructive focus-visible:ring-destructive text-destructive"
-                    )}
+    <div className="bg-[#fcf8f3] dark:bg-[#12100e] min-h-screen text-[#1a1715] dark:text-gray-100 py-12 sm:py-20 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-16">
+        {/* Main Grid: Left Details & Right Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+          {/* Left Column (5 cols) */}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="h-0.5 w-6 bg-[#cd6133]" />
+                <span className="text-xs font-bold uppercase tracking-widest text-[#cd6133]">
+                  RÉSERVATION EN LIGNE
+                </span>
+              </div>
+
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+                Réservez une <br />
+                <span className="italic font-normal text-[#cd6133]">table</span>
+              </h1>
+
+              <p className="text-[#78716c] dark:text-gray-400 text-base sm:text-lg leading-relaxed pt-2">
+                Le restaurant confirme votre réservation par téléphone ou WhatsApp. Profitez d&apos;une expérience gourmande exceptionnelle.
+              </p>
+            </div>
+
+            {/* Info List */}
+            <div className="space-y-5 pt-2">
+              {/* Address */}
+              <div className="flex items-start gap-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f7e9e2] text-[#cd6133] dark:bg-[#2c1912] dark:text-[#f08556]">
+                  <MapPin className="size-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#a8a29e] dark:text-gray-400">
+                    ADRESSE
+                  </p>
+                  <p className="font-bold text-base text-[#1a1715] dark:text-white leading-snug">
+                    {address ?? "Avenue Mohammed VI, Tanger"}
+                  </p>
+                  <p className="text-xs text-[#78716c] dark:text-gray-400">
+                    Quartier Malabata · face à la corniche
+                  </p>
+                </div>
+              </div>
+
+              {/* Hours */}
+              <div className="flex items-start gap-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f7e9e2] text-[#cd6133] dark:bg-[#2c1912] dark:text-[#f08556]">
+                  <Clock className="size-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#a8a29e] dark:text-gray-400">
+                    HORAIRES
+                  </p>
+                  <p className="font-bold text-base text-[#1a1715] dark:text-white leading-snug">
+                    {hours ?? "Lun-Dim · 11h00 – 23h00"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="flex items-start gap-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f7e9e2] text-[#cd6133] dark:bg-[#2c1912] dark:text-[#f08556]">
+                  <Phone className="size-5" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#a8a29e] dark:text-gray-400">
+                    TÉLÉPHONE / WHATSAPP
+                  </p>
+                  <a
+                    href={phone ? `tel:${phone.replace(/\s/g, "")}` : "#"}
+                    className="font-bold text-base text-[#1a1715] dark:text-white leading-snug hover:text-[#cd6133] transition-colors"
                   >
-                    <CalendarIcon className="mr-3 h-5 w-5 text-[#FF6B35]" />
-                    {field.value ? format(parseISO(field.value), "PPP", { locale: fr }) : <span>Choisir une date</span>}
+                    {phone ?? "+212 5 39 00 00 00"}
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Privatisation Feature Card */}
+            <div className="rounded-[2.5rem] bg-[#2a1710] dark:bg-[#25150f] p-6 text-white border border-[#cd6133]/30 shadow-2xl space-y-5 mt-6">
+              <div className="relative h-48 sm:h-56 w-full overflow-hidden rounded-2xl shadow-md border border-white/10">
+                <Image
+                  src={featureImage || "/images/orendezvous/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg"}
+                  alt="Privatisation"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-display text-2xl font-bold text-white tracking-tight">
+                  Privatisation
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                  Organisez vos événements privés, anniversaires ou grandes tablées dans un cadre unique et chaleureux.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.setValue("note", "Demande de privatisation d'espace / événement privé");
+                  toast.success("Option 'Privatisation' ajoutée à la note de votre réservation.");
+                }}
+                className="w-full sm:w-auto rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 text-xs font-bold uppercase tracking-wider py-4 px-6"
+              >
+                Demande de privatisation
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column: Reservation Form Card (7 cols) */}
+          <div className="lg:col-span-7">
+            <div className="rounded-[2.5rem] bg-white dark:bg-[#1c1917] p-6 sm:p-10 shadow-2xl border border-[#e7e5e4] dark:border-white/10">
+              {done ? (
+                <div className="flex flex-col items-center py-16 text-center space-y-4">
+                  <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                    <CalendarCheck className="size-8" />
+                  </div>
+                  <h2 className="font-display text-2xl font-bold">Demande envoyée avec succès !</h2>
+                  <p className="text-muted-foreground text-sm max-w-sm">
+                    Le restaurant vous confirmera votre table très vite par téléphone ou WhatsApp.
+                  </p>
+                  <Button
+                    onClick={() => setDone(false)}
+                    className="mt-4 rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white px-6 py-2 text-xs uppercase font-bold"
+                  >
+                    Nouvelle réservation
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ? parseISO(field.value) : undefined}
-                    onSelect={(d) => d && field.onChange(format(d, "yyyy-MM-dd"))}
-                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
-          />
-          <FieldError message={errors.date?.message} />
+                </div>
+              ) : (
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-5"
+                  noValidate
+                >
+                  <div>
+                    <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#1a1715] dark:text-white">
+                      Réserver une table
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#78716c] dark:text-gray-400 mt-1">
+                      Sélectionnez la date, l&apos;heure et le nombre de convives.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date" className="font-bold text-foreground dark:text-white">Date <span className="ml-2 inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
+                      <Controller
+                        control={form.control}
+                        name="date"
+                        render={({ field }) => (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal bg-white dark:bg-[#18181A] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-[#202024] hover:text-foreground dark:hover:text-white rounded-xl h-12 text-foreground dark:text-white px-4",
+                                  !field.value && "text-muted-foreground",
+                                  errors.date && "border-destructive focus-visible:ring-destructive text-destructive"
+                                )}
+                              >
+                                <CalendarIcon className="mr-3 h-5 w-5 text-[#FF6B35]" />
+                                {field.value ? format(parseISO(field.value), "PPP", { locale: fr }) : <span>Choisir une date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ? parseISO(field.value) : undefined}
+                                onSelect={(d) => d && field.onChange(format(d, "yyyy-MM-dd"))}
+                                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      />
+                      <FieldError message={errors.date?.message} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="time" className="font-bold text-foreground dark:text-white">Heure <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
+                      <Controller
+                        control={form.control}
+                        name="time"
+                        render={({ field }) => (
+                          <TimeSelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            hasError={!!errors.time}
+                          />
+                        )}
+                      />
+                      <FieldError message={errors.time?.message} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="party_size" className="font-bold text-foreground dark:text-white">Nombre de personnes <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
+                    <Input
+                      id="party_size"
+                      type="number"
+                      min={1}
+                      max={50}
+                      inputMode="numeric"
+                      aria-invalid={!!errors.party_size}
+                      className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.party_size && "border-destructive focus-visible:ring-destructive")}
+                      {...form.register("party_size", { valueAsNumber: true })}
+                    />
+                    <FieldError message={errors.party_size?.message} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="font-bold text-foreground dark:text-white">Table</Label>
+                    <Controller
+                      control={form.control}
+                      name="table_number"
+                      render={({ field }) => (
+                        <TableSelector value={field.value} onChange={field.onChange} />
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customer_name" className="font-bold text-foreground dark:text-white">Nom <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
+                    <Input
+                      id="customer_name"
+                      autoComplete="name"
+                      aria-invalid={!!errors.customer_name}
+                      className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.customer_name && "border-destructive focus-visible:ring-destructive")}
+                      {...form.register("customer_name")}
+                    />
+                    <FieldError message={errors.customer_name?.message} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customer_phone" className="font-bold text-foreground dark:text-white">Téléphone <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
+                    <Input
+                      id="customer_phone"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="06 12 34 56 78"
+                      aria-invalid={!!errors.customer_phone}
+                      className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.customer_phone && "border-destructive focus-visible:ring-destructive")}
+                      {...form.register("customer_phone")}
+                    />
+                    <FieldError message={errors.customer_phone?.message} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="note" className="font-bold text-foreground dark:text-white">Note <span className="text-[#e2a84a]">(optionnel)</span></Label>
+                    <Textarea
+                      id="note"
+                      placeholder="Anniversaire, terrasse, chaise bébé…"
+                      className="bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl min-h-[90px] text-foreground dark:text-white p-4 resize-none"
+                      {...form.register("note")}
+                    />
+                  </div>
+
+                  <Button
+                    size="lg"
+                    type="submit"
+                    className="w-full font-bold shadow-lg h-12 mt-4 rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white uppercase tracking-wider text-xs transition-all duration-300"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Envoi…" : "Demander la réservation"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="time" className="font-bold text-foreground dark:text-white">Heure <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
-          <Controller
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <TimeSelector
-                value={field.value}
-                onChange={field.onChange}
-                hasError={!!errors.time}
-              />
-            )}
-          />
-          <FieldError message={errors.time?.message} />
-        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="party_size" className="font-bold text-foreground dark:text-white">Nombre de personnes <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
-        <Input
-          id="party_size"
-          type="number"
-          min={1}
-          max={50}
-          inputMode="numeric"
-          aria-invalid={!!errors.party_size}
-          className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.party_size && "border-destructive focus-visible:ring-destructive")}
-          {...form.register("party_size", { valueAsNumber: true })}
-        />
-        <FieldError message={errors.party_size?.message} />
-      </div>
-      <div className="space-y-2">
-        <Label className="font-bold text-foreground dark:text-white">Table</Label>
-        <Controller
-          control={form.control}
-          name="table_number"
-          render={({ field }) => (
-            <TableSelector value={field.value} onChange={field.onChange} />
-          )}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="customer_name" className="font-bold text-foreground dark:text-white">Nom <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
-        <Input
-          id="customer_name"
-          autoComplete="name"
-          aria-invalid={!!errors.customer_name}
-          className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.customer_name && "border-destructive focus-visible:ring-destructive")}
-          {...form.register("customer_name")}
-        />
-        <FieldError message={errors.customer_name?.message} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="customer_phone" className="font-bold text-foreground dark:text-white">Téléphone <span className="ml-2 inline-flex items-center rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Requis</span></Label>
-        <Input
-          id="customer_phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="06 12 34 56 78"
-          aria-invalid={!!errors.customer_phone}
-          className={cn("bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl h-12 text-foreground dark:text-white px-4", errors.customer_phone && "border-destructive focus-visible:ring-destructive")}
-          {...form.register("customer_phone")}
-        />
-        <FieldError message={errors.customer_phone?.message} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="note" className="font-bold text-foreground dark:text-white">Note <span className="text-[#e2a84a]">(optionnel)</span></Label>
-        <Textarea
-          id="note"
-          placeholder="Anniversaire, terrasse, chaise bébé…"
-          className="bg-white dark:bg-[#18181A] border-gray-200 dark:border-white/5 rounded-xl min-h-[100px] text-foreground dark:text-white p-4"
-          {...form.register("note")}
-        />
-      </div>
-      <Button size="lg" type="submit" className="w-full font-bold shadow-md h-12 mt-4" disabled={submitting}>
-        {submitting ? "Envoi…" : "Demander la réservation"}
-      </Button>
-    </form>
+    </div>
   );
 }
 

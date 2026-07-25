@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRestaurantBySlug, getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
+import { getSiteTheme } from "@/lib/site-theme";
 import { ReservationForm } from "@/components/site/reservation-form";
 import { FeatureUnavailable } from "@/components/site/feature-unavailable";
 
@@ -25,15 +26,17 @@ export default async function ReservationPage({
     );
   }
 
+  const { theme } = await getSiteTheme(restaurant);
+
   return (
-    <div className="mx-auto max-w-lg px-4 pt-8 pb-32 lg:pb-48">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
-        Réserver une table
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Le restaurant confirme votre réservation par téléphone ou WhatsApp.
-      </p>
-      <ReservationForm slug={restaurant.slug} />
-    </div>
+    <ReservationForm
+      slug={restaurant.slug}
+      restaurantName={restaurant.name}
+      address={theme.address}
+      hours={restaurant.hours}
+      phone={restaurant.phone}
+      whatsappNumber={restaurant.whatsapp_number}
+      featureImage="/images/orendezvous/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg"
+    />
   );
 }

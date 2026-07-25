@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatDistanceToNowStrict } from "date-fns";
+import { fr } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -14,6 +17,9 @@ import {
   LogOut,
   CheckCheck,
   ShoppingBag,
+  CalendarDays,
+  PartyPopper,
+  type LucideIcon,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -25,8 +31,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
+import type { NotificationItem } from "@/app/api/dashboard/notifications/route";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+
+async function fetchNotifications(): Promise<NotificationItem[]> {
+  const res = await fetch("/api/dashboard/notifications");
+  if (!res.ok) throw new Error("fetch failed");
+  return (await res.json()).items as NotificationItem[];
+}
+
+const NOTIF_STYLE: Record<NotificationItem["kind"], { icon: LucideIcon; className: string }> = {
+  order: { icon: ShoppingBag, className: "bg-primary/10 text-primary" },
+  reservation: { icon: CalendarDays, className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+  event_inquiry: { icon: PartyPopper, className: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400" },
+};
 
 const ROLE_FRENCH: Record<Role, string> = {
   owner: "Gérant",
@@ -40,18 +59,85 @@ export function DashboardHeader({
   logoUrl,
   role,
   email,
+  restaurantId,
 }: {
   restaurantName: string;
   logoUrl?: string | null;
   role: Role;
   email: string;
+  restaurantId: string;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(2);
 
   useEffect(() => setMounted(true), []);
+
+  // ── Notifications ────────────────────────────────────────────────────────
+  // Feed is derived server-side from recent orders + pending reservations.
+  // "Read" state is per-device: a lastSeen timestamp in localStorage, keyed by
+  // restaurant. Unread = items created after lastSeen.
+  const storageKey = `notif-last-seen:${restaurantId}`;
+  const [lastSeen, setLastSeen] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    const stored = Number(window.localStorage.getItem(storageKey));
+    return Number.isFinite(stored) ? stored : 0;
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
+    refetchInterval: 30_000,
+  });
+
+  // Realtime push: new orders / reservations bump the bell instantly. Also
+  // refresh the underlying list views so they stay in sync. Mirrors the KDS
+  // subscription pattern (kds-view.tsx). Falls back to the 30s poll above.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("dashboard-notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: ["orders"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservations" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: ["reservations"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "event_inquiries" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: ["event-inquiries"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => new Date(n.created_at).getTime() > lastSeen).length,
+    [notifications, lastSeen],
+  );
+
+  const markAllRead = useCallback(() => {
+    const now = Date.now();
+    localStorage.setItem(storageKey, String(now));
+    setLastSeen(now);
+  }, [storageKey]);
 
   const isDark = theme === "dark";
   const initialLetter = restaurantName.charAt(0).toUpperCase();
@@ -77,52 +163,80 @@ export function DashboardHeader({
       <div className="flex items-center gap-2.5 sm:gap-3">
         
         {/* 1. Notification Bell Button */}
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={(open) => !open && markAllRead()}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Notifications"
+              aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lues)` : "Notifications"}
               className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition-colors hover:bg-muted shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Bell className="size-4 stroke-[2px]" />
-              {unreadNotifications > 0 && (
-                <span className="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-[#e36329] ring-2 ring-card shadow-sm animate-pulse" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-[#e36329] px-1 text-[10px] font-extrabold text-white ring-2 ring-card shadow-sm">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 rounded-2xl border-border bg-card p-2 shadow-2xl">
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/60">
               <span className="font-display text-sm font-extrabold text-foreground">Notifications</span>
-              {unreadNotifications > 0 && (
+              {notifications.length > 0 && (
                 <button
-                  onClick={() => setUnreadNotifications(0)}
+                  onClick={markAllRead}
                   className="text-[11.5px] font-bold text-primary hover:underline flex items-center gap-1"
                 >
                   <CheckCheck className="size-3.5" /> Tout marquer comme lu
                 </button>
               )}
             </div>
-            <div className="py-1 space-y-1">
-              <DropdownMenuItem className="p-2.5 rounded-xl cursor-pointer flex items-start gap-3 hover:bg-muted">
-                <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                  <ShoppingBag className="size-4" />
+            <div className="max-h-[380px] overflow-y-auto py-1 space-y-1">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+                  <Bell className="size-7 text-muted-foreground/40" />
+                  <p className="text-[13px] font-semibold text-muted-foreground">Aucune notification</p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-bold text-foreground leading-snug">Nouvelle commande CMD-4810</p>
-                  <p className="text-[11.5px] text-muted-foreground mt-0.5">Sur place · Table 3 (185 MAD)</p>
-                  <span className="text-[10px] text-muted-foreground/80 mt-1 block">Il y a 2 min</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-2.5 rounded-xl cursor-pointer flex items-start gap-3 hover:bg-muted">
-                <div className="size-8 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bell className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-bold text-foreground leading-snug">Nouvelle réservation</p>
-                  <p className="text-[11.5px] text-muted-foreground mt-0.5">Client Amine · 4 personnes à 20h00</p>
-                  <span className="text-[10px] text-muted-foreground/80 mt-1 block">Il y a 15 min</span>
-                </div>
-              </DropdownMenuItem>
+              ) : (
+                notifications.map((n) => {
+                  const isUnread = new Date(n.created_at).getTime() > lastSeen;
+                  const style = NOTIF_STYLE[n.kind];
+                  const Icon = style.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={`${n.kind}-${n.id}`}
+                      asChild
+                      className="p-0 rounded-xl cursor-pointer"
+                    >
+                      <Link
+                        href={n.href}
+                        className={cn(
+                          "flex items-start gap-3 p-2.5 w-full hover:bg-muted",
+                          isUnread && "bg-primary/[0.04]",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "size-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                            style.className,
+                          )}
+                        >
+                          <Icon className="size-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-bold text-foreground leading-snug">{n.title}</p>
+                          <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{n.subtitle}</p>
+                          <span className="text-[10px] text-muted-foreground/80 mt-1 block">
+                            {formatDistanceToNowStrict(new Date(n.created_at), { locale: fr, addSuffix: true })}
+                          </span>
+                        </div>
+                        {isUnread && (
+                          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#e36329]" />
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })
+              )}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>

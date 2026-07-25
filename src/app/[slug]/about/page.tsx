@@ -9,10 +9,10 @@ import { getSiteTheme } from "@/lib/site-theme";
 export const metadata: Metadata = { title: "Qui sommes-nous" };
 
 const DEFAULT_ABOUT_GALLERY = [
-  "/images/about/about-storefront.webp",
-  "/images/about/about-2.webp",
-  "/images/about/about-5.webp",
-  "/images/about/about-4.webp",
+  "/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg",
+  "/images/orendezvous/orendezvous.tanger_1782412303_3927481511788834209_73557593345.jpg",
+  "/images/orendezvous/orendezvous.tanger_1782412303_3927481512191507130_73557593345.jpg",
+  "/images/orendezvous/orendezvous.tanger_1770820323_3830240942847468663_73557593345.jpg",
 ];
 
 export default async function AboutPage({

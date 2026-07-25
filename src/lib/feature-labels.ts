@@ -12,4 +12,5 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   inventory: "Inventaire",
   recipes: "Fiches techniques",
   kds: "Écran cuisine (KDS)",
+  events: "Événements",
 };
