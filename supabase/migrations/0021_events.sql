@@ -46,7 +46,7 @@ create table public.event_inquiries (
   event_type            text not null
                           check (event_type in ('birthday', 'corporate', 'wedding', 'privatization', 'other')),
   full_name             text not null,
-  email                 text not null,
+  email                 text,
   phone                 text not null,
   preferred_date        date,
   preferred_time_slot   text check (preferred_time_slot in ('lunch', 'evening', 'full_day')),
@@ -97,23 +97,32 @@ alter publication supabase_realtime add table public.event_inquiries;
 
 -- ---------------------------------------------------------------------------
 -- Seed — two sample events for "Ô rendez-vous" (id 1111…, see seed_orendezvous.sql)
--- so the public /events page and dashboard aren't empty on first run.
+-- so the public /events page and dashboard aren't empty on first run. Guarded
+-- by existence so this migration never fails on an environment that doesn't
+-- have that seed restaurant.
 -- ---------------------------------------------------------------------------
 insert into public.events
   (restaurant_id, slug, title, tagline, description, category, status, badge_label,
    start_date, end_date, doors_open, is_free_entry, minimum_spend_per_person, max_seats, reserved_seats)
-values
-  ('11111111-1111-1111-1111-111111111111', 'soiree-jazz-live',
-   'Soirée Jazz Live & Dîner Gourmand',
-   'Une ambiance feutrée avec le Trio Jazz de Tanger',
-   'Profitez d''un dîner d''exception accompagné par les meilleures mélodies jazz en direct. Menu spécial à 4 mains proposé par le chef.',
-   'live_music', 'upcoming', 'Ce Vendredi',
-   '2026-07-31T20:00:00Z', '2026-07-31T23:30:00Z', '19:30', true, 250, 50, 38),
-  ('11111111-1111-1111-1111-111111111111', 'degustation-tapas-flamenco',
-   'Dégustation de Tapas & Flamenco',
-   'Voyage culinaire et spectacle andalou',
-   'Une sélection de tapas maison accompagnée d''un spectacle de flamenco en direct.',
-   'theme_night', 'sold_out', null,
-   '2026-08-07T20:30:00Z', '2026-08-07T23:00:00Z', '20:00', true, 0, 40, 40);
+select v.restaurant_id, v.slug, v.title, v.tagline, v.description, v.category, v.status,
+       v.badge_label, v.start_date, v.end_date, v.doors_open, v.is_free_entry,
+       v.minimum_spend_per_person, v.max_seats, v.reserved_seats
+from (
+  values
+    ('11111111-1111-1111-1111-111111111111'::uuid, 'soiree-jazz-live',
+     'Soirée Jazz Live & Dîner Gourmand',
+     'Une ambiance feutrée avec le Trio Jazz de Tanger',
+     'Profitez d''un dîner d''exception accompagné par les meilleures mélodies jazz en direct. Menu spécial à 4 mains proposé par le chef.',
+     'live_music', 'upcoming', 'Ce Vendredi',
+     '2026-07-31T20:00:00Z'::timestamptz, '2026-07-31T23:30:00Z'::timestamptz, '19:30', true, 250::numeric, 50, 38),
+    ('11111111-1111-1111-1111-111111111111'::uuid, 'degustation-tapas-flamenco',
+     'Dégustation de Tapas & Flamenco',
+     'Voyage culinaire et spectacle andalou',
+     'Une sélection de tapas maison accompagnée d''un spectacle de flamenco en direct.',
+     'theme_night', 'sold_out', null,
+     '2026-08-07T20:30:00Z'::timestamptz, '2026-08-07T23:00:00Z'::timestamptz, '20:00', true, 0::numeric, 40, 40)
+) as v(restaurant_id, slug, title, tagline, description, category, status, badge_label,
+       start_date, end_date, doors_open, is_free_entry, minimum_spend_per_person, max_seats, reserved_seats)
+where exists (select 1 from public.restaurants r where r.id = v.restaurant_id);
 
 notify pgrst, 'reload schema';

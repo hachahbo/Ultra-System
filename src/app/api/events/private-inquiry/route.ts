@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       restaurant_id: restaurant.id,
       event_type: input.event_type,
       full_name: input.full_name,
-      email: input.email,
+      email: input.email || null,
       phone: input.phone,
       preferred_date: input.preferred_date || null,
       preferred_time_slot: input.preferred_time_slot ?? null,

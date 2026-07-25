@@ -98,6 +98,9 @@ export const eventSchema = z.object({
 });
 
 export type EventInput = z.infer<typeof eventSchema>;
+// Input side (before defaults/coercions apply) — used to type the RHF form,
+// whose field values match the schema input, not its transformed output.
+export type EventFormInput = z.input<typeof eventSchema>;
 
 // Public status update from the dashboard.
 export const eventInquiryStatusSchema = z.enum([
@@ -112,7 +115,7 @@ export const eventInquirySchema = z.object({
   restaurant_slug: z.string().min(1),
   event_type: z.enum(["birthday", "corporate", "wedding", "privatization", "other"]),
   full_name: z.string().trim().min(1, "Nom requis").max(120),
-  email: z.string().trim().email("E-mail invalide").max(160),
+  email: z.string().trim().email("E-mail invalide").max(160).optional().or(z.literal("")),
   phone: phoneSchema,
   preferred_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide").optional().or(z.literal("")),
   preferred_time_slot: z.enum(["lunch", "evening", "full_day"]).optional(),

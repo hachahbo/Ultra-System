@@ -70,6 +70,7 @@ export default async function DashboardLayout({
             role={ctx.profile.role}
             email={ctx.userEmail ?? ""}
             restaurantId={ctx.restaurant.id}
+            restaurantSlug={ctx.restaurant.slug}
           />
           <main className="mx-auto w-full flex-1 space-y-8 px-4 py-6 md:px-8 md:py-8">
             {children}

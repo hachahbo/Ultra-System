@@ -1,20 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, Clock, MapPin, Users, Music, Wine, Sparkles, Send, CheckCircle2, ChevronRight, ArrowRight } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Calendar, Clock, Users, Wine, Sparkles, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { formatPrice } from "@/lib/format";
+import { EVENT_CATEGORY_LABELS } from "@/lib/events";
+import type { EventCategory, RestaurantEvent } from "@/lib/types";
 
 interface EventsSectionProps {
   slug: string;
   restaurantName: string;
   phone?: string | null;
   whatsappNumber?: string | null;
+  events: RestaurantEvent[];
 }
 
 type CategoryFilter = "all" | "music" | "theme" | "tasting";
+
+// DB category → the section's coarse filter buckets.
+const CATEGORY_TO_FILTER: Record<EventCategory, Exclude<CategoryFilter, "all">> = {
+  live_music: "music",
+  dj_set: "music",
+  tasting: "tasting",
+  theme_night: "theme",
+  special_menu: "theme",
+};
+
+// The form's event-type pills → the inquiry schema enum.
+const EVENT_TYPE_MAP: Record<string, "birthday" | "corporate" | "wedding" | "privatization" | "other"> = {
+  Anniversaire: "birthday",
+  Entreprise: "corporate",
+  "Mariage / Fête": "wedding",
+  Autre: "other",
+};
+
+function priceLabel(e: RestaurantEvent): string {
+  if (!e.is_free_entry && e.ticket_price > 0) return formatPrice(e.ticket_price, e.currency);
+  if (e.minimum_spend_per_person > 0) return `Min. ${formatPrice(e.minimum_spend_per_person, e.currency)}`;
+  return "Entrée libre";
+}
 
 interface EventItem {
   id: string;
@@ -30,60 +59,29 @@ interface EventItem {
   price: string;
 }
 
-const EVENTS_DATA: EventItem[] = [
-  {
-    id: "jazz-night",
-    title: "Soirée Jazz Live & Dîner Gourmand",
-    category: "music",
-    categoryLabel: "Musique Live",
-    date: "Vendredi 31 Juillet 2026",
-    time: "20:00 - 23:30",
-    description: "Une soirée envoûtante avec le duo Jazz Tanger Trio. Menu d'exception 4 services accordé avec vins choisis.",
-    image: "/images/orendezvous/orendezvous.tanger_1783019424_3932574417688072480_73557593345.jpg",
-    status: "upcoming",
-    statusLabel: "À venir",
-    price: "Sur réservation",
-  },
-  {
-    id: "wine-tasting",
-    title: "Dégustation Vins Nature & Tapas",
-    category: "tasting",
-    categoryLabel: "Dégustation",
-    date: "Samedi 8 Août 2026",
-    time: "19:30 - 22:00",
-    description: "Voyage œnologique à travers 5 domaines d'exception accompagnés de nos meilleures planches gourmandes.",
-    image: "/images/orendezvous/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg",
-    status: "upcoming",
-    statusLabel: "À venir",
-    price: "450 MAD / pers.",
-  },
-  {
-    id: "sunset-dj",
-    title: "Sunset Lounge & Session Vinyl DJ Set",
-    category: "music",
-    categoryLabel: "Musique Live",
-    date: "Vendredi 14 Août 2026",
-    time: "18:00 - 01:00",
-    description: "Ambiance terrasse chill, cocktails signature & sons deep house/funk pour célébrer le coucher du soleil.",
-    image: "/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg",
-    status: "upcoming",
-    statusLabel: "À venir",
-    price: "Entrée libre",
-  },
-  {
-    id: "chef-workshop",
-    title: "Atelier Culinaire & Accord Mets-Vins",
-    category: "theme",
-    categoryLabel: "Atelier",
-    date: "Dimanche 23 Août 2026",
-    time: "11:30 - 15:00",
-    description: "Le Chef partage ses secrets de cuisson et d'assaisonnement. Masterclass suivie d'un déjeuner dégustation.",
-    image: "/images/orendezvous/orendezvous.tanger_1770820323_3830240942847468663_73557593345.jpg",
-    status: "soldout",
-    statusLabel: "Complet",
-    price: "650 MAD / pers.",
-  },
-];
+const FALLBACK_IMAGE =
+  "/images/orendezvous/orendezvous.tanger_1783019424_3932574417688072480_73557593345.jpg";
+
+// Maps a DB event row into the card display shape this section renders.
+function toEventItem(e: RestaurantEvent): EventItem {
+  const start = parseISO(e.start_date);
+  const timeRange = e.end_date
+    ? `${format(start, "HH:mm")} - ${format(parseISO(e.end_date), "HH:mm")}`
+    : format(start, "HH:mm");
+  return {
+    id: e.id,
+    title: e.title,
+    category: CATEGORY_TO_FILTER[e.category],
+    categoryLabel: EVENT_CATEGORY_LABELS[e.category],
+    date: format(start, "EEEE d MMMM yyyy", { locale: fr }),
+    time: timeRange,
+    description: e.description ?? e.tagline ?? "",
+    image: e.cover_image || FALLBACK_IMAGE,
+    status: e.status === "sold_out" ? "soldout" : "upcoming",
+    statusLabel: e.badge_label || (e.status === "sold_out" ? "Complet" : "À venir"),
+    price: priceLabel(e),
+  };
+}
 
 const PAST_PHOTOS = [
   "/images/orendezvous/orendezvous.tanger_1782412303_3927481511788834209_73557593345.jpg",
@@ -97,9 +95,11 @@ export function EventsSection({
   restaurantName,
   phone,
   whatsappNumber,
+  events,
 }: EventsSectionProps) {
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [quoteData, setQuoteData] = useState({
     name: "",
     phone: "",
@@ -109,12 +109,39 @@ export function EventsSection({
     notes: "",
   });
 
-  const filteredEvents = EVENTS_DATA.filter(
+  const eventItems = useMemo(() => events.map(toEventItem), [events]);
+  const filteredEvents = eventItems.filter(
     (e) => filter === "all" || e.category === filter
   );
 
-  const handleQuoteSubmit = (e: React.FormEvent) => {
+  const handleQuoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+
+    // Persist the inquiry so it reaches the owner's dashboard + notifications.
+    try {
+      const res = await fetch("/api/events/private-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurant_slug: slug,
+          event_type: EVENT_TYPE_MAP[quoteData.eventType] ?? "other",
+          full_name: quoteData.name,
+          phone: quoteData.phone,
+          guest_count: Number(quoteData.guests) || 1,
+          preferred_date: quoteData.date || undefined,
+          special_requests: quoteData.notes || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("submit failed");
+    } catch {
+      setSubmitting(false);
+      toast.error("Échec de l'envoi. Réessayez ou contactez-nous directement.");
+      return;
+    }
+
+    // Optional hand-off to WhatsApp for an immediate conversation.
     if (whatsappNumber || phone) {
       const targetPhone = (whatsappNumber || phone || "").replace(/\D/g, "");
       const text = `*Demande de Privatisation / Devis*\n\nNom: ${quoteData.name}\nTéléphone: ${quoteData.phone}\nType d'événement: ${quoteData.eventType}\nNombre d'invités: ${quoteData.guests}\nDate souhaitée: ${quoteData.date || "Non spécifiée"}\nNotes: ${quoteData.notes || "Aucune"}`;
@@ -123,6 +150,8 @@ export function EventsSection({
         "_blank"
       );
     }
+
+    setSubmitting(false);
     setQuoteSubmitted(true);
     toast.success("Votre demande de devis a bien été envoyée !");
   };
@@ -214,6 +243,17 @@ export function EventsSection({
           </div>
 
           {/* Cards Grid */}
+          {filteredEvents.length === 0 ? (
+            <div className="rounded-[2.5rem] border border-dashed border-[#e7e5e4] dark:border-white/10 py-20 text-center">
+              <Calendar className="mx-auto size-9 text-[#cd6133]/40" />
+              <p className="mt-4 text-sm font-semibold text-muted-foreground">
+                Aucun événement à venir pour le moment.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Revenez bientôt ou suivez-nous pour ne rien manquer.
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filteredEvents.map((event) => (
               <div
@@ -298,6 +338,7 @@ export function EventsSection({
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* ── 3. Privatisation & Corporate Events ─────────────────────────── */}
@@ -497,10 +538,11 @@ export function EventsSection({
 
                     <Button
                       type="submit"
+                      disabled={submitting}
                       className="w-full rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white font-bold text-xs uppercase tracking-wider py-6 shadow-lg shadow-[#cd6133]/25 transition-all duration-300"
                     >
                       <Send className="size-4 mr-2" />
-                      Envoyer la demande de devis
+                      {submitting ? "Envoi en cours…" : "Envoyer la demande de devis"}
                     </Button>
                   </form>
                 )}

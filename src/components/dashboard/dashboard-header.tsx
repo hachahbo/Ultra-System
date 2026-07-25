@@ -19,6 +19,8 @@ import {
   ShoppingBag,
   CalendarDays,
   PartyPopper,
+  Globe,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -60,12 +62,14 @@ export function DashboardHeader({
   role,
   email,
   restaurantId,
+  restaurantSlug,
 }: {
   restaurantName: string;
   logoUrl?: string | null;
   role: Role;
   email: string;
   restaurantId: string;
+  restaurantSlug?: string;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -301,6 +305,19 @@ export function DashboardHeader({
               <p className="text-[11.5px] font-medium text-muted-foreground truncate mt-0.5">{email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border/60" />
+            <DropdownMenuItem asChild className="rounded-xl cursor-pointer font-semibold text-xs py-2.5 bg-primary/5 text-primary hover:bg-primary/10 transition-colors">
+              <a
+                href={`/${restaurantSlug || "orendezvous"}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between w-full"
+              >
+                <span className="flex items-center gap-2 font-bold">
+                  <Globe className="size-4 text-primary" /> Visiter le site web
+                </span>
+                <ExternalLink className="size-3.5 text-primary/70" />
+              </a>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild className="rounded-xl cursor-pointer font-semibold text-xs py-2.5">
               <Link href="/dashboard/settings" className="flex items-center gap-2">
                 <Settings className="size-4 text-muted-foreground" /> Réglages du restaurant

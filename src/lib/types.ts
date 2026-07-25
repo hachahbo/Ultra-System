@@ -340,7 +340,7 @@ export type EventInquiry = {
   restaurant_id: string;
   event_type: "birthday" | "corporate" | "wedding" | "privatization" | "other";
   full_name: string;
-  email: string;
+  email: string | null;
   phone: string;
   preferred_date: string | null;
   preferred_time_slot: "lunch" | "evening" | "full_day" | null;

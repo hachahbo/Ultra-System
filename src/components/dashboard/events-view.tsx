@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -21,10 +19,6 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
@@ -338,12 +332,14 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                           >
                             <MessageCircle className="size-3.5" /> WhatsApp
                           </a>
-                          <a
-                            href={`mailto:${q.email}`}
-                            className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary hover:underline"
-                          >
-                            <Mail className="size-3.5" /> {q.email}
-                          </a>
+                          {q.email && (
+                            <a
+                              href={`mailto:${q.email}`}
+                              className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary hover:underline"
+                            >
+                              <Mail className="size-3.5" /> {q.email}
+                            </a>
+                          )}
                         </div>
                       </div>
 
