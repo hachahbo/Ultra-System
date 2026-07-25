@@ -689,9 +689,12 @@ export function OrdersView() {
 
       {/* POS Modal Overlay */}
       <Dialog open={isPosModalOpen} onOpenChange={setPosModalOpen}>
-        <DialogContent className="max-w-[1440px] sm:max-w-[1440px] w-[95vw] h-[92vh] p-0 overflow-hidden bg-transparent border-none shadow-none">
-          <PosView />
-        </DialogContent>
+        {isPosModalOpen && (
+          <DialogContent showCloseButton={false} className="w-full max-w-full sm:max-w-[1440px] sm:w-[95vw] h-[100dvh] sm:h-[92vh] p-0 overflow-hidden bg-transparent border-none shadow-none rounded-none sm:rounded-[24px]">
+            <DialogTitle className="sr-only">Nouvelle commande</DialogTitle>
+            <PosView onClose={() => setPosModalOpen(false)} />
+          </DialogContent>
+        )}
       </Dialog>
 
       {/* Edit / View Order Modal */}
