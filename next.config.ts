@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Points next-intl at our request config (cookie-based locale, no URL prefix).
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // Bundle analysis: this project builds with Turbopack (default for `next
 // dev`/`next build`, no --webpack flag anywhere), so the webpack-only
@@ -74,4 +78,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

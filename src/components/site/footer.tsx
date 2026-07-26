@@ -1,14 +1,16 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { LogoIcon } from "@/components/site/logo-icon";
 import type { Restaurant, ResolvedTheme } from "@/lib/types";
 
-export function Footer({
+export async function Footer({
   restaurant,
   theme,
 }: {
   restaurant: Restaurant;
   theme: ResolvedTheme;
 }) {
+  const t = await getTranslations("Footer");
   const base = `/${restaurant.slug}`;
   const bgImage = theme.hero_image_urls[0] ?? "/images/about/newsletter-bg.webp";
 
@@ -28,12 +30,12 @@ export function Footer({
 
             <div className="relative z-10 px-6 py-12 text-center sm:px-12 sm:py-16">
               <h2 className="mx-auto max-w-xl font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Get Our Promo Code by Subscribing To our Newsletter
+                {t("newsletterTitle")}
               </h2>
               <form className="mx-auto mt-6 flex max-w-md rounded-full bg-white p-1.5 shadow-sm">
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("emailPlaceholder")}
                   className="min-w-0 flex-auto rounded-full bg-transparent px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
                   required
                 />
@@ -41,7 +43,7 @@ export function Footer({
                   type="submit"
                   className="rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                 >
-                  Subscribe
+                  {t("subscribe")}
                 </button>
               </form>
             </div>
@@ -70,27 +72,27 @@ export function Footer({
                 {theme.about_body || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
                 {" "}
                 <Link href={`${base}/about`} className="text-card-foreground underline hover:text-primary font-medium text-xs ml-1">
-                  Learn more
+                  {t("learnMore")}
                 </Link>
               </p>
               <div>
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-3">Opening Hours</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-3">{t("openingHours")}</h3>
                 <div className="space-y-1.5 text-xs text-muted-foreground">
                   {restaurant.hours ? (
                     <p>{restaurant.hours}</p>
                   ) : (
                     <>
                       <div className="flex justify-between max-w-[240px]">
-                        <span className="font-medium text-card-foreground/80">Monday - Friday</span>
+                        <span className="font-medium text-card-foreground/80">{t("mondayFriday")}</span>
                         <span>8:00 am to 9:00 pm</span>
                       </div>
                       <div className="flex justify-between max-w-[240px]">
-                        <span className="font-medium text-card-foreground/80">Saturday</span>
+                        <span className="font-medium text-card-foreground/80">{t("saturday")}</span>
                         <span>8:00 am to 9:00 pm</span>
                       </div>
                       <div className="flex justify-between max-w-[240px]">
-                        <span className="font-medium text-card-foreground/80">Sunday</span>
-                        <span>CLOSED</span>
+                        <span className="font-medium text-card-foreground/80">{t("sunday")}</span>
+                        <span>{t("closed")}</span>
                       </div>
                     </>
                   )}
@@ -100,19 +102,19 @@ export function Footer({
 
             {/* Column 2: Navigation */}
             <div>
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Navigation</h3>
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">{t("navigation")}</h3>
               <ul className="space-y-4 text-xs font-medium text-muted-foreground">
-                <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Menu</Link></li>
-                <li><Link href={`${base}/about`} className="hover:text-primary transition-colors">About us</Link></li>
-                <li><Link href={`${base}/contact`} className="hover:text-primary transition-colors">Contact us</Link></li>
-                <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">Main dishes</Link></li>
+                <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">{t("menu")}</Link></li>
+                <li><Link href={`${base}/about`} className="hover:text-primary transition-colors">{t("aboutUs")}</Link></li>
+                <li><Link href={`${base}/contact`} className="hover:text-primary transition-colors">{t("contactUs")}</Link></li>
+                <li><Link href={`${base}/menu`} className="hover:text-primary transition-colors">{t("mainDishes")}</Link></li>
               </ul>
             </div>
 
             {/* Column 3: Follow Us */}
             {(theme.social_facebook_url || theme.social_instagram_url || theme.social_twitter_url) && (
               <div>
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">Follow Us</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-card-foreground mb-6 mt-1">{t("followUs")}</h3>
                 <div className="flex gap-4">
                   {theme.social_facebook_url && (
                     <a href={theme.social_facebook_url} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all bg-card">
@@ -137,11 +139,11 @@ export function Footer({
           {/* Bottom Bar */}
           <div className="mt-20 flex flex-col items-center justify-between border-t border-border pt-8 pb-4 sm:flex-row relative z-10">
             <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
-              © {new Date().getFullYear()} {restaurant.name}. All Right Reserved. Designed by Isaac
+              © {new Date().getFullYear()} {restaurant.name}. {t("rightsReserved")}
             </p>
             <div className="mt-4 flex gap-6 text-[11px] font-medium text-muted-foreground sm:mt-0">
-              <a href="#" className="hover:text-card-foreground transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-card-foreground transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-card-foreground transition-colors">{t("termsOfService")}</a>
+              <a href="#" className="hover:text-card-foreground transition-colors">{t("privacyPolicy")}</a>
             </div>
           </div>
         </div>

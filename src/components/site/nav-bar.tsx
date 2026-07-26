@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Menu as MenuIcon, UtensilsCrossed, CalendarDays, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { LogoIcon } from "@/components/site/logo-icon";
 import {
   Sheet,
@@ -17,12 +19,13 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
+// `key` indexes into the Nav.* messages; icons/href stay static.
 const links = [
-  { href: "/menu", label: "Menu", icon: UtensilsCrossed },
-  { href: "/events", label: "Events", icon: CalendarDays },
-  { href: "/about", label: "About", icon: Info },
-  { href: "/contact", label: "Contact", icon: Phone },
-];
+  { href: "/menu", key: "menu", icon: UtensilsCrossed },
+  { href: "/events", key: "events", icon: CalendarDays },
+  { href: "/about", key: "about", icon: Info },
+  { href: "/contact", key: "contact", icon: Phone },
+] as const;
 
 export function NavBar({
   slug,
@@ -35,6 +38,7 @@ export function NavBar({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations("Nav");
   const base = `/${slug}`;
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export function NavBar({
           <div className="md:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Ouvrir le menu" className="-ml-2">
+                <Button variant="ghost" size="icon" aria-label={t("openMenu")} className="-ml-2">
                   <MenuIcon className="size-5" />
                 </Button>
               </SheetTrigger>
@@ -76,20 +80,25 @@ export function NavBar({
                         className="flex items-center gap-4 rounded-xl px-4 py-3 text-base font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                       >
                         <Icon className="size-5 text-white/60" />
-                        {l.label}
+                        {t(l.key)}
                       </Link>
                     );
                   })}
-                  
+
                   <div className="mt-4 mb-2 flex items-center justify-between px-4 py-3 rounded-xl bg-white/5">
                     <span className="text-base font-medium text-white/80">Apparence</span>
                     <ThemeToggle />
                   </div>
 
+                  <div className="mb-2 flex items-center justify-between px-4 py-3 rounded-xl bg-white/5">
+                    <span className="text-base font-medium text-white/80">{t("language")}</span>
+                    <LanguageSwitcher />
+                  </div>
+
                   <div className="mt-auto pb-4 px-2">
                     <Button asChild className="w-full rounded-xl shadow-md h-12 bg-white text-black hover:bg-white/90">
                       <Link href={`${base}/reservation`}>
-                        Book a table
+                        {t("reserve")}
                       </Link>
                     </Button>
                   </div>
@@ -123,7 +132,7 @@ export function NavBar({
                 href={`${base}${l.href}`}
                 className="text-sm font-medium text-foreground/70 transition-colors hover:text-foreground"
               >
-                {l.label}
+                {t(l.key)}
               </Link>
             ))}
           </nav>
@@ -132,17 +141,20 @@ export function NavBar({
         {/* Right: Actions */}
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
           <div className="hidden md:block">
+            <LanguageSwitcher />
+          </div>
+          <div className="hidden md:block">
             <ThemeToggle />
           </div>
-          
+
           {/* Desktop CTA */}
           <Button asChild className="hidden md:inline-flex rounded-full px-8 py-6 text-base font-semibold bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] transition-all duration-300">
-            <Link href={`${base}/reservation`}>Book a table</Link>
+            <Link href={`${base}/reservation`}>{t("reserve")}</Link>
           </Button>
 
           {/* Mobile CTA */}
           <Button asChild className="md:hidden rounded-xl px-6 py-5 font-bold text-base bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_8px_16px_rgba(255,107,53,0.25)] transition-all">
-            <Link href={`${base}/reservation`}>Book</Link>
+            <Link href={`${base}/reservation`}>{t("reserve")}</Link>
           </Button>
         </div>
       </div>

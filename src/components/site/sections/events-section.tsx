@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar, Clock, Users, Wine, Sparkles, Send, CheckCircle2 } from "lucide-react";
@@ -31,13 +32,14 @@ const CATEGORY_TO_FILTER: Record<EventCategory, Exclude<CategoryFilter, "all">> 
   special_menu: "theme",
 };
 
-// The form's event-type pills → the inquiry schema enum.
-const EVENT_TYPE_MAP: Record<string, "birthday" | "corporate" | "wedding" | "privatization" | "other"> = {
-  Anniversaire: "birthday",
-  Entreprise: "corporate",
-  "Mariage / Fête": "wedding",
-  Autre: "other",
-};
+// Event-type pills: a stable enum value + the message key for its label.
+type InquiryType = "birthday" | "corporate" | "wedding" | "other";
+const EVENT_TYPE_OPTIONS: { value: InquiryType; labelKey: string }[] = [
+  { value: "birthday", labelKey: "typeBirthday" },
+  { value: "corporate", labelKey: "typeCorporate" },
+  { value: "wedding", labelKey: "typeWedding" },
+  { value: "other", labelKey: "typeOther" },
+];
 
 function priceLabel(e: RestaurantEvent): string {
   if (!e.is_free_entry && e.ticket_price > 0) return formatPrice(e.ticket_price, e.currency);
@@ -97,13 +99,21 @@ export function EventsSection({
   whatsappNumber,
   events,
 }: EventsSectionProps) {
+  const t = useTranslations("Events");
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [quoteData, setQuoteData] = useState({
+  const [quoteData, setQuoteData] = useState<{
+    name: string;
+    phone: string;
+    eventType: InquiryType;
+    guests: string;
+    date: string;
+    notes: string;
+  }>({
     name: "",
     phone: "",
-    eventType: "Anniversaire",
+    eventType: "birthday",
     guests: "20",
     date: "",
     notes: "",
@@ -126,7 +136,7 @@ export function EventsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurant_slug: slug,
-          event_type: EVENT_TYPE_MAP[quoteData.eventType] ?? "other",
+          event_type: quoteData.eventType,
           full_name: quoteData.name,
           phone: quoteData.phone,
           guest_count: Number(quoteData.guests) || 1,
@@ -137,7 +147,7 @@ export function EventsSection({
       if (!res.ok) throw new Error("submit failed");
     } catch {
       setSubmitting(false);
-      toast.error("Échec de l'envoi. Réessayez ou contactez-nous directement.");
+      toast.error(t("submitError"));
       return;
     }
 
@@ -153,7 +163,7 @@ export function EventsSection({
 
     setSubmitting(false);
     setQuoteSubmitted(true);
-    toast.success("Votre demande de devis a bien été envoyée !");
+    toast.success(t("submitSuccess"));
   };
 
   return (
@@ -173,16 +183,16 @@ export function EventsSection({
         <div className="relative mx-auto max-w-5xl text-center space-y-6">
           <div className="inline-flex items-center gap-2.5 rounded-full bg-[#cd6133]/20 border border-[#cd6133]/40 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#f08556]">
             <Sparkles className="size-3.5" />
-            ÉVÉNEMENTS &amp; SOIRÉES SPÉCIALES
+            {t("heroBadge")}
           </div>
 
           <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-            Vivez des moments <br />
-            <span className="italic font-normal text-[#cd6133]">inoubliables</span>
+            {t("heroTitleLine1")} <br />
+            <span className="italic font-normal text-[#cd6133]">{t("heroTitleAccent")}</span>
           </h1>
 
           <p className="max-w-2xl mx-auto text-gray-300 text-base sm:text-lg leading-relaxed">
-            Musique live, dégustations exclusives, soirées à thème et privatisation d&apos;espaces. Découvrez le calendrier de {restaurantName}.
+            {t("heroSubtitle", { name: restaurantName })}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
@@ -190,14 +200,14 @@ export function EventsSection({
               asChild
               className="rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white font-bold px-8 py-6 text-sm uppercase tracking-wider shadow-lg shadow-[#cd6133]/30"
             >
-              <Link href={`/${slug}/reservation`}>Réserver une table</Link>
+              <Link href={`/${slug}/reservation`}>{t("reserveTable")}</Link>
             </Button>
             <Button
               asChild
               variant="outline"
               className="rounded-full border border-white/30 bg-white/5 text-white hover:bg-white/15 font-bold px-8 py-6 text-sm uppercase tracking-wider"
             >
-              <a href="#privatisation">Privatiser le restaurant</a>
+              <a href="#privatisation">{t("privatize")}</a>
             </Button>
           </div>
         </div>
@@ -211,21 +221,21 @@ export function EventsSection({
               <div className="flex items-center gap-3">
                 <span className="h-0.5 w-6 bg-[#cd6133]" />
                 <span className="text-xs font-bold uppercase tracking-widest text-[#cd6133]">
-                  PROGRAMME À VENIR
+                  {t("programUpcoming")}
                 </span>
               </div>
               <h2 className="font-display text-3xl sm:text-4xl font-bold">
-                Événements à ne pas manquer
+                {t("upcomingHeading")}
               </h2>
             </div>
 
             {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               {[
-                { id: "all", label: "Tous" },
-                { id: "music", label: "Musique Live" },
-                { id: "tasting", label: "Dégustations" },
-                { id: "theme", label: "Ateliers & Thèmes" },
+                { id: "all", label: t("filterAll") },
+                { id: "music", label: t("filterMusic") },
+                { id: "tasting", label: t("filterTasting") },
+                { id: "theme", label: t("filterTheme") },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -247,10 +257,10 @@ export function EventsSection({
             <div className="rounded-[2.5rem] border border-dashed border-[#e7e5e4] dark:border-white/10 py-20 text-center">
               <Calendar className="mx-auto size-9 text-[#cd6133]/40" />
               <p className="mt-4 text-sm font-semibold text-muted-foreground">
-                Aucun événement à venir pour le moment.
+                {t("emptyTitle")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Revenez bientôt ou suivez-nous pour ne rien manquer.
+                {t("emptyHint")}
               </p>
             </div>
           ) : (
@@ -319,7 +329,7 @@ export function EventsSection({
                   </div>
 
                   <div className="pt-2 border-t border-[#f5f2ed] dark:border-white/5 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground font-medium">Places limitées</span>
+                    <span className="text-xs text-muted-foreground font-medium">{t("limitedSeats")}</span>
                     <Button
                       asChild
                       disabled={event.status === "soldout"}
@@ -330,7 +340,7 @@ export function EventsSection({
                       }`}
                     >
                       <Link href={`/${slug}/reservation`}>
-                        {event.status === "soldout" ? "Liste d'attente" : "Réserver ma table"}
+                        {event.status === "soldout" ? t("waitlist") : t("reserveMyTable")}
                       </Link>
                     </Button>
                   </div>
@@ -350,14 +360,14 @@ export function EventsSection({
                 <div className="flex items-center gap-3">
                   <span className="h-0.5 w-6 bg-[#cd6133]" />
                   <span className="text-xs font-bold uppercase tracking-widest text-[#cd6133]">
-                    PRIVATISATION &amp; GROUPES
+                    {t("privatizationLabel")}
                   </span>
                 </div>
                 <h2 className="font-display text-3xl sm:text-4xl font-bold">
-                  Organisez votre événement privé
+                  {t("privatizationHeading")}
                 </h2>
                 <p className="text-[#78716c] dark:text-gray-400 text-sm sm:text-base leading-relaxed">
-                  Que ce soit pour un anniversaire, un repas d&apos;équipe ou la privatisation totale de notre espace, notre équipe vous accompagne sur-mesure.
+                  {t("privatizationIntro")}
                 </p>
               </div>
 
@@ -368,9 +378,9 @@ export function EventsSection({
                     <Sparkles className="size-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">Anniversaires &amp; Fêtes</h4>
+                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">{t("offerBirthdayTitle")}</h4>
                     <p className="text-xs text-[#78716c] dark:text-gray-400 mt-1 leading-relaxed">
-                      Espace dédié, gâteaux personnalisés et ambiances festives pour célébrer avec vos proches.
+                      {t("offerBirthdayText")}
                     </p>
                   </div>
                 </div>
@@ -380,9 +390,9 @@ export function EventsSection({
                     <Users className="size-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">Événements d&apos;Entreprise</h4>
+                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">{t("offerCorporateTitle")}</h4>
                     <p className="text-xs text-[#78716c] dark:text-gray-400 mt-1 leading-relaxed">
-                      Cocktails dinatoires, réunions d&apos;équipe et repas de fin d&apos;année sur-mesure.
+                      {t("offerCorporateText")}
                     </p>
                   </div>
                 </div>
@@ -392,9 +402,9 @@ export function EventsSection({
                     <Wine className="size-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">Privatisation Totale</h4>
+                    <h4 className="font-bold text-base text-[#1a1715] dark:text-white">{t("offerPrivatizationTitle")}</h4>
                     <p className="text-xs text-[#78716c] dark:text-gray-400 mt-1 leading-relaxed">
-                      Accès exclusif à l&apos;ensemble de la salle et terrasse avec chef &amp; équipe dédiés.
+                      {t("offerPrivatizationText")}
                     </p>
                   </div>
                 </div>
@@ -409,37 +419,37 @@ export function EventsSection({
                     <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
                       <CheckCircle2 className="size-8" />
                     </div>
-                    <h3 className="font-display text-2xl font-bold">Demande de devis reçue !</h3>
+                    <h3 className="font-display text-2xl font-bold">{t("quoteReceivedTitle")}</h3>
                     <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                      Merci ! Notre responsable événementiel va étudier votre demande et vous recontacter très rapidement.
+                      {t("quoteReceivedText")}
                     </p>
                     <Button
                       onClick={() => setQuoteSubmitted(false)}
                       className="mt-4 rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white px-6 py-2 text-xs uppercase font-bold"
                     >
-                      Faire une autre demande
+                      {t("anotherRequest")}
                     </Button>
                   </div>
                 ) : (
                   <form onSubmit={handleQuoteSubmit} className="space-y-5">
                     <div>
                       <h3 className="font-display text-2xl font-bold text-[#1a1715] dark:text-white">
-                        Demander un devis sur-mesure
+                        {t("quoteFormTitle")}
                       </h3>
                       <p className="text-xs sm:text-sm text-[#78716c] dark:text-gray-400 mt-1">
-                        Remplissez le formulaire ci-dessous. Nous vous répondrons sous 24h.
+                        {t("quoteFormSubtitle")}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                          Nom complet
+                          {t("fullName")}
                         </label>
                         <input
                           type="text"
                           required
-                          placeholder="Votre nom et prénom"
+                          placeholder={t("fullNamePlaceholder")}
                           value={quoteData.name}
                           onChange={(e) =>
                             setQuoteData({ ...quoteData, name: e.target.value })
@@ -450,7 +460,7 @@ export function EventsSection({
 
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                          Téléphone / WhatsApp
+                          {t("phoneWhatsapp")}
                         </label>
                         <input
                           type="tel"
@@ -468,21 +478,21 @@ export function EventsSection({
                     {/* Event Type Pills */}
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                        Type d&apos;événement
+                        {t("eventType")}
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        {["Anniversaire", "Entreprise", "Mariage / Fête", "Autre"].map((t) => (
+                        {EVENT_TYPE_OPTIONS.map((opt) => (
                           <button
-                            key={t}
+                            key={opt.value}
                             type="button"
-                            onClick={() => setQuoteData({ ...quoteData, eventType: t })}
+                            onClick={() => setQuoteData({ ...quoteData, eventType: opt.value })}
                             className={`rounded-full px-4 py-2 text-xs font-bold transition-all border ${
-                              quoteData.eventType === t
+                              quoteData.eventType === opt.value
                                 ? "bg-[#cd6133] border-[#cd6133] text-white shadow-sm"
                                 : "bg-[#f5f2ed] dark:bg-[#262320] border-transparent text-[#5a544c] dark:text-gray-300 hover:bg-[#eae6de]"
                             }`}
                           >
-                            {t}
+                            {t(opt.labelKey)}
                           </button>
                         ))}
                       </div>
@@ -491,13 +501,13 @@ export function EventsSection({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                          Nombre d&apos;invités
+                          {t("guestCount")}
                         </label>
                         <input
                           type="number"
                           min={5}
                           max={200}
-                          placeholder="Ex: 25"
+                          placeholder={t("guestCountPlaceholder")}
                           value={quoteData.guests}
                           onChange={(e) =>
                             setQuoteData({ ...quoteData, guests: e.target.value })
@@ -508,7 +518,7 @@ export function EventsSection({
 
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                          Date souhaitée
+                          {t("preferredDate")}
                         </label>
                         <input
                           type="date"
@@ -523,11 +533,11 @@ export function EventsSection({
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-[#1a1715] dark:text-gray-200">
-                        Précisions / Demandes particulières
+                        {t("notes")}
                       </label>
                       <textarea
                         rows={3}
-                        placeholder="Ambiance souhaitée, budget, restrictions alimentaires..."
+                        placeholder={t("notesPlaceholder")}
                         value={quoteData.notes}
                         onChange={(e) =>
                           setQuoteData({ ...quoteData, notes: e.target.value })
@@ -542,7 +552,7 @@ export function EventsSection({
                       className="w-full rounded-full bg-[#cd6133] hover:bg-[#b55026] text-white font-bold text-xs uppercase tracking-wider py-6 shadow-lg shadow-[#cd6133]/25 transition-all duration-300"
                     >
                       <Send className="size-4 mr-2" />
-                      {submitting ? "Envoi en cours…" : "Envoyer la demande de devis"}
+                      {submitting ? t("submitting") : t("submit")}
                     </Button>
                   </form>
                 )}
@@ -555,10 +565,12 @@ export function EventsSection({
         <div className="space-y-8 pt-8">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <h3 className="font-display text-3xl font-bold">
-              Revivez nos récents événements
+              {t("pastHeading")}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Suivez-nous sur Instagram <span className="font-bold text-[#cd6133]">@rendezvous_tanger</span> pour découvrir nos prochains rendez-vous en direct.
+              {t.rich("pastSubtitle", {
+                handle: (chunks) => <span className="font-bold text-[#cd6133]">{chunks}</span>,
+              })}
             </p>
           </div>
 
