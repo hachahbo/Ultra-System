@@ -173,6 +173,11 @@ export function SiteBuilder({
     return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   }
 
+  const onSaveError = (errors: Record<string, unknown>) => {
+    console.error("Form validation errors:", errors);
+    toast.error("Veuillez corriger les erreurs de validation dans le formulaire.");
+  };
+
   return (
     <div className={`space-y-6 ${siteFontClassNames}`}>
       {/* Sleek Admin Header Banner */}
@@ -196,7 +201,7 @@ export function SiteBuilder({
             )}
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-            <Globe className="size-3.5 text-primary" />
+            <Globe className="size-3.5 text-[#e36329]" />
             <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-primary">
               /{slug}
             </a>
@@ -204,12 +209,33 @@ export function SiteBuilder({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button variant="outline" onClick={form.handleSubmit(saveDraft)} disabled={saving} className="rounded-xl font-bold text-xs h-10 px-4">
-            {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
+          <Button
+            variant={form.formState.isDirty ? "default" : "outline"}
+            onClick={form.handleSubmit(saveDraft, onSaveError)}
+            disabled={saving}
+            className={`rounded-xl font-bold text-xs h-10 px-4 transition-all duration-300 ${
+              form.formState.isDirty
+                ? "bg-[#e36329] hover:bg-[#c8521d] text-white shadow-md ring-2 ring-[#e36329]/30"
+                : ""
+            }`}
+          >
+            {saving ? (
+              "Enregistrement…"
+            ) : (
+              <span className="flex items-center gap-1.5">
+                {form.formState.isDirty && (
+                  <span className="size-2 rounded-full bg-white animate-pulse" />
+                )}
+                {form.formState.isDirty ? "Enregistrer le brouillon *" : "Enregistrer le brouillon"}
+              </span>
+            )}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button disabled={!hasDraft || publishing} className="rounded-xl font-bold text-xs h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+              <Button
+                disabled={!hasDraft || publishing}
+                className="rounded-xl font-bold text-xs h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+              >
                 {publishing ? "Publication…" : "Publier"}
               </Button>
             </AlertDialogTrigger>

@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { compressImage } from "@/lib/image";
 import type { ThemeDraftInput } from "@/lib/schemas";
 
-const MAX_HERO_IMAGES = 5;
+const MAX_HERO_IMAGES = 12;
 const MAX_WELCOME_IMAGES = 8;
 const MAX_ABOUT_IMAGES = 8;
 

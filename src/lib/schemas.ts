@@ -333,6 +333,14 @@ export type BulkPermissionsInput = z.infer<typeof bulkPermissionsSchema>;
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide");
 
+const assetUrl = z
+  .string()
+  .trim()
+  .refine(
+    (v) => !v || v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://") || v.startsWith("data:"),
+    { message: "URL d'image invalide" }
+  );
+
 export const themeSectionSchema = z.object({
   key: z.enum(SECTION_KEYS),
   enabled: z.boolean(),
@@ -343,7 +351,7 @@ export const themeSectionSchema = z.object({
 // sections/custom_copy in the builder), but validating them here means a
 // future site-builder panel needs no further schema work.
 const valueItemSchema = z.object({
-  image_url: z.string().url(),
+  image_url: assetUrl,
   title: z.string().trim().min(1).max(60),
   body: z.string().trim().min(1).max(500),
 });
@@ -362,8 +370,8 @@ export const themeDraftSchema = z.object({
   color_background: hexColor.nullable().optional(),
   color_text: hexColor.nullable().optional(),
   font_pair: z.enum(FONT_PAIR_KEYS).optional(),
-  logo_url: z.string().url().nullable().optional(),
-  hero_image_urls: z.array(z.string().url()).max(5).optional(),
+  logo_url: assetUrl.nullable().optional(),
+  hero_image_urls: z.array(assetUrl).max(15).optional(),
   about_title: z.string().trim().max(120).nullable().optional(),
   about_body: z.string().trim().max(2000).nullable().optional(),
   address: z.string().trim().max(300).nullable().optional(),
@@ -373,17 +381,17 @@ export const themeDraftSchema = z.object({
     .refine((s) => new Set(s.map((x) => x.key)).size === s.length, "Sections dupliquées")
     .optional(),
   custom_copy: z.partialRecord(z.enum(COPY_KEYS), z.string().trim().max(300)).optional(),
-  welcome_gallery_urls: z.array(z.string().url()).max(8).optional(),
-  values_items: z.array(valueItemSchema).max(6).optional(),
-  testimonials: z.array(testimonialSchema).max(9).optional(),
-  about_gallery_urls: z.array(z.string().url()).max(8).optional(),
+  welcome_gallery_urls: z.array(assetUrl).max(15).optional(),
+  values_items: z.array(valueItemSchema).max(10).optional(),
+  testimonials: z.array(testimonialSchema).max(15).optional(),
+  about_gallery_urls: z.array(assetUrl).max(15).optional(),
   about_rating: z.number().min(0).max(5).nullable().optional(),
   about_review_count: z.number().int().min(0).nullable().optional(),
-  about_map_url: z.string().url().nullable().optional(),
-  specials_image_url: z.string().url().nullable().optional(),
-  social_facebook_url: z.string().url().nullable().optional(),
-  social_instagram_url: z.string().url().nullable().optional(),
-  social_twitter_url: z.string().url().nullable().optional(),
+  about_map_url: assetUrl.nullable().optional(),
+  specials_image_url: assetUrl.nullable().optional(),
+  social_facebook_url: assetUrl.nullable().optional(),
+  social_instagram_url: assetUrl.nullable().optional(),
+  social_twitter_url: assetUrl.nullable().optional(),
 });
 export type ThemeDraftInput = z.infer<typeof themeDraftSchema>;
 
