@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/site/sections/hero-section";
 import { SpecialsSection } from "@/components/site/sections/specials-section";
 import { WelcomeSection } from "@/components/site/sections/welcome-section";
-import { getPublicMenu } from "@/lib/menu";
+import { getPublicMenu, getRestaurantBySlug } from "@/lib/menu";
 import { getSiteTheme } from "@/lib/site-theme";
 import type { SectionKey } from "@/lib/types";
 
@@ -24,10 +24,16 @@ export default async function HomePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const menu = await getPublicMenu(slug);
-  if (!menu) notFound();
-  const { restaurant, items } = menu;
+  const restaurant = await getRestaurantBySlug(slug);
+  if (!restaurant) notFound();
   const { theme } = await getSiteTheme(restaurant);
+  const menu = (await getPublicMenu(slug)) ?? {
+    restaurant,
+    categories: [],
+    items: [],
+    promotions: [],
+  };
+  const { items } = menu;
 
   const featured = items.filter((i) => i.in_stock).slice(0, 4);
   const base = `/${restaurant.slug}`;

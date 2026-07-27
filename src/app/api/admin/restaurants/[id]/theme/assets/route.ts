@@ -4,7 +4,7 @@ import { requireSuperAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_BYTES = 1024 * 1024;
-const KINDS = new Set(["logo", "hero"]);
+const KINDS = new Set(["logo", "hero", "welcome", "about", "specials", "value"]);
 
 // The operator has no restaurant_id, so the tenant-scoped storage RLS
 // ("menu images tenant insert", 0001_init.sql) can't allow a browser-direct

@@ -6,9 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Palette, ImageIcon, FileText, Layers, Globe, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +53,17 @@ function themeToFormValues(theme: RestaurantTheme): ThemeDraftInput {
     address: resolved.address,
     sections: resolved.sections,
     custom_copy: resolved.custom_copy,
+    welcome_gallery_urls: resolved.welcome_gallery_urls,
+    values_items: resolved.values_items,
+    testimonials: resolved.testimonials,
+    about_gallery_urls: resolved.about_gallery_urls,
+    about_rating: resolved.about_rating,
+    about_review_count: resolved.about_review_count,
+    about_map_url: resolved.about_map_url,
+    specials_image_url: resolved.specials_image_url,
+    social_facebook_url: resolved.social_facebook_url,
+    social_instagram_url: resolved.social_instagram_url,
+    social_twitter_url: resolved.social_twitter_url,
   };
 }
 
@@ -78,7 +90,15 @@ export function SiteBuilder({
 
   const form = useForm<ThemeDraftInput>({
     resolver: zodResolver(themeDraftSchema),
-    defaultValues: { hero_image_urls: [], sections: [], custom_copy: {} },
+    defaultValues: {
+      hero_image_urls: [],
+      sections: [],
+      custom_copy: {},
+      welcome_gallery_urls: [],
+      values_items: [],
+      testimonials: [],
+      about_gallery_urls: [],
+    },
   });
 
   useEffect(() => {
@@ -154,31 +174,46 @@ export function SiteBuilder({
   }
 
   return (
-    <div className={siteFontClassNames}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Button variant="ghost" size="sm" asChild className="-ml-2 mb-1">
+    <div className={`space-y-6 ${siteFontClassNames}`}>
+      {/* Sleek Admin Header Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-card border border-border/80 p-5 sm:p-6 shadow-sm">
+        <div className="space-y-1">
+          <Button variant="ghost" size="sm" asChild className="-ml-2.5 h-8 text-xs text-muted-foreground hover:text-foreground">
             <Link href="/admin/restaurants">
-              <ArrowLeft className="size-4" /> Restaurants
+              <ArrowLeft className="size-3.5 mr-1" /> Retour aux restaurants
             </Link>
           </Button>
-          <h1 className="font-display text-2xl font-semibold">{restaurantName}</h1>
-          <p className="text-sm text-muted-foreground">
-            /{slug}
-            {hasDraft && <span className="ml-2 text-amber-600">· brouillon non publié</span>}
-          </p>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-2xl font-extrabold text-foreground">{restaurantName}</h1>
+            {hasDraft ? (
+              <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[11px] px-2.5 py-0.5">
+                Brouillon non publié
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] px-2.5 py-0.5 flex items-center gap-1">
+                <CheckCircle className="size-3" /> Publié
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Globe className="size-3.5 text-primary" />
+            <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-primary">
+              /{slug}
+            </a>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={form.handleSubmit(saveDraft)} disabled={saving}>
+
+        <div className="flex items-center gap-2.5">
+          <Button variant="outline" onClick={form.handleSubmit(saveDraft)} disabled={saving} className="rounded-xl font-bold text-xs h-10 px-4">
             {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button disabled={!hasDraft || publishing}>
+              <Button disabled={!hasDraft || publishing} className="rounded-xl font-bold text-xs h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                 {publishing ? "Publication…" : "Publier"}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-2xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Publier ce site ?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -186,32 +221,44 @@ export function SiteBuilder({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={publish}>Publier</AlertDialogAction>
+                <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={publish} className="rounded-xl bg-primary text-primary-foreground font-bold">
+                  Publier le site
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_420px]">
-        <Tabs defaultValue="design">
-          <TabsList>
-            <TabsTrigger value="design">Design</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="content">Contenu</TabsTrigger>
-            <TabsTrigger value="sections">Sections</TabsTrigger>
+      {/* Main Grid: Controls + Preview */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_440px] items-start">
+        <Tabs defaultValue="design" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 rounded-xl p-1 bg-muted/60 border border-border/50 h-11">
+            <TabsTrigger value="design" className="rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 py-2">
+              <Palette className="size-3.5" /> Design
+            </TabsTrigger>
+            <TabsTrigger value="images" className="rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 py-2">
+              <ImageIcon className="size-3.5" /> Images
+            </TabsTrigger>
+            <TabsTrigger value="content" className="rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 py-2">
+              <FileText className="size-3.5" /> Contenu
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 py-2">
+              <Layers className="size-3.5" /> Sections
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="design" className="mt-4">
+
+          <TabsContent value="design" className="mt-4 focus-visible:outline-none">
             <PanelDesign form={form} />
           </TabsContent>
-          <TabsContent value="images" className="mt-4">
+          <TabsContent value="images" className="mt-4 focus-visible:outline-none">
             <PanelImages form={form} restaurantId={restaurantId} />
           </TabsContent>
-          <TabsContent value="content" className="mt-4">
-            <PanelContent form={form} />
+          <TabsContent value="content" className="mt-4 focus-visible:outline-none">
+            <PanelContent form={form} restaurantId={restaurantId} />
           </TabsContent>
-          <TabsContent value="sections" className="mt-4">
+          <TabsContent value="sections" className="mt-4 focus-visible:outline-none">
             <PanelSections form={form} />
           </TabsContent>
         </Tabs>

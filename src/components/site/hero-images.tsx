@@ -26,9 +26,9 @@ export function HeroImages({
   setActiveStep?: (step: number) => void;
   className?: string;
 }) {
-  // Default high quality O Rendez-Vous images
-  const main0 = images?.[0] ?? "/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg";
-  const pop0 = images?.[1] ?? "/images/orendezvous/orendezvous.tanger_1777049699_3882496730299010586_73557593345.jpg";
+  // Default high quality O Rendez-Vous hero images
+  const main0 = images?.[0] ?? "/images/orendezvous/hero-default.webp";
+  const pop0 = images?.[1] ?? "/images/orendezvous/hero-pop-default.webp";
 
   // Step 1 images (Kitchen / Dining visual)
   const main1 = images?.[2] ?? "/images/orendezvous/orendezvous.tanger_1782412303_3927481511788834209_73557593345.jpg";
