@@ -133,13 +133,13 @@ export function HeroContent({
       >
         <Button
           asChild
-          className="rounded-full bg-[#F4ECE3] px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold text-[#1c1712] hover:bg-[#F4ECE3]/90 shadow-md transition-all shrink-0"
+          className="liquid-glass liquid-glass--light rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold transition-all duration-300 shrink-0 hover:scale-[1.02] border-none"
         >
           <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
         </Button>
         <Button
           asChild
-          className="rounded-full bg-[#FF6B35] px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold text-white hover:bg-[#FF6B35]/90 shadow-[0_8px_20px_rgba(255,107,53,0.35)] hover:shadow-[0_12px_24px_rgba(255,107,53,0.45)] group transition-all duration-300 flex items-center gap-2 shrink-0"
+          className="liquid-glass liquid-glass--orange rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold group transition-all duration-300 flex items-center gap-2 shrink-0 hover:scale-[1.02] border-none"
         >
           <Link href={`${base}/reservation`}>
             Book a table <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>

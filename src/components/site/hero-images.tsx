@@ -61,15 +61,15 @@ export function HeroImages({
       {/* Inner Images block */}
       <div className="relative flex h-full min-h-[520px] w-full max-w-[420px] items-center justify-center lg:h-[620px]">
         {/* === Phase 2: Midground Layer (z-index: 10) Main Reveal === */}
-        <div className="relative z-10 h-full w-[90%] overflow-hidden rounded-t-[150px] rounded-br-[70px] rounded-bl-[35px] shadow-2xl">
+        <div className="relative z-10 h-full w-[90%]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep}
-              initial={{ opacity: 0, scale: 1.05 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4 }}
-              className="absolute inset-0"
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-full w-full overflow-hidden rounded-t-[150px] rounded-br-[70px] rounded-bl-[35px] shadow-2xl"
             >
               <Image
                 src={current.main}
@@ -87,26 +87,24 @@ export function HeroImages({
 
         {/* === Phase 3: Foreground Layer (z-index: 20) Pop === */}
         <div className="hidden lg:block absolute -left-14 bottom-[18%] z-20 w-[58%] sm:-left-20">
-          <div className="relative aspect-square w-full overflow-hidden rounded-full shadow-2xl ring-4 ring-background">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeStep}
-                initial={{ opacity: 0, scale: 0.9, rotate: -15 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                exit={{ opacity: 0, scale: 0.9, rotate: 15 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                <Image
-                  src={current.pop}
-                  alt="Delicious food plate"
-                  fill
-                  sizes="35vw"
-                  className="scale-[1.25] object-cover object-center"
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, scale: 0.85, rotate: -15 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.85, rotate: 15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="relative aspect-square w-full overflow-hidden rounded-full shadow-2xl ring-4 ring-background"
+            >
+              <Image
+                src={current.pop}
+                alt="Delicious food plate"
+                fill
+                sizes="35vw"
+                className="scale-[1.25] object-cover object-center"
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* === Phase 1: Background Layer (z-index: 0) The SVGs === */}
