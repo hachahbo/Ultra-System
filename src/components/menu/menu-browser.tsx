@@ -25,10 +25,12 @@ interface ItemDetails {
 
 // ─── Editorial fallback photography ─────────────────────────────────────────
 const FALLBACK_IMAGES = [
-  "/images/dish-1%201.png",
-  "/images/dish-2%201.png",
-  "/images/dish-3%201.png",
-  "/images/dish-4.png",
+  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
+  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
+  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
+  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
+  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
+  "/hero-pop-default.webp",
 ] as const;
 
 function fallbackImage(seed: string) {
@@ -286,7 +288,7 @@ export function MenuBrowser({
       >
         <AnimatePresence mode="popLayout">
           {visibleItems.map((item, index) => {
-            const src = item.image_url || fallbackImage(item.id);
+            const src = (!item.image_url || item.image_url.includes("dish-")) ? fallbackImage(item.id) : item.image_url;
             const wasAdded = justAdded === item.id;
             const isSignature = index === 0 && activeCategory === null;
             const isExpanded = !!expandedItems[item.id];
@@ -309,8 +311,8 @@ export function MenuBrowser({
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right (Strictly Matching the 118px Oval Style) ── */}
-                <div className="absolute right-6 -top-[34px] z-10 size-[118px] rounded-full border-[3px] border-card overflow-hidden shadow-[0_14px_34px_rgba(0,0,0,0.5)]">
-                  <div className="relative size-full transition-transform duration-500 group-hover:scale-110">
+                <div className="absolute right-6 -top-[34px] z-10 size-[118px] rounded-full overflow-hidden ring-2 ring-white/80 dark:ring-white/20 shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-110">
+                  <div className="relative size-full">
                     {src ? (
                       <Image
                         src={src}

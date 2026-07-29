@@ -303,7 +303,7 @@ function CategoryCardBody({
         <ul className="mt-4 flex flex-1 flex-col gap-3">
           {card.items.map((it) => (
             <li key={it.id} className="flex items-center gap-3">
-              <div className="relative size-11 flex-none overflow-hidden rounded-full ring-1 ring-white/35 border border-white/20 bg-[#17222c] shadow-md">
+              <div className="relative size-11 flex-none overflow-hidden rounded-full bg-[#17222c] shadow-md">
                 {it.imageUrl ? (
                   <Image src={it.imageUrl} alt={it.name} fill sizes="64px" className="object-cover object-center scale-125" />
                 ) : (

@@ -9,6 +9,22 @@ import type { Item } from "@/lib/types";
 import { useCart } from "@/store/cart";
 import { ItemDialog } from "@/components/menu/item-dialog";
 
+const DISH_FALLBACK_IMAGES = [
+  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
+  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
+  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
+  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
+  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
+  "/hero-pop-default.webp",
+];
+
+function getDishImage(item: Item) {
+  if (item.image_url && !item.image_url.includes("dish-")) return item.image_url;
+  let hash = 0;
+  for (let i = 0; i < item.id.length; i++) hash = (hash * 31 + item.id.charCodeAt(i)) | 0;
+  return DISH_FALLBACK_IMAGES[Math.abs(hash) % DISH_FALLBACK_IMAGES.length];
+}
+
 // Home-page dish card (design: photo medallion, price badge, name) — 
 // opens the item details modal on click, and adds to cart via the + button.
 export function DishCard({
@@ -55,6 +71,8 @@ export function DishCard({
     }
   }
 
+  const imgSrc = getDishImage(item);
+
   return (
     <>
       <div
@@ -62,12 +80,12 @@ export function DishCard({
         className="group relative mt-8 sm:mt-10 lg:mt-12 flex min-h-[190px] w-full flex-col justify-between overflow-visible rounded-[32px] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:border-white/10 dark:from-black/40 dark:to-black/10 dark:shadow-none cursor-pointer"
       >
         {/* Floating Image Top Right */}
-        <div className="absolute -right-2 -top-8 z-10 flex size-[110px] items-center justify-center sm:-right-4 sm:-top-10 sm:size-[120px] lg:-top-12 lg:size-[130px]">
-          <div className="relative size-full transition-transform duration-500 group-hover:scale-110 drop-shadow-md">
-            <div className="relative size-full overflow-hidden rounded-full">
-              {item.image_url ? (
+        <div className="absolute -right-2 -top-8 z-10 flex size-[110px] items-center justify-center sm:-right-4 sm:-top-10 sm:size-[120px] lg:-top-12 lg:size-[130px] transition-transform duration-500 group-hover:scale-110">
+          <div className="relative size-full drop-shadow-md">
+            <div className="relative size-full overflow-hidden rounded-full ring-4 ring-white/80 dark:ring-white/20 shadow-lg">
+              {imgSrc ? (
                 <Image
-                  src={item.image_url}
+                  src={imgSrc}
                   alt={item.name_fr}
                   fill
                   sizes="200px"
