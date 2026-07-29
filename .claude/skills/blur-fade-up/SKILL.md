@@ -136,27 +136,6 @@ choreography and starts reading as a slow page.
   `opacity: 1` half, reduced-motion users get a permanently invisible page —
   because the base class hides it.
 
-## The gradient-hairline glass border
-
-`.liquid-glass::before` draws a 1.4px border whose brightness varies top-to-
-bottom (bright at edges, invisible in the middle) — it reads like light catching
-a bevel. The trick is the double mask:
-
-```css
-padding: 1.4px;                       /* = border thickness */
--webkit-mask:
-  linear-gradient(#fff 0 0) content-box,   /* the inner area */
-  linear-gradient(#fff 0 0);               /* the whole box   */
--webkit-mask-composite: xor;               /* whole MINUS inner = border ring */
-mask-composite: exclude;                   /* standard-syntax equivalent */
-```
-
-Both the `-webkit-` and standard `mask-composite` lines are required — they use
-different keywords (`xor` vs `exclude`) for the same operation. Ship both.
-
-Requires `position: relative` and `border-radius: inherit` on the pseudo-element,
-or the ring detaches from the button's corners.
-
 ## Masked backdrop blur
 
 To blur only part of the viewport and have it dissolve:

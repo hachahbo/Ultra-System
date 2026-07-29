@@ -14,13 +14,18 @@ const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15 },
+    transition: { staggerChildren: 0.2, delayChildren: 0.1 },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  hidden: { opacity: 0, filter: "blur(20px)", y: 40 },
+  visible: { 
+    opacity: 1, 
+    filter: "blur(0px)", 
+    y: 0, 
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+  },
 };
 
 export function SpecialsSection({
@@ -62,19 +67,30 @@ export function SpecialsSection({
         viewport={{ once: true, margin: "-50px" }}
         className="relative mx-auto max-w-[1600px] px-4 xl:px-8"
       >
-        <motion.div variants={itemVariants} className="mx-auto mb-16 max-w-xl text-center">
-          <h2 className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+        {/* Header Text Blur-Fade-Up */}
+        <div className="mx-auto mb-16 max-w-xl text-center flex flex-col items-center">
+          <motion.h2 
+            variants={itemVariants}
+            className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl"
+          >
             {heading ?? "Our Special Dishes"}
-          </h2>
-          <p className="mt-4 text-sm text-muted-foreground md:text-base">
+          </motion.h2>
+          <motion.p 
+            variants={itemVariants}
+            className="mt-4 text-sm text-muted-foreground md:text-base max-w-lg"
+          >
             {sub ??
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
-          </p>
-        </motion.div>
+          </motion.p>
+        </div>
 
-        <motion.div variants={itemVariants} className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] dark:bg-[#0c1824] shadow-2xl">
+        {/* Main Section Card Container Blur-Fade-Up */}
+        <motion.div 
+          variants={itemVariants} 
+          className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] dark:bg-[#0c1824] shadow-2xl"
+        >
           {/* Left Side: Featured Image */}
-          <div className="w-full lg:w-[45%] lg:p-12">
+          <motion.div variants={itemVariants} className="w-full lg:w-[45%] lg:p-12">
             <div className="relative w-full h-full min-h-[340px] lg:min-h-[400px] overflow-hidden rounded-b-[40px] lg:rounded-[32px] shadow-xl">
               <Image
                 src={imageUrl || FALLBACK_DISH_IMAGE}
@@ -84,17 +100,17 @@ export function SpecialsSection({
                 alt="Nos plats"
               />
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Side: Category carousel */}
-          <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
+          <motion.div variants={itemVariants} className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
             <CategoryCarousel
               categories={categories}
               items={items}
               slug={slug}
               currency={currency}
             />
-          </div>
+          </motion.div>
         </motion.div>
       </motion.div>
     </section>
