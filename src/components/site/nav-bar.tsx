@@ -47,6 +47,8 @@ export function NavBar({
   logoUrl?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const t = useTranslations("Nav");
   const base = `/${slug}`;
@@ -55,12 +57,41 @@ export function NavBar({
     setOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 20);
+
+      if (scrollY <= 40) {
+        setIsVisible(true);
+      } else if (scrollY > lastScrollY && scrollY > 80) {
+        // Scrolling down -> hide navbar
+        setIsVisible(false);
+      } else if (scrollY < lastScrollY) {
+        // Scrolling up -> show navbar
+        setIsVisible(true);
+      }
+      lastScrollY = scrollY > 0 ? scrollY : 0;
+    };
+
+    window.addEventListener("scroll", updateScrollDirection, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrollDirection);
+  }, []);
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -45, filter: "blur(20px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.9, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
+      animate={{
+        opacity: 1,
+        y: isVisible ? 0 : -110,
+        filter: "blur(0px)",
+      }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={`sticky top-0 z-40 bg-background/90 backdrop-blur-xl py-4 transition-all duration-300 ${
+        isScrolled ? "shadow-md border-b border-border/40" : ""
+      }`}
     >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8 relative">
         {/* Left: Mobile Burger & Desktop Logo */}

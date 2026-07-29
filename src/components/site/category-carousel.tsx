@@ -112,7 +112,8 @@ export function CategoryCarousel({
     if (!el) return;
     const measure = () => {
       const available = el.clientWidth;
-      setCardW(Math.round(Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, available * 0.62))));
+      const factor = available < 640 ? 0.78 : 0.62;
+      setCardW(Math.round(Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, available * factor))));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -275,59 +276,61 @@ function CategoryCardBody({
       }}
     >
       {/* Icon panel */}
-      <div className="relative flex h-[37%] items-center justify-center border-b border-white/5 bg-[radial-gradient(120%_120%_at_50%_0%,#17222c_0%,#0f171e_100%)]">
+      <div className="relative flex h-[27%] items-center justify-center border-b border-white/5 bg-[radial-gradient(120%_120%_at_50%_0%,#17222c_0%,#0f171e_100%)]">
         <div
           className={`relative flex items-center justify-center ${
-            card.iconUrl.endsWith(".svg") ? "size-[130px]" : "size-[96px]"
+            card.iconUrl.endsWith(".svg") ? "size-[80px]" : "size-[64px]"
           }`}
         >
           <Image
             src={card.iconUrl}
             alt=""
             fill
-            sizes="140px"
-            className={card.iconUrl.endsWith(".svg") ? "object-contain scale-110" : "object-cover"}
+            sizes="120px"
+            className={card.iconUrl.endsWith(".svg") ? "object-contain scale-100" : "object-cover"}
           />
         </div>
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col p-5 pt-4">
-        <h3 className="font-display text-[21px] font-extrabold leading-tight tracking-tight text-white">
-          {card.title}
-        </h3>
-        <p className="mt-1 text-[13px] text-white/55">
-          {card.items.length} spécialité{card.items.length > 1 ? "s" : ""}
-        </p>
+      <div className="flex flex-1 flex-col justify-between p-4 sm:p-5 pt-3 sm:pt-4">
+        <div>
+          <h3 className="font-display text-[19px] sm:text-[21px] font-extrabold leading-tight tracking-tight text-white">
+            {card.title}
+          </h3>
+          <p className="mt-0.5 text-xs text-white/55">
+            {card.items.length} spécialité{card.items.length > 1 ? "s" : ""}
+          </p>
 
-        <ul className="mt-4 flex flex-1 flex-col gap-3">
-          {card.items.map((it) => (
-            <li key={it.id} className="flex items-center gap-3">
-              <div className="relative size-11 flex-none overflow-hidden rounded-full bg-[#17222c] shadow-md">
-                {it.imageUrl ? (
-                  <Image src={it.imageUrl} alt={it.name} fill sizes="64px" className="object-cover object-center scale-125" />
-                ) : (
-                  <div className="grid size-full place-items-center text-white/40">
-                    <UtensilsCrossed className="size-4" />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-bold text-white">{it.name}</div>
-                <div className="truncate text-xs text-white/55">{it.desc}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {card.items.map((it) => (
+              <li key={it.id} className="flex items-center gap-2.5">
+                <div className="relative size-9 sm:size-10 flex-none overflow-hidden rounded-full bg-[#17222c] shadow-md">
+                  {it.imageUrl ? (
+                    <Image src={it.imageUrl} alt={it.name} fill sizes="64px" className="object-cover object-center scale-125" />
+                  ) : (
+                    <div className="grid size-full place-items-center text-white/40">
+                      <UtensilsCrossed className="size-3.5" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-xs sm:text-sm font-bold text-white">{it.name}</div>
+                  <div className="truncate text-[11px] sm:text-xs text-white/55">{it.desc}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <Link
           href={`/${slug}/menu`}
           tabIndex={isActive ? 0 : -1}
-          className="group mt-4 flex items-center justify-center gap-3 border-t border-white/[0.07] pt-4 text-[11.5px] font-bold uppercase tracking-[2.5px] text-white/60 transition-colors hover:text-[#FF6B35]"
+          className="group mt-3 flex items-center justify-center gap-2.5 border-t border-white/[0.07] pt-3 text-[11px] font-bold uppercase tracking-[2px] text-white/60 transition-colors hover:text-[#FF6B35]"
         >
-          <span className="h-px w-5 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
+          <span className="h-px w-4 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
           Voir la carte
-          <span className="h-px w-5 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
+          <span className="h-px w-4 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
         </Link>
       </div>
     </article>
