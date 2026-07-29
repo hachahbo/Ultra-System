@@ -311,7 +311,7 @@ export function MenuBrowser({
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right (Strictly Matching the 118px Oval Style) ── */}
-                <div className="absolute right-6 -top-[34px] z-10 size-[118px] rounded-full overflow-hidden ring-2 ring-white/80 dark:ring-white/20 shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-110">
+                <div className="absolute right-6 -top-[34px] z-10 size-[118px] rounded-full overflow-hidden ring-2 ring-[#768a8e] shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-110">
                   <div className="relative size-full">
                     {src ? (
                       <Image
@@ -420,16 +420,16 @@ export function MenuBrowser({
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#141416] dark:to-[#24130b] text-[#1b2437] dark:text-stone-200 rounded-[28px] -mx-6 -mb-6 mt-6"
+                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#191614] dark:to-[#241a14] text-[#1b2437] dark:text-stone-200 rounded-b-[21px] rounded-t-2xl -mx-6 -mb-6 mt-4 border-t border-border/10 dark:border-stone-800/50"
                       onClick={(e) => e.stopPropagation()} // Prevent modal trigger inside details
                     >
-                      <div className="p-[30px] pt-7">
+                      <div className="px-6 py-5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <div className="font-serif font-bold text-[24px] text-[#1b2437] dark:text-amber-500 leading-tight">
+                            <div className="font-serif font-bold text-[20px] text-[#1b2437] dark:text-amber-500 leading-tight">
                               {details.expandTitle}
                             </div>
-                            <div className="text-xs font-semibold text-[#42506b] dark:text-stone-400 mt-2 flex items-center gap-1.5">
+                            <div className="text-xs font-semibold text-[#42506b] dark:text-stone-400 mt-1.5 flex items-center gap-1.5">
                               {details.expandSub}
                               <svg width="14" height="8" viewBox="0 0 18 10" fill="#FF6B35" className="inline shrink-0">
                                 <path d="M0 10a9 9 0 0 1 18 0z" />
@@ -437,13 +437,13 @@ export function MenuBrowser({
                             </div>
                           </div>
                         </div>
-                        <div className="h-[1.5px] bg-[#1b2437]/20 dark:bg-stone-700/60 my-4" />
-                        <div className="text-[11px] font-black tracking-[0.25em] text-[#1b2437]/60 dark:text-stone-400 uppercase mb-4">
+                        <div className="h-[1.5px] bg-[#1b2437]/20 dark:bg-stone-700/60 my-3.5" />
+                        <div className="text-[11px] font-black tracking-[0.25em] text-[#1b2437]/60 dark:text-stone-400 uppercase mb-3">
                           {details.sectionLabel}
                         </div>
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2.5">
                           {details.rows.map((row, rIdx) => (
-                            <div key={rIdx} className="pb-3 border-b border-[#1b2437]/10 dark:border-stone-700/30 last:border-b-0 last:pb-0">
+                            <div key={rIdx} className="pb-2.5 border-b border-[#1b2437]/10 dark:border-stone-700/30 last:border-b-0 last:pb-0">
                               <div className="flex justify-between items-baseline gap-4">
                                 <span className="font-bold text-sm text-[#1b2437] dark:text-stone-200">{row.name}</span>
                                 {row.price && (
@@ -555,8 +555,8 @@ function CategoryPill({
       )}
       <span
         className={`relative z-10 transition-colors duration-200 ${active
-            ? "text-[#FF6B35] dark:text-[#FF6B35] font-bold"
-            : "text-muted-foreground hover:text-foreground"
+          ? "text-[#FF6B35] dark:text-[#FF6B35] font-bold"
+          : "text-muted-foreground hover:text-foreground"
           }`}
       >
         {children}

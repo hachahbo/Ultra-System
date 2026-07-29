@@ -139,13 +139,20 @@
     transition-duration: 500ms;
   }
 
+  html {
+    font-family: var(--font-sans), 'Roboto', sans-serif;
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans), 'Roboto', sans-serif;
   }
 
-  html {
-    font-family: var(--font-sans), 'Roboto', sans-serif;
+  body[data-scroll-locked],
+  body[style*="overflow: hidden"] {
+    margin-right: 0px !important;
+    padding-right: 0px !important;
   }
 
   h1,
