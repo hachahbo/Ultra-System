@@ -11,6 +11,15 @@ import type { Category, Item } from "@/lib/types";
 const FALLBACK_DISH_IMAGE = "/images/hero-default.webp";
 const ACCENT = "#FF6B35";
 
+const DISH_SAMPLE_IMAGES = [
+  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
+  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
+  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
+  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
+  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
+  "/hero-pop-default.webp",
+];
+
 // Card geometry — the 352x524 ratio of the design, scaled to whatever width
 // the column gives us. The horizontal step between neighbours keeps the
 // design's 250/352 proportion so the fan reads the same at every size.
@@ -58,19 +67,24 @@ export function CategoryCarousel({
 
   // Only categories that actually have something in stock to show.
   const cards = useMemo<CategoryCard[]>(() => {
+    let imgIdx = 0;
     return categories
       .map((c) => {
         const inStock = items.filter((i) => i.category_id === c.id && i.in_stock);
         return {
           id: c.id,
           title: c.name_fr,
-          iconUrl: inStock.find((i) => i.image_url)?.image_url ?? FALLBACK_DISH_IMAGE,
-          items: inStock.slice(0, itemsPerCard).map((i) => ({
-            id: i.id,
-            name: i.name_fr,
-            desc: i.description_fr || formatPrice(i.base_price, currency),
-            imageUrl: i.image_url || FALLBACK_DISH_IMAGE,
-          })),
+          iconUrl: "/pure-eraser-result.svg",
+          items: inStock.slice(0, itemsPerCard).map((i) => {
+            const assignedImg = i.image_url || DISH_SAMPLE_IMAGES[imgIdx % DISH_SAMPLE_IMAGES.length];
+            imgIdx++;
+            return {
+              id: i.id,
+              name: i.name_fr,
+              desc: i.description_fr || formatPrice(i.base_price, currency),
+              imageUrl: assignedImg,
+            };
+          }),
         };
       })
       .filter((c) => c.items.length > 0);
@@ -156,10 +170,10 @@ export function CategoryCarousel({
             const a = Math.abs(off);
             const hidden = a > 2;
 
-            const scale = a === 0 ? 1 : a === 1 ? 0.84 : 0.7;
-            const opacity = hidden ? 0 : a === 0 ? 1 : a === 1 ? 0.55 : 0.28;
+            const scale = a === 0 ? 1 : a === 1 ? 0.86 : 0.72;
+            const opacity = hidden ? 0 : a === 0 ? 1 : a === 1 ? 0.6 : 0.3;
             const x = off * step;
-            const rotateY = prefersReducedMotion || off === 0 ? 0 : off < 0 ? 26 : -26;
+            const rotateY = 0;
             const blur = prefersReducedMotion ? 0 : a >= 2 ? 3 : a === 1 ? 1.2 : 0;
 
             return (
@@ -262,13 +276,17 @@ function CategoryCardBody({
     >
       {/* Icon panel */}
       <div className="relative flex h-[37%] items-center justify-center border-b border-white/5 bg-[radial-gradient(120%_120%_at_50%_0%,#17222c_0%,#0f171e_100%)]">
-        <div className="relative size-[88px] overflow-hidden rounded-full border-2 border-[#FF6B35]/35 shadow-[0_12px_30px_-8px_rgba(0,0,0,.6)]">
+        <div
+          className={`relative flex items-center justify-center ${
+            card.iconUrl.endsWith(".svg") ? "size-[130px]" : "size-[96px]"
+          }`}
+        >
           <Image
             src={card.iconUrl}
             alt=""
             fill
-            sizes="96px"
-            className="object-cover"
+            sizes="140px"
+            className={card.iconUrl.endsWith(".svg") ? "object-contain scale-110" : "object-cover"}
           />
         </div>
       </div>
@@ -285,9 +303,9 @@ function CategoryCardBody({
         <ul className="mt-4 flex flex-1 flex-col gap-3">
           {card.items.map((it) => (
             <li key={it.id} className="flex items-center gap-3">
-              <div className="relative size-11 flex-none overflow-hidden rounded-[11px] border border-white/[0.06] bg-[#17222c]">
+              <div className="relative size-11 flex-none overflow-hidden rounded-full ring-1 ring-white/35 border border-white/20 bg-[#17222c] shadow-md">
                 {it.imageUrl ? (
-                  <Image src={it.imageUrl} alt="" fill sizes="64px" className="object-cover" />
+                  <Image src={it.imageUrl} alt={it.name} fill sizes="64px" className="object-cover object-center scale-125" />
                 ) : (
                   <div className="grid size-full place-items-center text-white/40">
                     <UtensilsCrossed className="size-4" />

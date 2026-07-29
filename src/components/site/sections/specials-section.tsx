@@ -87,10 +87,10 @@ export function SpecialsSection({
         {/* Main Section Card Container Blur-Fade-Up */}
         <motion.div 
           variants={itemVariants} 
-          className="flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] dark:bg-[#0c1824] shadow-2xl"
+          className="relative flex flex-col lg:flex-row overflow-hidden rounded-[40px] bg-[#0b1f2e] dark:bg-[#0c1824] shadow-2xl"
         >
           {/* Left Side: Featured Image */}
-          <motion.div variants={itemVariants} className="w-full lg:w-[45%] lg:p-12">
+          <motion.div variants={itemVariants} className="relative z-20 w-full lg:w-[45%] lg:p-12">
             <div className="relative w-full h-full min-h-[340px] lg:min-h-[400px] overflow-hidden rounded-b-[40px] lg:rounded-[32px] shadow-xl">
               <Image
                 src={imageUrl || FALLBACK_DISH_IMAGE}
@@ -103,7 +103,7 @@ export function SpecialsSection({
           </motion.div>
 
           {/* Right Side: Category carousel */}
-          <motion.div variants={itemVariants} className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
+          <motion.div variants={itemVariants} className="relative z-10 w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
             <CategoryCarousel
               categories={categories}
               items={items}
