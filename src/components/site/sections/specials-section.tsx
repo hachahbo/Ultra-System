@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
-import { ChevronDown } from "lucide-react";
-import { DishCard } from "@/components/site/dish-card";
-import type { Item } from "@/lib/types";
+import { CategoryCarousel } from "@/components/site/category-carousel";
+import type { Category, Item } from "@/lib/types";
 
 // Generic, restaurant-agnostic placeholder — same fallback image used
 // elsewhere on the site (welcome grid, about gallery) rather than curated
@@ -26,6 +24,7 @@ const itemVariants: Variants = {
 };
 
 export function SpecialsSection({
+  categories,
   items,
   slug,
   currency,
@@ -33,6 +32,7 @@ export function SpecialsSection({
   sub,
   imageUrl,
 }: {
+  categories: Category[];
   items: Item[];
   slug: string;
   currency: string;
@@ -40,8 +40,6 @@ export function SpecialsSection({
   sub?: string;
   imageUrl?: string | null;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   if (!items || items.length === 0) return null;
 
   return (
@@ -88,78 +86,14 @@ export function SpecialsSection({
             </div>
           </div>
 
-          {/* Right Side: Dishes grid */}
+          {/* Right Side: Category carousel */}
           <div className="w-full lg:w-[55%] p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
-            <div className="grid grid-cols-1 gap-x-12 gap-y-4 xl:gap-x-12 xl:gap-y-10 sm:grid-cols-2 mt-4">
-              {items.map((item, index) => {
-                const itemWithImage = {
-                  ...item,
-                  image_url: item.image_url || FALLBACK_DISH_IMAGE,
-                };
-
-                // Dish 1: Always fully visible
-                if (index === 0) {
-                  return (
-                    <motion.div 
-                      key={item.id} 
-                      initial={{ opacity: 0, scale: 0.92, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <DishCard item={itemWithImage} slug={slug} currency={currency} />
-                    </motion.div>
-                  );
-                }
-
-                // Dishes 2..N: Smooth collapse/expand on mobile, fully visible in 2x2 grid on desktop
-                return (
-                  <motion.div 
-                    key={item.id}
-                    initial={false}
-                    animate={{
-                      height: isExpanded ? "auto" : 0,
-                      opacity: isExpanded ? 1 : 0,
-                      scale: isExpanded ? 1 : 0.95,
-                    }}
-                    transition={{ 
-                      duration: 0.4, 
-                      ease: [0.16, 1, 0.3, 1],
-                      delay: isExpanded ? (index - 1) * 0.08 : 0,
-                    }}
-                    className="overflow-hidden sm:!h-auto sm:!opacity-100 sm:!scale-100 sm:!overflow-visible"
-                  >
-                    <DishCard item={itemWithImage} slug={slug} currency={currency} />
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Expand / Collapse Action Button (Mobile Only) */}
-            {items.length > 1 && (
-              <motion.div 
-                layout 
-                className="mt-8 flex justify-center sm:hidden"
-              >
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  aria-expanded={isExpanded}
-                  className="group relative inline-flex items-center gap-3 rounded-full bg-[#FF6B35]/20 text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white px-8 py-3.5 text-sm font-bold tracking-wide backdrop-blur-md border border-[#FF6B35]/40 shadow-[0_8px_20px_rgba(255,107,53,0.2)] hover:shadow-[0_12px_28px_rgba(255,107,53,0.4)] transition-all duration-300 active:scale-95 cursor-pointer outline-none select-none"
-                >
-                  <span>
-                    {isExpanded
-                      ? "Voir moins"
-                      : `Voir toutes les spécialités (${items.length})`}
-                  </span>
-                  <motion.span
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.35, ease: "easeInOut" }}
-                    className="inline-flex items-center justify-center"
-                  >
-                    <ChevronDown className="h-4 w-4 stroke-[3]" />
-                  </motion.span>
-                </button>
-              </motion.div>
-            )}
+            <CategoryCarousel
+              categories={categories}
+              items={items}
+              slug={slug}
+              currency={currency}
+            />
           </div>
         </motion.div>
       </motion.div>

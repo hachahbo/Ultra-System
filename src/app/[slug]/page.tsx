@@ -33,9 +33,11 @@ export default async function HomePage({
     items: [],
     promotions: [],
   };
-  const { items } = menu;
+  const { categories, items } = menu;
 
-  const featured = items.filter((i) => i.in_stock).slice(0, 4);
+  // The specials section now shows a carousel of categories, so it needs the
+  // whole in-stock menu rather than a handful of featured dishes.
+  const inStock = items.filter((i) => i.in_stock);
   const base = `/${restaurant.slug}`;
 
   // Renderers keyed by section — theme.sections controls order + which are
@@ -55,9 +57,10 @@ export default async function HomePage({
       />
     ),
     specials:
-      featured.length > 0 ? (
+      inStock.length > 0 ? (
         <SpecialsSection
-          items={featured}
+          categories={categories}
+          items={inStock}
           slug={restaurant.slug}
           currency={restaurant.currency}
           heading={theme.custom_copy.specials_heading}
