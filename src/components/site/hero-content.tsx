@@ -104,7 +104,7 @@ export function HeroContent({
 
           {/* 1. Title */}
           <h1 
-            className="animate-blur-fade-up font-serif ml-3 font-medium leading-[1.08] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
+            className="animate-blur-fade-up font-serif ml-3 font-medium leading-[1.08] tracking-tight mb-4 text-white lg:text-[#1c1712] lg:dark:text-[#F4ECE3]"
             style={{ 
               fontSize: "clamp(32px, 7.5vw, 76px)",
               animationDelay: '400ms'
@@ -133,15 +133,15 @@ export function HeroContent({
       >
         <Button
           asChild
-          className="liquid-glass liquid-glass--light rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold transition-all duration-300 shrink-0 hover:scale-[1.02] border-none"
+          className="liquid-glass liquid-glass--light rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold transition-all duration-300 shrink-0 hover:scale-[1.02] border-none !text-white lg:!text-[#1c1712] lg:dark:!text-[#F4ECE3]"
         >
-          <Link href={`${base}/menu`}>{ctaLabel ?? "Menu"}</Link>
+          <Link href={`${base}/menu`} className="!text-white lg:!text-[#1c1712] lg:dark:!text-[#F4ECE3]">{ctaLabel ?? "Menu"}</Link>
         </Button>
         <Button
           asChild
-          className="liquid-glass liquid-glass--orange rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold group transition-all duration-300 flex items-center gap-2 shrink-0 hover:scale-[1.02] border-none"
+          className="liquid-glass liquid-glass--orange rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold group transition-all duration-300 flex items-center gap-2 shrink-0 hover:scale-[1.02] border-none !text-white"
         >
-          <Link href={`${base}/reservation`}>
+          <Link href={`${base}/reservation`} className="!text-white">
             Book a table <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>
           </Link>
         </Button>
