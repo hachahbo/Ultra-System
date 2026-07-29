@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 
 import { Menu as MenuIcon, UtensilsCrossed, CalendarDays, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,12 @@ export function NavBar({
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4">
+    <motion.header
+      initial={{ opacity: 0, y: -45, filter: "blur(20px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.9, delay: 1, ease: [0.16, 1, 0.3, 1] }}
+      className="sticky top-0 z-40 bg-background/90 backdrop-blur py-4"
+    >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8 relative">
         {/* Left: Mobile Burger & Desktop Logo */}
         <div className="flex flex-1 items-center justify-start gap-2">
@@ -158,6 +164,6 @@ export function NavBar({
           </Button>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

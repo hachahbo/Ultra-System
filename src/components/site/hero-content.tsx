@@ -14,8 +14,8 @@ const containerVariants: Variants = {
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+  hidden: { opacity: 0, filter: "blur(20px)", y: 40 },
+  visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export function HeroContent({
@@ -87,23 +87,27 @@ export function HeroContent({
       <AnimatePresence mode="wait">
         <motion.div
           key={activeStep}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
-          transition={{ duration: 0.35, ease: "easeInOut" }}
+          initial={{ opacity: 0, filter: "blur(20px)", y: 40 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          exit={{ opacity: 0, filter: "blur(15px)", y: -20 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-start"
         >
           {/* 0. Top Label Tag */}
-          <div className="ml-3 text-[11px] md:text-xs tracking-[0.25em] font-black text-[#FF6B35] uppercase mb-3 flex items-center gap-2">
+          <div 
+            className="animate-blur-fade-up ml-3 text-[11px] md:text-xs tracking-[0.25em] font-black text-[#FF6B35] uppercase mb-3 flex items-center gap-2"
+            style={{ animationDelay: '300ms' }}
+          >
             <span className="h-[2px] w-8 bg-[#FF6B35] inline-block shrink-0 rounded-full" />
             {currentStep.label}
           </div>
 
-          {/* 1. Title: 2 lines on mobile, 4 lines on desktop */}
+          {/* 1. Title */}
           <h1 
-            className="font-serif ml-3 font-medium leading-[1.08] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
+            className="animate-blur-fade-up font-serif ml-3 font-medium leading-[1.08] tracking-tight mb-4 text-[#1c1712] dark:text-[#F4ECE3]"
             style={{ 
-              fontSize: "clamp(32px, 7.5vw, 76px)" 
+              fontSize: "clamp(32px, 7.5vw, 76px)",
+              animationDelay: '400ms'
             }}
           >
             {renderHeadline(currentStep.title, currentStep.highlightWord)}
@@ -111,7 +115,10 @@ export function HeroContent({
 
           {/* 4. Description */}
           <div className="hidden lg:block mt-3 max-w-md">
-            <p className="ml-3 text-base leading-relaxed text-muted-foreground/90 sm:text-lg mb-5">
+            <p 
+              className="animate-blur-fade-up ml-3 text-base leading-relaxed text-muted-foreground/90 sm:text-lg mb-5"
+              style={{ animationDelay: '500ms' }}
+            >
               {currentStep.subtitle}
             </p>
           </div>
@@ -121,7 +128,8 @@ export function HeroContent({
       {/* 2. Buttons */}
       <motion.div
         variants={itemVariants}
-        className="mt-4 sm:mt-5 ml-3 flex flex-row items-center gap-3 sm:gap-4 flex-nowrap"
+        className="animate-blur-fade-up mt-4 sm:mt-5 ml-3 flex flex-row items-center gap-3 sm:gap-4 flex-nowrap"
+        style={{ animationDelay: '600ms' }}
       >
         <Button
           asChild
@@ -140,7 +148,11 @@ export function HeroContent({
       </motion.div>
 
       {/* 3. Opening Hours & Location Info */}
-      <motion.div variants={itemVariants} className="hidden lg:flex flex-col sm:flex-row gap-8 sm:gap-12 mt-8 ml-3">
+      <motion.div 
+        variants={itemVariants} 
+        className="animate-blur-fade-up hidden lg:flex flex-col sm:flex-row gap-8 sm:gap-12 mt-8 ml-3"
+        style={{ animationDelay: '750ms' }}
+      >
         <div className="flex flex-col gap-1">
           <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
             Opening hours
@@ -166,7 +178,8 @@ export function HeroContent({
       {/* 5. Socials & Horizontal Line */}
       <motion.div
         variants={itemVariants}
-        className="hidden lg:flex mt-10 items-center gap-6 w-full max-w-sm ml-3"
+        className="animate-blur-fade-up hidden lg:flex mt-10 items-center gap-6 w-full max-w-sm ml-3"
+        style={{ animationDelay: '850ms' }}
       >
         <div className="flex gap-4 shrink-0">
           <a

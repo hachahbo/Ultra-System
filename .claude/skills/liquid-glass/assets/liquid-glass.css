@@ -1,0 +1,109 @@
+/* ---------------------------------------------------------------
+   liquid-glass — frosted translucent surface with a specular edge.
+   Plain CSS. No Tailwind, no build step, no dependencies.
+
+   Four layers:
+     1. backdrop-filter  → blurs what is BEHIND the element
+     2. 1% white fill    → carrier for background-blend-mode
+     3. inset box-shadow → light entering the top surface
+     4. masked ::before  → gradient hairline border (the specular edge)
+
+   Requires something visually busy behind it (video, photo, gradient).
+   Over a flat color it degrades to a faint outline.
+   --------------------------------------------------------------- */
+
+.liquid-glass {
+  position: relative; /* anchors the ::before ring */
+  overflow: hidden;
+  border: none;
+
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity; /* keeps brightness, drops color */
+
+  -webkit-backdrop-filter: blur(4px); /* Safari — required */
+  backdrop-filter: blur(4px);
+
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+/* The specular edge: a full-size gradient rectangle, masked down to a
+   ring so the gradient survives only in the border region. */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit; /* or the ring is square over a pill */
+  padding: 1.4px; /* == border thickness */
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+
+  /* shape A = content box (inner area), shape B = whole box.
+     B minus A leaves a ring exactly `padding` thick. */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; /* WebKit keyword */
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude; /* standard keyword — same operation */
+
+  pointer-events: none; /* never eat clicks meant for the button */
+}
+
+/* ---------------------------------------------------------------
+   Variants — compose with the base class.
+   --------------------------------------------------------------- */
+
+/* Heavier frost for cards/panels holding text. 4px is for small pills;
+   body copy over video needs more separation to stay readable. */
+.liquid-glass--panel {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Thicker, brighter edge — reads as a chunkier slab. */
+.liquid-glass--thick::before {
+  padding: 3px;
+}
+
+/* For glass sitting on a LIGHT background: white edges vanish, so
+   switch the specular gradient and the inner highlight to black. */
+.liquid-glass--on-light {
+  background: rgba(0, 0, 0, 0.02);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+
+.liquid-glass--on-light::before {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.08) 20%,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.08) 80%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+}
+
+/* ---------------------------------------------------------------
+   Fallback: browsers without backdrop-filter get an opaque-ish fill
+   instead of a nearly invisible box. Firefox <103, older WebViews.
+   --------------------------------------------------------------- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .liquid-glass--on-light {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}

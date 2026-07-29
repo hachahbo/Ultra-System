@@ -1,6 +1,6 @@
 ---
 name: blur-fade-up
-description: "Staggered blur-in entrance animation (\"blur fade up\" / blur reveal) where text, icons, and buttons start blurred, transparent, and offset downward, then sharpen and rise into place one after another. Also covers liquid-glass buttons and masked backdrop-blur overlays. Use when asked for a blur reveal, staggered fade-in, cinematic hero entrance, frosted/liquid glass UI, or a blur that fades across the screen."
+description: "Staggered blur-in entrance animation (\"blur fade up\" / blur reveal) where text, icons, and buttons start blurred, transparent, and offset downward, then sharpen and rise into place one after another. Use when asked for a blur reveal, staggered fade-in, a cinematic hero entrance, elements that animate in one after another, or a backdrop blur that fades out across the screen. For frosted glass surfaces themselves, see the liquid-glass skill."
 origin: test-prj/cinematic-hero
 ---
 
@@ -33,21 +33,24 @@ through it. Reaching for the wrong one is the single most common mistake here.
 
 ## Install
 
-In **this** repo the rules already live in `src/index.css` — nothing to install.
-For a **new** project:
-
 ```bash
-cp .claude/skills/blur-fade-up/assets/blur-fade-up.css src/
+cp .claude/skills/blur-fade-up/assets/blur-fade-up.css src/app/
 ```
 
-Then import it after your Tailwind directives (or anywhere, if no Tailwind):
+Then add one line to `src/app/globals.css`, below the existing imports
+(`tailwindcss`, `tw-animate-css`, `shadcn/tailwind.css`):
 
 ```css
-@import './blur-fade-up.css';
+@import "./blur-fade-up.css";
 ```
 
 The file is plain CSS — no Tailwind, no build step, no dependencies. It parses
 clean through PostCSS + autoprefixer (verified).
+
+**Next.js note:** the class must be on a component that reaches the browser.
+It works in Server Components (it's just CSS in the HTML), and the animation
+starts at first paint rather than on hydration — that's the point of using CSS
+here rather than JS.
 
 ## Use it
 
@@ -84,18 +87,21 @@ Two rules that matter more than the exact numbers:
    fires while nav links are still arriving. That overlap is deliberate; a
    strictly serial ladder makes the last element wait too long.
 
-The ladder shipping in `src/App.jsx`:
+A full hero ladder, as a starting point to copy:
 
-| Element | Line | Delay |
-|---|---|---|
-| Logo | `src/App.jsx:44` | 0ms |
-| Nav links | `src/App.jsx:56` | `100 + i * 50` → 100–300ms |
-| Search / User | `src/App.jsx:67`, `:75` | 350 / 400ms |
-| Metadata row | `src/App.jsx:152` | 300ms |
-| Title | `src/App.jsx:171` | 400ms |
-| Description | `src/App.jsx:179` | 500ms |
-| Watch Now / Learn More | `src/App.jsx:188`, `:195` | 600 / 700ms |
-| Previous / Next | `src/App.jsx:206`, `:213` | 800 / 900ms |
+| Element | Delay |
+|---|---|
+| Logo | 0ms |
+| Nav links | `100 + i * 50` → 100–300ms |
+| Search / profile buttons | 350 / 400ms |
+| Metadata row | 300ms |
+| Headline | 400ms |
+| Subhead | 500ms |
+| Primary / secondary CTA | 600 / 700ms |
+| Prev / next controls | 800 / 900ms |
+
+Total runway ~1.9s (900ms delay + 1s duration). Past that it stops reading as
+choreography and starts reading as a slow page.
 
 ## Gotchas
 
@@ -117,16 +123,14 @@ The ladder shipping in `src/App.jsx`:
   a flat background looks like a plain transparent box.
 - **A parent with `overflow: hidden` clips the 40px rise.** The element gets cut
   off mid-travel instead of sliding in.
-- **Tailwind v4 scans the whole project tree, including this skill.** v4 does
-  automatic content detection from the project root, with no `content:` array to
-  scope it. Two measured consequences in this repo:
-  - The nested `wandor/` and `halo/` apps leak into the root app's bundle — the
-    root CSS went 19.28 kB → 32.25 kB, and `dist/assets/*.css` now contains
-    `.bg-[#2B2644]`, a color used **only** in `halo/`, never in `src/`.
-  - Class names written in this `SKILL.md` get compiled too (~1 kB).
-
-  Harmless for a demo, wrong for production. Fix by giving each app its own
-  root, or with `@source` / `@source not` directives in the entry CSS.
+- **Tailwind v4 (used here) scans the whole project tree, including this skill
+  file.** v4 does automatic content detection from the project root, with no
+  `content:` array to scope it. Measured in the origin project: an unrelated
+  nested app leaked its utilities into the main bundle (19.28 kB → 32.25 kB,
+  including a `.bg-[#2B2644]` color that appeared in no source file of the app
+  being built), and class names written inside the `SKILL.md` itself compiled
+  too (~1 kB). Scope it with `@source` / `@source not` in `globals.css` if the
+  bundle looks larger than the app's own markup justifies.
 - **Respect `prefers-reduced-motion`.** The shipped stylesheet already disables
   the animation and forces `opacity: 1` under that media query. Without the
   `opacity: 1` half, reduced-motion users get a permanently invisible page —
@@ -168,22 +172,12 @@ transparent 45%)` — opaque (blurred) at the bottom, gone by 45% up. Notes:
   it, nothing underneath is clickable.
 - The mask affects *where the blur shows*, not *how strong* it is. It creates no
   darkening — pair it with a gradient overlay if you also want contrast.
-- Sits between the background (z-0) and content (z-10) — see `src/App.jsx:36`.
+- Layer it between the background (z-0) and the content (z-10).
+
+For the glass surfaces that usually accompany this effect, see the
+`liquid-glass` skill.
 
 ## Verify it
-
-The dev server serves the animation without a build step:
-
-```bash
-npm run dev                                          # → http://localhost:5173/
-curl -s http://localhost:5173/src/index.css | grep blurFadeUp
-```
-
-To confirm the whole thing compiles into a production bundle:
-
-```bash
-npm run build
-```
 
 Because the animation runs once at load and finishes in under a second, a
 screenshot taken after ~1.5s shows the *settled* state. To capture it mid-flight
