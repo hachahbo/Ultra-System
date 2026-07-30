@@ -1,8 +1,10 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import type { Testimonial } from "@/lib/types";
 
-export function TestimonialsSection({ items }: { items: Testimonial[] }) {
+export async function TestimonialsSection({ items }: { items: Testimonial[] }) {
   if (items.length === 0) return null;
+  const t = await getTranslations("Testimonials");
 
   return (
     <section className="relative overflow-hidden bg-[#fdf8f4] dark:bg-background py-20">
@@ -20,7 +22,7 @@ export function TestimonialsSection({ items }: { items: Testimonial[] }) {
       <div className="relative z-10 mx-auto max-w-[1600px] px-6 md:px-12 lg:px-16">
         <div className="text-center mb-16 sr-only">
           <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl">
-            Ce que nos clients en disent
+            {t("heading")}
           </h2>
         </div>
 

@@ -123,6 +123,9 @@ export type RestaurantTheme = {
   social_facebook_url: string | null;
   social_instagram_url: string | null;
   social_twitter_url: string | null;
+  // 0023 — content translations. English overrides for the copy fields above;
+  // French lives in those base columns and is always the fallback.
+  i18n: I18nBag<ThemeI18n>;
   draft: Partial<ThemeDraftFields> | null;
   updated_at: string;
 };
@@ -192,6 +195,35 @@ export type AuditLog = {
   created_at: string;
 };
 
+// ---------------------------------------------------------------------------
+// Content translations (0023_content_i18n.sql)
+// The base columns hold French and are always the fallback; `i18n` carries the
+// other locales. Adding a locale = widening ContentLocale, not more columns.
+// ---------------------------------------------------------------------------
+
+export type ContentLocale = "en";
+
+/** Per-locale overrides for a row's translatable fields. */
+export type I18nBag<T> = Partial<Record<ContentLocale, Partial<T>>>;
+
+export type CategoryI18n = { name: string };
+export type ItemI18n = { name: string; description: string };
+export type EventI18n = {
+  title: string;
+  tagline: string;
+  description: string;
+  badge_label: string;
+};
+export type ThemeI18n = {
+  about_title: string;
+  about_body: string;
+  custom_copy: Partial<Record<CopyKey, string>>;
+  /** Index-aligned with the base `values_items` array. */
+  values_items: { title?: string; body?: string }[];
+  /** Index-aligned with the base `testimonials` array. */
+  testimonials: { text?: string; author?: string }[];
+};
+
 export type Category = {
   id: string;
   restaurant_id: string;
@@ -199,6 +231,7 @@ export type Category = {
   name_ar: string | null;
   name_es: string | null;
   sort_order: number;
+  i18n?: I18nBag<CategoryI18n>;
 };
 
 export type Item = {
@@ -215,6 +248,7 @@ export type Item = {
   sort_order: number;
   is_smart_menu_eligible: boolean;
   customization_groups: CustomizationGroup[];
+  i18n?: I18nBag<ItemI18n>;
 };
 
 export type MenuItemCost = {
@@ -333,6 +367,7 @@ export type RestaurantEvent = {
   reserved_seats: number;
   created_at: string;
   updated_at: string;
+  i18n?: I18nBag<EventI18n>;
 };
 
 export type EventInquiry = {

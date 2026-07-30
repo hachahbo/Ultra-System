@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -112,6 +113,7 @@ export function ItemDialog({
   onClose: () => void;
 }) {
   const { add } = useCart();
+  const t = useTranslations("Menu");
   const prefersReducedMotion = useReducedMotion();
   const isDesktop = useIsDesktop();
 
@@ -175,11 +177,13 @@ export function ItemDialog({
       (g) => g.required && (selected[g.title.fr] ?? []).length === 0,
     );
     if (missing) {
-      toast.error(`Veuillez choisir : ${missing.title.fr}`);
+      toast.error(t("chooseRequired", { group: missing.title.fr }));
       return;
     }
 
-    // Merge standard options + removed ingredient strings
+    // Merge standard options + removed ingredient strings. These strings are
+    // order data the kitchen reads in the (French) dashboard, so they stay
+    // canonical French regardless of the visitor's language.
     const allOptions = [
       ...Object.values(selected).flat(),
       ...[...removed].map((i) => `Sans ${i}`),
@@ -244,7 +248,7 @@ export function ItemDialog({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={t("dialogClose")}
               className="absolute left-4 top-4 z-20 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/80 border border-border/50 text-foreground backdrop-blur-sm transition-colors hover:bg-muted"
             >
               <X className="size-4" />
@@ -304,7 +308,7 @@ export function ItemDialog({
                         </span>
                         {group.max_selections > 1 && (
                           <span className="text-[10px] text-muted-foreground">
-                            max {group.max_selections}
+                            {t("maxSelections", { count: group.max_selections })}
                           </span>
                         )}
                       </legend>
@@ -377,11 +381,11 @@ export function ItemDialog({
                   <div className="mb-3 flex items-center gap-2">
                     <UtensilsCrossed className="size-3.5 text-muted-foreground" />
                     <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Composition des ingrédients
+                      {t("ingredientComposition")}
                     </span>
                   </div>
                   <p className="mb-4 text-xs text-muted-foreground">
-                    Retirez les ingrédients que vous ne souhaitez pas.
+                    {t("ingredientHint")}
                   </p>
 
                   <div className="flex flex-wrap gap-2">
@@ -400,7 +404,7 @@ export function ItemDialog({
                           {isRemoved ? (
                             <span className="flex items-center gap-1">
                               <X className="size-3" />
-                              Sans {opt.name}
+                              {t("without", { name: opt.name })}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1">
@@ -415,9 +419,9 @@ export function ItemDialog({
 
                   {removed.size > 0 && (
                     <p className="mt-3 text-[11px] text-muted-foreground">
-                      Retiré :{" "}
+                      {t("removedLabel")}{" "}
                       <span className="font-medium text-destructive">
-                        {[...removed].map((n) => `Sans ${n}`).join(", ")}
+                        {[...removed].map((n) => t("without", { name: n })).join(", ")}
                       </span>
                     </p>
                   )}
@@ -427,7 +431,7 @@ export function ItemDialog({
               {/* ── Section 3: Special Instructions (Note) ── */}
               <div className="mt-6 mb-4">
                 <Label htmlFor="item-note" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Instructions spéciales
+                  {t("specialInstructions")}
                 </Label>
                 <Textarea
                   id="item-note"
@@ -439,7 +443,7 @@ export function ItemDialog({
                       e.target.scrollIntoView({ behavior: "smooth", block: "center" });
                     }, 300);
                   }}
-                  placeholder="Ex: Pas d'oignons, sauce à part..."
+                  placeholder={t("specialInstructionsPlaceholder")}
                   className="mt-2 resize-none rounded-xl text-base sm:text-sm"
                   rows={2}
                 />
@@ -456,7 +460,7 @@ export function ItemDialog({
                 <div className="flex items-center rounded-full border border-border/80 bg-background shadow-sm">
                   <button
                     type="button"
-                    aria-label="Diminuer la quantité"
+                    aria-label={t("decreaseQuantity")}
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="flex size-12 cursor-pointer items-center justify-center rounded-l-full text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:bg-muted"
                   >
@@ -467,7 +471,7 @@ export function ItemDialog({
                   </span>
                   <button
                     type="button"
-                    aria-label="Augmenter la quantité"
+                    aria-label={t("increaseQuantity")}
                     onClick={() => setQuantity((q) => q + 1)}
                     className="flex size-12 cursor-pointer items-center justify-center rounded-r-full text-muted-foreground transition-all hover:bg-muted/50 hover:text-foreground active:bg-muted"
                   >
@@ -481,7 +485,7 @@ export function ItemDialog({
                   onClick={confirm}
                   className="flex flex-1 cursor-pointer items-center justify-center rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98]"
                 >
-                  Ajouter · {formatPrice(unitPrice * quantity, currency)}
+                  {t("addWithPrice", { price: formatPrice(unitPrice * quantity, currency) })}
                 </button>
               </div>
             </div>

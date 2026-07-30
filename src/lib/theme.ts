@@ -44,6 +44,7 @@ const DEFAULT_THEME: Omit<ResolvedTheme, "restaurant_id"> = {
   social_facebook_url: null,
   social_instagram_url: null,
   social_twitter_url: null,
+  i18n: {},
   updated_at: new Date(0).toISOString(),
 };
 

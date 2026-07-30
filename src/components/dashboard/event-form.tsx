@@ -63,6 +63,14 @@ export function EventForm({
       minimum_spend_per_person: event?.minimum_spend_per_person ?? 0,
       max_seats: event?.max_seats ?? undefined,
       reserved_seats: event?.reserved_seats ?? 0,
+      i18n: {
+        en: {
+          title: event?.i18n?.en?.title ?? "",
+          tagline: event?.i18n?.en?.tagline ?? "",
+          description: event?.i18n?.en?.description ?? "",
+          badge_label: event?.i18n?.en?.badge_label ?? "",
+        },
+      },
     },
   });
   const errors = form.formState.errors;
@@ -92,6 +100,51 @@ export function EventForm({
           <div className="space-y-2">
             <Label htmlFor="ev-desc" className={LABEL}>Description</Label>
             <Textarea id="ev-desc" rows={3} className="rounded-xl bg-background text-[14px]" {...form.register("description")} />
+          </div>
+
+          {/* English version — shown to visitors browsing the site in English.
+              Any field left blank falls back to the French one above. */}
+          <div className="space-y-3 rounded-xl border border-dashed border-border/70 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Version anglaise (optionnelle)
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="ev-title-en" className={LABEL}>Titre</Label>
+              <Input
+                id="ev-title-en"
+                className={FIELD}
+                placeholder={form.watch("title") || "Live Jazz Night…"}
+                {...form.register("i18n.en.title")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ev-tagline-en" className={LABEL}>Accroche</Label>
+              <Input
+                id="ev-tagline-en"
+                className={FIELD}
+                placeholder={form.watch("tagline") || "An intimate atmosphere…"}
+                {...form.register("i18n.en.tagline")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ev-desc-en" className={LABEL}>Description</Label>
+              <Textarea
+                id="ev-desc-en"
+                rows={3}
+                className="rounded-xl bg-background text-[14px]"
+                placeholder={form.watch("description") || ""}
+                {...form.register("i18n.en.description")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ev-badge-en" className={LABEL}>Badge</Label>
+              <Input
+                id="ev-badge-en"
+                className={FIELD}
+                placeholder={form.watch("badge_label") || "This Friday"}
+                {...form.register("i18n.en.badge_label")}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

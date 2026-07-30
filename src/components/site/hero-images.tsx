@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 const containerVariants: Variants = {
@@ -26,6 +27,8 @@ export function HeroImages({
   setActiveStep?: (step: number) => void;
   className?: string;
 }) {
+  const t = useTranslations("Hero");
+
   // Default high quality O Rendez-Vous hero images
   const main0 = images?.[0] ?? "/images/orendezvous/hero-default.webp";
   const pop0 = images?.[1] ?? "/images/orendezvous/hero-pop-default.webp";
@@ -73,7 +76,7 @@ export function HeroImages({
             >
               <Image
                 src={current.main}
-                alt="Restaurant interior"
+                alt={t("imageAltInterior")}
                 fill
                 priority
                 sizes="(min-width: 1024px) 45vw, 90vw"
@@ -98,7 +101,7 @@ export function HeroImages({
             >
               <Image
                 src={current.pop}
-                alt="Delicious food plate"
+                alt={t("imageAltDish")}
                 fill
                 sizes="35vw"
                 className="scale-[1.25] object-cover object-center"

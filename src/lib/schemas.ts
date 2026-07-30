@@ -6,15 +6,18 @@ import { COPY_KEYS, FEATURE_KEYS, FONT_PAIR_KEYS, SECTION_KEYS } from "@/lib/typ
 export const inviteRoleSchema = z.enum(["manager", "serveur", "cuisine"]);
 
 // Moroccan numbers: accept 06/07 mobile or +2126/+2127, tolerant of spaces.
-export const phoneSchema = z
-  .string()
-  .trim()
-  .transform((v) => v.replace(/[\s.-]/g, ""))
-  .pipe(
-    z
-      .string()
-      .regex(/^(?:\+?212|0)[5-7]\d{8}$/, "Numéro de téléphone invalide"),
-  );
+// Public forms build their own instance with a translated message; the bare
+// `phoneSchema` below is what the API routes validate with (its message is
+// never surfaced to visitors — routes answer with `error`, not zod details).
+export function makePhoneSchema(message: string) {
+  return z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s.-]/g, ""))
+    .pipe(z.string().regex(/^(?:\+?212|0)[5-7]\d{8}$/, message));
+}
+
+export const phoneSchema = makePhoneSchema("Numéro de téléphone invalide");
 
 export const orderLineSchema = z.object({
   item_id: z.string().uuid(),
@@ -78,8 +81,36 @@ export const eventStatusSchema = z.enum([
 ]);
 
 // Dashboard create/update. Slug is derived server-side from the title.
+// Content translations (0023). Each bag is keyed by locale; only "en" exists
+// today because French lives in the base columns. Every field is optional —
+// a half-translated row falls back to French field by field.
+export const itemI18nBagSchema = z.object({
+  en: z
+    .object({
+      name: z.string().trim().max(120).optional(),
+      description: z.string().trim().max(300).optional(),
+    })
+    .optional(),
+});
+
+export const categoryI18nBagSchema = z.object({
+  en: z.object({ name: z.string().trim().max(120).optional() }).optional(),
+});
+
+export const eventI18nBagSchema = z.object({
+  en: z
+    .object({
+      title: z.string().trim().max(160).optional(),
+      tagline: z.string().trim().max(200).optional(),
+      description: z.string().trim().max(2000).optional(),
+      badge_label: z.string().trim().max(40).optional(),
+    })
+    .optional(),
+});
+
 export const eventSchema = z.object({
   title: z.string().trim().min(1, "Titre requis").max(160),
+  i18n: eventI18nBagSchema.optional(),
   tagline: z.string().trim().max(200).optional().or(z.literal("")),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   category: eventCategorySchema,
@@ -151,6 +182,7 @@ export const customizationGroupSchema = z.object({
 
 export const itemSchema = z.object({
   category_id: z.string().uuid("Catégorie requise"),
+  i18n: itemI18nBagSchema.optional(),
   name_fr: z.string().trim().min(1, "Nom requis").max(120),
   name_ar: z.string().trim().max(120).optional(),
   name_es: z.string().trim().max(120).optional(),
@@ -165,6 +197,7 @@ export const itemSchema = z.object({
 export type ItemInput = z.infer<typeof itemSchema>;
 
 export const categorySchema = z.object({
+  i18n: categoryI18nBagSchema.optional(),
   name_fr: z.string().trim().min(1, "Nom requis").max(120),
   name_ar: z.string().trim().max(120).nullable().optional(),
   name_es: z.string().trim().max(120).nullable().optional(),
@@ -392,6 +425,40 @@ export const themeDraftSchema = z.object({
   social_facebook_url: assetUrl.nullable().optional(),
   social_instagram_url: assetUrl.nullable().optional(),
   social_twitter_url: assetUrl.nullable().optional(),
+  // English overrides for the copy fields above (0023). values_items and
+  // testimonials are index-aligned with their base arrays, so their entries
+  // carry only the translatable text — never the image URL.
+  i18n: z
+    .object({
+      en: z
+        .object({
+          about_title: z.string().trim().max(120).optional(),
+          about_body: z.string().trim().max(2000).optional(),
+          custom_copy: z
+            .partialRecord(z.enum(COPY_KEYS), z.string().trim().max(300))
+            .optional(),
+          values_items: z
+            .array(
+              z.object({
+                title: z.string().trim().max(60).optional(),
+                body: z.string().trim().max(500).optional(),
+              }),
+            )
+            .max(10)
+            .optional(),
+          testimonials: z
+            .array(
+              z.object({
+                text: z.string().trim().max(500).optional(),
+                author: z.string().trim().max(80).optional(),
+              }),
+            )
+            .max(15)
+            .optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 export type ThemeDraftInput = z.infer<typeof themeDraftSchema>;
 

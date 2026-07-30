@@ -64,6 +64,7 @@ function themeToFormValues(theme: RestaurantTheme): ThemeDraftInput {
     social_facebook_url: resolved.social_facebook_url,
     social_instagram_url: resolved.social_instagram_url,
     social_twitter_url: resolved.social_twitter_url,
+    i18n: resolved.i18n,
   };
 }
 
@@ -98,6 +99,7 @@ export function SiteBuilder({
       values_items: [],
       testimonials: [],
       about_gallery_urls: [],
+      i18n: {},
     },
   });
 

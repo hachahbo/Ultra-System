@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Check, Plus, ShoppingBag, Sparkles, UtensilsCrossed, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { cartSubtotal, useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
 import type { Item, PublicMenu } from "@/lib/types";
@@ -23,6 +24,22 @@ interface ItemDetails {
   rows: DetailRow[];
 }
 
+// Structural labels for the accordion, resolved from the active locale by the
+// caller so this stays a plain function.
+interface DetailLabels {
+  composition: string;
+  ingredientsLabel: string;
+  customizationTitle: string;
+  customizationSub: string;
+  customizationLabel: string;
+  detailsTitle: string;
+  detailsSub: string;
+  detailsLabel: string;
+  detailsSeasonal: string;
+  detailsHomemade: string;
+  free: string;
+}
+
 // ─── Editorial fallback photography ─────────────────────────────────────────
 const FALLBACK_IMAGES = [
   "/Gemini_Generated_Image_vli73mvli73mvli7.png",
@@ -39,116 +56,40 @@ function fallbackImage(seed: string) {
   return FALLBACK_IMAGES[Math.abs(hash) % FALLBACK_IMAGES.length];
 }
 
-// Helper to retrieve authentic tangerine ingredients or customization groups
-function getItemDetails(item: Item): ItemDetails {
-  const name = item.name_fr.toLowerCase();
-
-  if (name.includes("potatoes")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Notre grand classique, servi croustillant.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Pommes de terre grelot" },
-        { name: "Beurre noisette & thym" },
-        { name: "Fleur de sel de Tanger" }
-      ]
-    };
-  }
-  if (name.includes("grecque") || name.includes("greek")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Fraîcheur du marché, assaisonnée minute.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Tomates & concombres" },
-        { name: "Féta AOP & olives Kalamata" },
-        { name: "Origan, huile d'olive vierge" }
-      ]
-    };
-  }
-  if (name.includes("boeuf") || name.includes("bœuf") || name.includes("filet")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Pièce maîtresse de la maison.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Filet de bœuf 220g" },
-        { name: "Crème d'épinards au parmesan" },
-        { name: "Potatoes maison" }
-      ]
-    };
-  }
-  if (name.includes("fruits") || name.includes("fruit salad")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Le dessert le plus léger de la carte.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Fruits de saison" },
-        { name: "Sirop de menthe fraîche" },
-        { name: "Zeste de citron vert" }
-      ]
-    };
-  }
-  if (name.includes("linguine") || name.includes("pasta")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Sauce mijotée trois heures.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Linguine fraîches" },
-        { name: "Tomates San Marzano" },
-        { name: "Basilic & parmesan 24 mois" }
-      ]
-    };
-  }
-  if (name.includes("carpaccio")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Tranché à la commande.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Bœuf tranché finement" },
-        { name: "Vinaigrette à la truffe" },
-        { name: "Copeaux de parmesan & roquette" }
-      ]
-    };
-  }
-  if (name.includes("tiramisu")) {
-    return {
-      expandTitle: "Composition",
-      expandSub: "Reposé 24h avant le service.",
-      sectionLabel: "INGRÉDIENTS",
-      rows: [
-        { name: "Mascarpone & œufs fermiers" },
-        { name: "Espresso de spécialité" },
-        { name: "Cacao amer" }
-      ]
-    };
-  }
-
-  // Fallback to customization groups if options exist
+// What the accordion shows for a dish. This used to key off the French dish
+// name and return invented ingredient lists ("Fleur de sel de Tanger" for
+// anything named *potatoes*, …) — fabricated food information that could not
+// be translated honestly and was wrong for any restaurant but the demo one.
+// The real source is the item's own customization groups (the "Ingrédients"
+// group convention that ItemDialog already relies on); with none set we show
+// a generic block rather than making something up.
+function getItemDetails(item: Item, l: DetailLabels, currency: string): ItemDetails {
   if (item.customization_groups && item.customization_groups.length > 0) {
+    const isIngredients = item.customization_groups.every(
+      (g) => g.options.every((o) => Number(o.price_modifier) === 0),
+    );
     return {
-      expandTitle: "Personnalisation",
-      expandSub: "Options à choisir pour accompagner votre plat.",
-      sectionLabel: "OPTIONS DISPONIBLES",
-      rows: item.customization_groups.map(group => ({
+      expandTitle: isIngredients ? l.composition : l.customizationTitle,
+      expandSub: isIngredients ? l.detailsSub : l.customizationSub,
+      sectionLabel: isIngredients ? l.ingredientsLabel : l.customizationLabel,
+      rows: item.customization_groups.map((group) => ({
         name: group.title.fr,
-        desc: group.options.map(o => `${o.name} (${o.price_modifier > 0 ? `+${o.price_modifier} MAD` : "Gratuit"})`).join(", ")
-      }))
+        desc: group.options
+          .map((o) =>
+            Number(o.price_modifier) > 0
+              ? `${o.name} (+${formatPrice(o.price_modifier, currency)})`
+              : `${o.name} (${l.free})`,
+          )
+          .join(", "),
+      })),
     };
   }
 
   return {
-    expandTitle: "Détails du plat",
-    expandSub: "Préparé avec soin par notre chef.",
-    sectionLabel: "INFORMATIONS",
-    rows: [
-      { name: "Ingrédients de saison" },
-      { name: "Fait maison minute" }
-    ]
+    expandTitle: l.detailsTitle,
+    expandSub: l.detailsSub,
+    sectionLabel: l.detailsLabel,
+    rows: [{ name: l.detailsSeasonal }, { name: l.detailsHomemade }],
   };
 }
 
@@ -197,7 +138,25 @@ export function MenuBrowser({
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setContext, add, lines } = useCart();
+  const t = useTranslations("Menu");
   const prefersReducedMotion = useReducedMotion();
+
+  const detailLabels = useMemo<DetailLabels>(
+    () => ({
+      composition: t("compositionTitle"),
+      ingredientsLabel: t("ingredientsLabel"),
+      customizationTitle: t("customizationTitle"),
+      customizationSub: t("customizationSub"),
+      customizationLabel: t("customizationLabel"),
+      detailsTitle: t("detailsTitle"),
+      detailsSub: t("detailsSub"),
+      detailsLabel: t("detailsLabel"),
+      detailsSeasonal: t("detailsSeasonal"),
+      detailsHomemade: t("detailsHomemade"),
+      free: t("free"),
+    }),
+    [t],
+  );
 
   // Defer motion styles until after hydration to avoid SSR mismatch.
   const [isHydrated, setIsHydrated] = useState(false);
@@ -265,7 +224,7 @@ export function MenuBrowser({
             active={activeCategory === null}
             onClick={() => setActiveCategory(null)}
           >
-            Tout
+            {t("all")}
           </CategoryPill>
           {categories.map((c) => (
             <CategoryPill
@@ -292,7 +251,7 @@ export function MenuBrowser({
             const wasAdded = justAdded === item.id;
             const isSignature = index === 0 && activeCategory === null;
             const isExpanded = !!expandedItems[item.id];
-            const details = getItemDetails(item);
+            const details = getItemDetails(item, detailLabels, restaurant.currency);
 
             return (
               <motion.li
@@ -338,12 +297,12 @@ export function MenuBrowser({
                     {isSignature && item.in_stock && (
                       <span className="shrink-0 flex items-center gap-1 rounded-full bg-[#FF6B35]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#FF6B35]">
                         <Sparkles className="size-3" />
-                        Signature
+                        {t("signature")}
                       </span>
                     )}
                     {!item.in_stock && (
                       <span className="shrink-0 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive">
-                        Épuisé
+                        {t("soldOut")}
                       </span>
                     )}
                   </div>
@@ -403,7 +362,7 @@ export function MenuBrowser({
                     {/* Accordion Expansion Toggle chevron */}
                     <button
                       onClick={(e) => toggleExpand(item.id, e)}
-                      aria-label="Détails"
+                      aria-label={t("details")}
                       className={`flex size-[42px] items-center justify-center rounded-full border border-border/40 bg-transparent text-foreground hover:bg-muted/30 cursor-pointer transition-transform duration-300 ${isExpanded ? "rotate-180" : ""
                         }`}
                     >
@@ -447,7 +406,7 @@ export function MenuBrowser({
                               <div className="flex justify-between items-baseline gap-4">
                                 <span className="font-bold text-sm text-[#1b2437] dark:text-stone-200">{row.name}</span>
                                 {row.price && (
-                                  <span className="font-bold text-sm text-[#1b2437] dark:text-amber-500 whitespace-nowrap">{row.price} MAD</span>
+                                  <span className="font-bold text-sm text-[#1b2437] dark:text-amber-500 whitespace-nowrap">{row.price}</span>
                                 )}
                               </div>
                               {row.desc && (
@@ -476,7 +435,7 @@ export function MenuBrowser({
             >
               <UtensilsCrossed className="size-8 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
-                Aucun plat dans cette catégorie.
+                {t("emptyCategory")}
               </p>
             </motion.li>
           )}
@@ -516,7 +475,7 @@ export function MenuBrowser({
                   {count}
                 </motion.span>
                 <ShoppingBag className="size-4 transition-transform group-hover:-translate-y-0.5" />
-                <span>Voir le panier</span>
+                <span>{t("viewCart")}</span>
               </span>
               <span className="font-bold tabular-nums">
                 {formatPrice(subtotal, restaurant.currency)}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
@@ -10,23 +11,26 @@ import type { CustomizationGroup, OrderLine } from "@/lib/types";
 // row is scoped to the restaurant resolved server-side from the slug, and all
 // prices are recomputed from the DB so the client can't tamper with them.
 export async function POST(request: Request) {
+  // Errors go straight into a toast on the public site, so they follow the
+  // visitor's locale cookie like the rest of the page.
+  const t = await getTranslations("Errors");
   const ip = clientIp(request);
   const ipLimit = await checkRateLimit(`order:ip:${ip}`, 10, 60);
   if (!ipLimit.allowed) {
-    return rateLimitResponse(ipLimit.retryAfterSeconds);
+    return rateLimitResponse(ipLimit.retryAfterSeconds, t("rateLimited"));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
+    return NextResponse.json({ error: t("invalidBody") }, { status: 400 });
   }
 
   const parsed = orderSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Données invalides", details: parsed.error.flatten() },
+      { error: t("invalidData"), details: parsed.error.flatten() },
       { status: 400 },
     );
   }
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
     .eq("slug", input.restaurant_slug)
     .maybeSingle();
   if (!restaurant) {
-    return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t("restaurantNotFound") }, { status: 404 });
   }
 
   // Soft per-tenant cap — catches a flood spread across many IPs targeting
@@ -55,13 +59,13 @@ export async function POST(request: Request) {
     await getPublicFeatures(restaurant.id, restaurant.plan),
   );
   if (!features.online_ordering) {
-    return NextResponse.json({ error: "Commande en ligne indisponible" }, { status: 403 });
+    return NextResponse.json({ error: t("onlineOrderingUnavailable") }, { status: 403 });
   }
   if (input.type === "dine_in" && !restaurant.is_dine_in_enabled) {
-    return NextResponse.json({ error: "Commande sur place indisponible" }, { status: 400 });
+    return NextResponse.json({ error: t("dineInUnavailable") }, { status: 400 });
   }
   if (input.type === "delivery" && !restaurant.is_delivery_enabled) {
-    return NextResponse.json({ error: "Livraison indisponible" }, { status: 400 });
+    return NextResponse.json({ error: t("deliveryUnavailable") }, { status: 400 });
   }
 
   // Recompute every line from the DB.
@@ -78,11 +82,11 @@ export async function POST(request: Request) {
   for (const line of input.lines) {
     const item = itemsById.get(line.item_id);
     if (!item) {
-      return NextResponse.json({ error: "Article introuvable" }, { status: 400 });
+      return NextResponse.json({ error: t("itemNotFound") }, { status: 400 });
     }
     if (!item.in_stock) {
       return NextResponse.json(
-        { error: `"${item.name_fr}" est épuisé` },
+        { error: t("itemSoldOut", { name: item.name_fr }) },
         { status: 409 },
       );
     }
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
         .flatMap((g) => g.options)
         .find((o) => o.name === optName);
       if (!opt) {
-        return NextResponse.json({ error: "Option invalide" }, { status: 400 });
+        return NextResponse.json({ error: t("invalidOption") }, { status: 400 });
       }
       unitPrice += Number(opt.price_modifier);
       validOptions.push(optName);
@@ -116,7 +120,7 @@ export async function POST(request: Request) {
   // Guard against a silent zero-revenue order (Overview/Analytics both sum
   // `orders.total` directly — a bug here would hide real revenue for weeks).
   if (total <= 0) {
-    return NextResponse.json({ error: "Commande invalide" }, { status: 400 });
+    return NextResponse.json({ error: t("invalidOrder") }, { status: 400 });
   }
 
   // The capture: upsert the customer so the phone lands in the DB (§2).
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
       .select("id, order_count")
       .single();
     if (customerError || !customer) {
-      return NextResponse.json({ error: "Erreur d'enregistrement" }, { status: 500 });
+      return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
     }
     customerId = customer.id;
     await supabase
@@ -166,7 +170,7 @@ export async function POST(request: Request) {
     .single();
 
   if (orderError || !order) {
-    return NextResponse.json({ error: "Erreur d'enregistrement" }, { status: 500 });
+    return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
   }
 
   return NextResponse.json({ id: order.id, total }, { status: 201 });

@@ -59,6 +59,12 @@ export function ItemFormDialog({
       in_stock: item?.in_stock ?? true,
       is_smart_menu_eligible: item?.is_smart_menu_eligible ?? false,
       customization_groups: item?.customization_groups ?? [],
+      i18n: {
+        en: {
+          name: item?.i18n?.en?.name ?? "",
+          description: item?.i18n?.en?.description ?? "",
+        },
+      },
     },
   });
 
@@ -154,6 +160,24 @@ export function ItemFormDialog({
             <div className="space-y-2">
               <Label htmlFor="description_fr">Description (optionnel)</Label>
               <Textarea id="description_fr" {...form.register("description_fr")} />
+            </div>
+            {/* English is what the public site shows when a visitor switches
+                language; left blank it falls back to the French fields. */}
+            <div className="space-y-2">
+              <Label htmlFor="name_en">Nom (anglais, optionnel)</Label>
+              <Input
+                id="name_en"
+                placeholder={form.watch("name_fr") || "Name in English"}
+                {...form.register("i18n.en.name")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description_en">Description (anglais, optionnel)</Label>
+              <Textarea
+                id="description_en"
+                placeholder={form.watch("description_fr") || "Description in English"}
+                {...form.register("i18n.en.description")}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="base_price">Prix (MAD)</Label>

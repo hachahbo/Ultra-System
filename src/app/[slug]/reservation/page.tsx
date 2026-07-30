@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getRestaurantBySlug, getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { getSiteTheme } from "@/lib/site-theme";
 import { ReservationForm } from "@/components/site/reservation-form";
 import { FeatureUnavailable } from "@/components/site/feature-unavailable";
 
-export const metadata: Metadata = { title: "Réserver une table" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Reservation");
+  return { title: t("metaTitle") };
+}
 
 export default async function ReservationPage({
   params,
@@ -21,9 +25,8 @@ export default async function ReservationPage({
     await getPublicFeatures(restaurant.id, restaurant.plan),
   );
   if (!features.reservations) {
-    return (
-      <FeatureUnavailable message="Les réservations en ligne ne sont pas disponibles pour ce restaurant." />
-    );
+    const t = await getTranslations("Reservation");
+    return <FeatureUnavailable message={t("unavailable")} />;
   }
 
   const { theme } = await getSiteTheme(restaurant);

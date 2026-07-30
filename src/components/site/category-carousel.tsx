@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, UtensilsCrossed } from "lucide-react";
 import { motion, useReducedMotion, type PanInfo } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/format";
 import type { Category, Item } from "@/lib/types";
 
@@ -60,6 +61,7 @@ export function CategoryCarousel({
   currency: string;
   itemsPerCard?: number;
 }) {
+  const t = useTranslations("Carousel");
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState(0);
   const [cardW, setCardW] = useState(DEFAULT_CARD_W);
@@ -140,7 +142,7 @@ export function CategoryCarousel({
         ref={stageRef}
         role="group"
         aria-roledescription="carousel"
-        aria-label="Catégories du menu"
+        aria-label={t("label")}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "ArrowRight") {
@@ -221,7 +223,7 @@ export function CategoryCarousel({
         <button
           type="button"
           onClick={prev}
-          aria-label="Catégorie précédente"
+          aria-label={t("previous")}
           className="flex size-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white transition-colors hover:border-[#FF6B35] hover:bg-[#FF6B35] cursor-pointer"
         >
           <ChevronLeft className="size-5" strokeWidth={2.2} />
@@ -247,7 +249,7 @@ export function CategoryCarousel({
         <button
           type="button"
           onClick={next}
-          aria-label="Catégorie suivante"
+          aria-label={t("next")}
           className="flex size-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white transition-colors hover:border-[#FF6B35] hover:bg-[#FF6B35] cursor-pointer"
         >
           <ChevronRight className="size-5" strokeWidth={2.2} />
@@ -266,6 +268,8 @@ function CategoryCardBody({
   slug: string;
   isActive: boolean;
 }) {
+  const t = useTranslations("Carousel");
+
   return (
     <article
       className="flex size-full flex-col overflow-hidden rounded-[26px] border border-white/[0.07] bg-[#0f171e]"
@@ -299,7 +303,7 @@ function CategoryCardBody({
             {card.title}
           </h3>
           <p className="mt-0.5 text-xs text-white/55">
-            {card.items.length} spécialité{card.items.length > 1 ? "s" : ""}
+            {t("specialtyCount", { count: card.items.length })}
           </p>
 
           <ul className="mt-3 flex flex-col gap-2.5">
@@ -329,7 +333,7 @@ function CategoryCardBody({
           className="group mt-3 flex items-center justify-center gap-2.5 border-t border-white/[0.07] pt-3 text-[11px] font-bold uppercase tracking-[2px] text-white/60 transition-colors hover:text-[#FF6B35]"
         >
           <span className="h-px w-4 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
-          Voir la carte
+          {t("viewMenu")}
           <span className="h-px w-4 bg-white/25 transition-colors group-hover:bg-[#FF6B35]" />
         </Link>
       </div>

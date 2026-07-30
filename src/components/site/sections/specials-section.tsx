@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { CategoryCarousel } from "@/components/site/category-carousel";
 import type { Category, Item } from "@/lib/types";
 
@@ -45,6 +46,8 @@ export function SpecialsSection({
   sub?: string;
   imageUrl?: string | null;
 }) {
+  const t = useTranslations("Specials");
+
   if (!items || items.length === 0) return null;
 
   return (
@@ -73,14 +76,13 @@ export function SpecialsSection({
             variants={itemVariants}
             className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl"
           >
-            {heading ?? "Our Special Dishes"}
+            {heading ?? t("heading")}
           </motion.h2>
-          <motion.p 
+          <motion.p
             variants={itemVariants}
             className="mt-4 text-sm text-muted-foreground md:text-base max-w-lg"
           >
-            {sub ??
-              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
+            {sub ?? t("sub")}
           </motion.p>
         </div>
 
@@ -97,7 +99,7 @@ export function SpecialsSection({
                 fill
                 sizes="(min-width: 1024px) 45vw, 100vw"
                 className="object-cover object-center hover:scale-105 transition-transform duration-500"
-                alt="Nos plats"
+                alt={t("imageAlt")}
               />
             </div>
           </motion.div>

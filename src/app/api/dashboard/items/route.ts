@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       is_smart_menu_eligible: parsed.data.is_smart_menu_eligible ?? false,
       image_url: parsed.data.image_url ?? null,
       customization_groups: parsed.data.customization_groups ?? [],
+      i18n: parsed.data.i18n ?? {},
     })
     .select("id")
     .single();

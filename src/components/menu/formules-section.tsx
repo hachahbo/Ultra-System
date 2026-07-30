@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/format";
 import type { Category, Item, Promotion } from "@/lib/types";
 
@@ -22,12 +23,13 @@ export function FormulesSection({
   currency: string;
 }) {
   const [openId, setOpenId] = useState<string | null>(promotions[0]?.id ?? null);
+  const t = useTranslations("Menu");
 
   if (promotions.length === 0) return null;
 
   return (
     <section className="mt-14">
-      <h2 className="font-display text-2xl font-semibold tracking-tight">Nos formules</h2>
+      <h2 className="font-display text-2xl font-semibold tracking-tight">{t("formulesHeading")}</h2>
       <div className="mt-5 flex flex-col gap-4">
         {promotions.map((promotion) => {
           const isOpen = openId === promotion.id;
@@ -86,12 +88,12 @@ export function FormulesSection({
                         return (
                           <div key={i} className="border-t border-border pt-4 first:border-0 first:pt-0">
                             <div className="text-sm font-bold">
-                              {rule.count} × {category?.name_fr ?? "Catégorie"}
+                              {rule.count} × {category?.name_fr ?? t("formuleCategory")}
                             </div>
                             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                               {eligible.length > 0
                                 ? eligible.map((item) => item.name_fr).join(", ")
-                                : "Aucun plat éligible pour le moment."}
+                                : t("formuleEmpty")}
                             </p>
                           </div>
                         );

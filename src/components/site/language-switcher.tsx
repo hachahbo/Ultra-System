@@ -50,7 +50,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-48 rounded-2xl border border-black/10 dark:border-white/15 bg-background/95 dark:bg-[#181513]/95 p-1.5 text-foreground backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+        className="w-48 rounded-2xl border border-black/10 dark:border-white/15 bg-background/95 dark:bg-[#181513]/95 p-1.5 text-foreground backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[200]"
       >
         <div className="px-2.5 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground/70">
           {t("language")}
@@ -61,6 +61,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           return (
             <DropdownMenuItem
               key={locale}
+              onSelect={() => onSelect(locale)}
               onClick={() => onSelect(locale)}
               className={cn(
                 "flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 my-0.5",

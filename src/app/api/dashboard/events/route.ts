@@ -77,6 +77,7 @@ export async function POST(request: Request) {
     minimum_spend_per_person: v.minimum_spend_per_person,
     max_seats: v.max_seats ?? null,
     reserved_seats: v.reserved_seats ?? 0,
+    i18n: v.i18n ?? {},
   };
 
   const base = slugify(v.title);

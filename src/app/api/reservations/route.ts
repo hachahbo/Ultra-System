@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
@@ -8,23 +9,26 @@ import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 // Public reservation intake — written to the DB (never WhatsApp-only, §2).
 // Owner confirms/declines manually from the dashboard (§3D).
 export async function POST(request: Request) {
+  // Errors go straight into a toast on the public site, so they follow the
+  // visitor's locale cookie like the rest of the page.
+  const t = await getTranslations("Errors");
   const ip = clientIp(request);
   const ipLimit = await checkRateLimit(`reservation:ip:${ip}`, 5, 60);
   if (!ipLimit.allowed) {
-    return rateLimitResponse(ipLimit.retryAfterSeconds);
+    return rateLimitResponse(ipLimit.retryAfterSeconds, t("rateLimited"));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
+    return NextResponse.json({ error: t("invalidBody") }, { status: 400 });
   }
 
   const parsed = reservationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Données invalides", details: parsed.error.flatten() },
+      { error: t("invalidData"), details: parsed.error.flatten() },
       { status: 400 },
     );
   }
@@ -37,14 +41,14 @@ export async function POST(request: Request) {
     .eq("slug", input.restaurant_slug)
     .maybeSingle();
   if (!restaurant) {
-    return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t("restaurantNotFound") }, { status: 404 });
   }
   const features = applyStatusGate(
     restaurant.status,
     await getPublicFeatures(restaurant.id, restaurant.plan),
   );
   if (!features.reservations) {
-    return NextResponse.json({ error: "Réservations indisponibles" }, { status: 403 });
+    return NextResponse.json({ error: t("reservationsUnavailable") }, { status: 403 });
   }
 
   const { data: reservation, error } = await supabase
@@ -62,7 +66,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !reservation) {
-    return NextResponse.json({ error: "Erreur d'enregistrement" }, { status: 500 });
+    return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
   }
 
   return NextResponse.json({ id: reservation.id }, { status: 201 });

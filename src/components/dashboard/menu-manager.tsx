@@ -656,6 +656,7 @@ function EditCategoryDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(category.name_fr);
+  const [nameEn, setNameEn] = useState(category.i18n?.en?.name ?? "");
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -663,6 +664,7 @@ function EditCategoryDialog({
     setSaving(true);
     const res = await patchJson(`/api/dashboard/categories/${category.id}`, {
       name_fr: name.trim(),
+      i18n: { en: { name: nameEn.trim() } },
     });
     setSaving(false);
     if (!res.ok) {
@@ -691,6 +693,18 @@ function EditCategoryDialog({
               id="cat-edit-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
+            />
+          </div>
+          {/* Shown on the public site when a visitor switches to English;
+              blank falls back to the French name. */}
+          <div className="space-y-2">
+            <Label htmlFor="cat-edit-name-en" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom (anglais)</Label>
+            <Input
+              id="cat-edit-name-en"
+              value={nameEn}
+              placeholder={name || "Name in English"}
+              onChange={(e) => setNameEn(e.target.value)}
               className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
             />
           </div>

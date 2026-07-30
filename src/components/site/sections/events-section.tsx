@@ -3,14 +3,13 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { Calendar, Clock, Users, Wine, Sparkles, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/format";
-import { EVENT_CATEGORY_LABELS } from "@/lib/events";
 import type { EventCategory, RestaurantEvent } from "@/lib/types";
 
 interface EventsSectionProps {
@@ -41,10 +40,22 @@ const EVENT_TYPE_OPTIONS: { value: InquiryType; labelKey: string }[] = [
   { value: "other", labelKey: "typeOther" },
 ];
 
-function priceLabel(e: RestaurantEvent): string {
+// Locale-dependent bits the card shape needs, resolved by the caller.
+interface EventLabels {
+  freeEntry: string;
+  minSpend: (price: string) => string;
+  soldOut: string;
+  upcoming: string;
+  dateFormat: string;
+  category: Record<EventCategory, string>;
+  dateLocale: ReturnType<typeof dateFnsLocale>;
+}
+
+function priceLabel(e: RestaurantEvent, l: EventLabels): string {
   if (!e.is_free_entry && e.ticket_price > 0) return formatPrice(e.ticket_price, e.currency);
-  if (e.minimum_spend_per_person > 0) return `Min. ${formatPrice(e.minimum_spend_per_person, e.currency)}`;
-  return "Entrée libre";
+  if (e.minimum_spend_per_person > 0)
+    return l.minSpend(formatPrice(e.minimum_spend_per_person, e.currency));
+  return l.freeEntry;
 }
 
 interface EventItem {
@@ -65,7 +76,7 @@ const FALLBACK_IMAGE =
   "/images/orendezvous/orendezvous.tanger_1783019424_3932574417688072480_73557593345.jpg";
 
 // Maps a DB event row into the card display shape this section renders.
-function toEventItem(e: RestaurantEvent): EventItem {
+function toEventItem(e: RestaurantEvent, l: EventLabels): EventItem {
   const start = parseISO(e.start_date);
   const timeRange = e.end_date
     ? `${format(start, "HH:mm")} - ${format(parseISO(e.end_date), "HH:mm")}`
@@ -74,14 +85,14 @@ function toEventItem(e: RestaurantEvent): EventItem {
     id: e.id,
     title: e.title,
     category: CATEGORY_TO_FILTER[e.category],
-    categoryLabel: EVENT_CATEGORY_LABELS[e.category],
-    date: format(start, "EEEE d MMMM yyyy", { locale: fr }),
+    categoryLabel: l.category[e.category],
+    date: format(start, l.dateFormat, { locale: l.dateLocale }),
     time: timeRange,
     description: e.description ?? e.tagline ?? "",
     image: e.cover_image || FALLBACK_IMAGE,
     status: e.status === "sold_out" ? "soldout" : "upcoming",
-    statusLabel: e.badge_label || (e.status === "sold_out" ? "Complet" : "À venir"),
-    price: priceLabel(e),
+    statusLabel: e.badge_label || (e.status === "sold_out" ? l.soldOut : l.upcoming),
+    price: priceLabel(e, l),
   };
 }
 
@@ -100,6 +111,7 @@ export function EventsSection({
   events,
 }: EventsSectionProps) {
   const t = useTranslations("Events");
+  const locale = useLocale();
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [quoteSubmitted, setQuoteSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -119,7 +131,29 @@ export function EventsSection({
     notes: "",
   });
 
-  const eventItems = useMemo(() => events.map(toEventItem), [events]);
+  const labels = useMemo<EventLabels>(
+    () => ({
+      freeEntry: t("freeEntry"),
+      minSpend: (price: string) => t("minSpend", { price }),
+      soldOut: t("soldOutBadge"),
+      upcoming: t("upcomingBadge"),
+      dateFormat: t("dateFormat"),
+      dateLocale: dateFnsLocale(locale),
+      category: {
+        live_music: t("categoryLiveMusic"),
+        theme_night: t("categoryThemeNight"),
+        tasting: t("categoryTasting"),
+        dj_set: t("categoryDjSet"),
+        special_menu: t("categorySpecialMenu"),
+      },
+    }),
+    [t, locale],
+  );
+
+  const eventItems = useMemo(
+    () => events.map((e) => toEventItem(e, labels)),
+    [events, labels],
+  );
   const filteredEvents = eventItems.filter(
     (e) => filter === "all" || e.category === filter
   );
@@ -154,7 +188,16 @@ export function EventsSection({
     // Optional hand-off to WhatsApp for an immediate conversation.
     if (whatsappNumber || phone) {
       const targetPhone = (whatsappNumber || phone || "").replace(/\D/g, "");
-      const text = `*Demande de Privatisation / Devis*\n\nNom: ${quoteData.name}\nTéléphone: ${quoteData.phone}\nType d'événement: ${quoteData.eventType}\nNombre d'invités: ${quoteData.guests}\nDate souhaitée: ${quoteData.date || "Non spécifiée"}\nNotes: ${quoteData.notes || "Aucune"}`;
+      const typeLabel =
+        EVENT_TYPE_OPTIONS.find((o) => o.value === quoteData.eventType)?.labelKey;
+      const text = t("whatsappTemplate", {
+        name: quoteData.name,
+        phone: quoteData.phone,
+        type: typeLabel ? t(typeLabel) : quoteData.eventType,
+        guests: quoteData.guests,
+        date: quoteData.date || t("notSpecified"),
+        notes: quoteData.notes || t("noneProvided"),
+      });
       window.open(
         `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`,
         "_blank"
@@ -173,7 +216,7 @@ export function EventsSection({
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <Image
             src="/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg"
-            alt="Hero background"
+            alt={t("heroImageAlt")}
             fill
             className="object-cover"
           />

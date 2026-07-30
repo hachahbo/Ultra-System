@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { HeroContent } from "@/components/site/hero-content";
 import { HeroImages } from "@/components/site/hero-images";
 
@@ -10,36 +11,43 @@ export function HeroSection({
   headline,
   sub,
   ctaLabel,
+  hours,
+  address,
   images,
 }: {
   base: string;
   headline?: string;
   sub?: string;
   ctaLabel?: string;
+  hours?: string | null;
+  address?: string | null;
   images?: string[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
+  const t = useTranslations("Hero");
 
+  // Step 1 falls back to the generic default copy when the operator hasn't
+  // written its own headline/sub; steps 2-3 are always app-level copy.
   const steps = [
     {
-      title: headline ?? "We provide\nthe\nbest food for\nyou",
-      highlightWord: "food",
-      subtitle: sub ?? "Une cantine de quartier au cœur de Tanger — assiettes de saison, vins nature et une salle chaleureuse où l'on se sent comme à la maison.",
-      label: "CANTINE · BISTROT — TANGER",
+      title: headline ?? t("step1Title"),
+      highlightWord: t("step1Highlight"),
+      subtitle: sub ?? t("step1Sub"),
+      label: t("step1Label"),
     },
     {
-      title: "Crafted\nwith\nlocal love &\npassion",
-      highlightWord: "passion",
-      subtitle: "Chaque plat est une composition d'ingrédients locaux issus des meilleurs producteurs de la région de Tanger-Tétouan.",
-      label: "ARTISANAL · LOCAVORE",
+      title: t("step2Title"),
+      highlightWord: t("step2Highlight"),
+      subtitle: t("step2Sub"),
+      label: t("step2Label"),
     },
     {
-      title: "Savor\nthe\nauthentic\nexperience",
-      highlightWord: "experience",
-      subtitle: "Rejoignez-nous pour un moment convivial autour de notre table. Réservez votre place dès aujourd'hui pour vivre l'expérience Darna.",
-      label: "PARTAGE · CONVIVIALITÉ",
-    }
+      title: t("step3Title"),
+      highlightWord: t("step3Highlight"),
+      subtitle: t("step3Sub"),
+      label: t("step3Label"),
+    },
   ];
 
   const handleScrollDown = () => {
@@ -58,7 +66,14 @@ export function HeroSection({
     >
       {/* 1. Main Grid Content Wrapper */}
       <div className="relative mx-auto flex w-full max-w-[1600px] flex-col items-start justify-end min-h-[520px] sm:min-h-[580px] lg:min-h-0 pt-16 pb-4 sm:pb-8 lg:pt-0 lg:pb-24 px-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-        <HeroContent base={base} activeStep={activeStep} steps={steps} ctaLabel={ctaLabel} />
+        <HeroContent
+          base={base}
+          activeStep={activeStep}
+          steps={steps}
+          ctaLabel={ctaLabel}
+          hours={hours}
+          address={address}
+        />
         <HeroImages images={images} activeStep={activeStep} setActiveStep={setActiveStep} />
       </div>
 
@@ -66,7 +81,7 @@ export function HeroSection({
       <div className="hidden xl:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col gap-6 text-[11px] font-black tracking-[0.25em] uppercase select-none z-30">
         {steps.map((_, idx) => {
           const isActive = activeStep === idx;
-          const label = idx === 0 ? "REVEAL" : idx === 1 ? "ASSEMBLE" : "SETTLE";
+          const label = idx === 0 ? t("timeline1") : idx === 1 ? t("timeline2") : t("timeline3");
           return (
             <button 
               key={idx}
@@ -97,10 +112,10 @@ export function HeroSection({
       <button
         onClick={handleScrollDown}
         className="hidden sm:flex absolute bottom-4 left-1/2 -translate-x-1/2 flex-col items-center gap-1 group cursor-pointer z-30 outline-none border-none bg-transparent"
-        aria-label="Défiler vers le bas"
+        aria-label={t("scrollDown")}
       >
         <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-muted-foreground/60 group-hover:text-[#FF6B35] transition-colors duration-300">
-          SCROLL
+          {t("scroll")}
         </span>
         <motion.span 
           className="text-[#FF6B35] text-sm font-black transition-colors"

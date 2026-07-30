@@ -53,6 +53,8 @@ export default async function HomePage({
         headline={theme.custom_copy.hero_headline}
         sub={theme.custom_copy.hero_sub}
         ctaLabel={theme.custom_copy.hero_cta}
+        hours={restaurant.hours}
+        address={theme.address}
         images={theme.hero_image_urls}
       />
     ),

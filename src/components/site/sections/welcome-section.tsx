@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
 const DEFAULT_WELCOME_IMAGES = [
   "/images/about/about-5.webp",
@@ -8,7 +9,7 @@ const DEFAULT_WELCOME_IMAGES = [
   "/images/about/about-4.webp",
 ];
 
-export function WelcomeSection({
+export async function WelcomeSection({
   heading,
   body,
   images,
@@ -17,6 +18,8 @@ export function WelcomeSection({
   body: string;
   images?: string[];
 }) {
+  const t = await getTranslations("Welcome");
+
   // Use custom images if present and not containing legacy demo placeholders, otherwise fallback to DEFAULT_WELCOME_IMAGES
   const hasCustomImages =
     images &&
@@ -33,7 +36,7 @@ export function WelcomeSection({
           {/* Title */}
           <div className="w-full md:w-5/12">
             <h2 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-foreground">
-              {heading ?? "Bienvenue"}
+              {heading ?? t("heading")}
             </h2>
           </div>
 
@@ -55,7 +58,7 @@ export function WelcomeSection({
               >
                 <Image
                   src={src}
-                  alt={`Ambiance ${i + 1}`}
+                  alt={t("imageAlt", { index: i + 1 })}
                   fill
                   sizes="(min-width: 1024px) 25vw, 50vw"
                   className="object-cover"

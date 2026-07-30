@@ -1,9 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { getLocale } from "next-intl/server";
 import { getAdminContext } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicTheme } from "@/lib/menu";
+import { localizeTheme } from "@/lib/i18n-content";
 import { mergeDraft, resolveTheme } from "@/lib/theme";
 import type { Restaurant, RestaurantTheme, ResolvedTheme } from "@/lib/types";
 
@@ -47,7 +49,10 @@ export const getSiteTheme = cache(
         const theme = data
           ? mergeDraft(data as RestaurantTheme)
           : resolveTheme(null, restaurant.id);
-        return { theme, preview: true };
+        // Preview reads the row directly, so it has to apply the locale that
+        // getPublicTheme would have applied — otherwise the builder's preview
+        // always shows French no matter which language is being previewed.
+        return { theme: localizeTheme(theme, await getLocale()), preview: true };
       }
     }
 

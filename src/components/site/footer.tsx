@@ -69,7 +69,7 @@ export async function Footer({
                 <LogoIcon className="w-32 sm:w-40 h-auto" />
               </div>
               <p className="text-muted-foreground line-clamp-3 leading-relaxed">
-                {theme.about_body || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."}
+                {theme.about_body || t("aboutFallback")}
                 {" "}
                 <Link href={`${base}/about`} className="text-card-foreground underline hover:text-primary font-medium text-xs ml-1">
                   {t("learnMore")}
@@ -84,11 +84,11 @@ export async function Footer({
                     <>
                       <div className="flex justify-between max-w-[240px]">
                         <span className="font-medium text-card-foreground/80">{t("mondayFriday")}</span>
-                        <span>8:00 am to 9:00 pm</span>
+                        <span>{t("defaultHours")}</span>
                       </div>
                       <div className="flex justify-between max-w-[240px]">
                         <span className="font-medium text-card-foreground/80">{t("saturday")}</span>
-                        <span>8:00 am to 9:00 pm</span>
+                        <span>{t("defaultHours")}</span>
                       </div>
                       <div className="flex justify-between max-w-[240px]">
                         <span className="font-medium text-card-foreground/80">{t("sunday")}</span>

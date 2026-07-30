@@ -38,8 +38,13 @@ export function clientIp(request: Request): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-export function rateLimitResponse(retryAfterSeconds: number) {
-  return new Response(JSON.stringify({ error: "Trop de requêtes, réessayez dans un instant" }), {
+// `message` lets public routes answer in the visitor's language; dashboard and
+// admin routes keep the French default.
+export function rateLimitResponse(
+  retryAfterSeconds: number,
+  message = "Trop de requêtes, réessayez dans un instant",
+) {
+  return new Response(JSON.stringify({ error: message }), {
     status: 429,
     headers: {
       "Content-Type": "application/json",

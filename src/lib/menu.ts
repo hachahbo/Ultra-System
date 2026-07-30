@@ -1,8 +1,10 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveFeatures } from "@/lib/features";
+import { localizeEvents, localizeMenu, localizeTheme } from "@/lib/i18n-content";
 import { resolveTheme } from "@/lib/theme";
 import type {
   FeatureKey,
@@ -38,7 +40,13 @@ export const getRestaurantBySlug = unstable_cache(
   { revalidate: 60, tags: ["menu"] },
 );
 
-export const getPublicMenu = unstable_cache(
+// The cached reads below deliberately stay locale-agnostic — they return the
+// raw rows including the `i18n` bag, and the exported wrappers apply the
+// active locale per request (localize* in src/lib/i18n-content.ts). Putting
+// the locale inside the cache key instead would double every entry for no
+// gain, and localizing *inside* unstable_cache would serve one visitor's
+// language to everyone.
+const getPublicMenuRows = unstable_cache(
   async (slug: string): Promise<PublicMenu | null> => {
     const supabase = anonClient();
     const { data: restaurant } = await supabase
@@ -92,6 +100,11 @@ export const getPublicMenu = unstable_cache(
   { revalidate: 60, tags: ["menu"] },
 );
 
+export async function getPublicMenu(slug: string): Promise<PublicMenu | null> {
+  const menu = await getPublicMenuRows(slug);
+  return menu && localizeMenu(menu, await getLocale());
+}
+
 // Feature toggles gate what the public site renders (cart/checkout,
 // reservation form). restaurant_features has no public RLS read policy —
 // this uses the service role read-only, scoped to a single restaurant's
@@ -115,7 +128,7 @@ export const getPublicFeatures = unstable_cache(
 // read-only, scoped to one restaurant. Cancelled/completed events are hidden
 // from the public list. Cached + tagged "events"; dashboard writes call
 // revalidateTag("events", "max").
-export const getPublicEvents = unstable_cache(
+const getPublicEventRows = unstable_cache(
   async (restaurantId: string): Promise<RestaurantEvent[]> => {
     const admin = createAdminClient();
     const { data } = await admin
@@ -130,6 +143,10 @@ export const getPublicEvents = unstable_cache(
   { revalidate: 60, tags: ["events"] },
 );
 
+export async function getPublicEvents(restaurantId: string): Promise<RestaurantEvent[]> {
+  return localizeEvents(await getPublicEventRows(restaurantId), await getLocale());
+}
+
 // Theme (branding) read for the public site. restaurant_theme has RLS enabled
 // with zero policies (service-role only, like restaurant_features), so this
 // uses the admin client — same pattern as getPublicFeatures above. The
@@ -137,13 +154,13 @@ export const getPublicEvents = unstable_cache(
 // read path a non-admin visitor can reach, so a draft-in-progress must never
 // leak here. Same "menu" tag/revalidate window as the rest of the public
 // data — a theme publish calls revalidateTag("menu","max") too.
-export const getPublicTheme = unstable_cache(
+const getPublicThemeRow = unstable_cache(
   async (restaurantId: string): Promise<ResolvedTheme> => {
     const admin = createAdminClient();
     const { data } = await admin
       .from("restaurant_theme")
       .select(
-        "restaurant_id, color_primary, color_secondary, color_background, color_text, font_pair, logo_url, hero_image_urls, about_title, about_body, address, sections, custom_copy, welcome_gallery_urls, values_items, testimonials, about_gallery_urls, about_rating, about_review_count, about_map_url, specials_image_url, social_facebook_url, social_instagram_url, social_twitter_url, updated_at",
+        "restaurant_id, color_primary, color_secondary, color_background, color_text, font_pair, logo_url, hero_image_urls, about_title, about_body, address, sections, custom_copy, welcome_gallery_urls, values_items, testimonials, about_gallery_urls, about_rating, about_review_count, about_map_url, specials_image_url, social_facebook_url, social_instagram_url, social_twitter_url, i18n, updated_at",
       )
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
@@ -152,3 +169,7 @@ export const getPublicTheme = unstable_cache(
   ["public-theme"],
   { revalidate: 60, tags: ["menu"] },
 );
+
+export async function getPublicTheme(restaurantId: string): Promise<ResolvedTheme> {
+  return localizeTheme(await getPublicThemeRow(restaurantId), await getLocale());
+}

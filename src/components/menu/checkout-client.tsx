@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,23 +16,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cartSubtotal, useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
-import { phoneSchema } from "@/lib/schemas";
+import { makePhoneSchema } from "@/lib/schemas";
 import type { Restaurant } from "@/lib/types";
 
-const deliveryFormSchema = z.object({
-  customer_name: z.string().trim().min(1, "Nom requis").max(100),
-  customer_phone: phoneSchema,
-  address: z.string().trim().min(5, "Adresse requise").max(300),
-  note: z.string().trim().max(500).optional(),
-});
+// Built per render so validation messages follow the active locale.
+function buildDeliverySchema(m: { name: string; phone: string; address: string }) {
+  return z.object({
+    customer_name: z.string().trim().min(1, m.name).max(100),
+    customer_phone: makePhoneSchema(m.phone),
+    address: z.string().trim().min(5, m.address).max(300),
+    note: z.string().trim().max(500).optional(),
+  });
+}
 
-type DeliveryForm = z.infer<typeof deliveryFormSchema>;
+type DeliveryForm = z.infer<ReturnType<typeof buildDeliverySchema>>;
 
 export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   const { lines, table, increment, decrement, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const t = useTranslations("Cart");
+  const tErrors = useTranslations("Errors");
+
+  const deliveryFormSchema = useMemo(
+    () =>
+      buildDeliverySchema({
+        name: t("errorName"),
+        phone: t("errorPhone"),
+        address: t("errorAddress"),
+      }),
+    [t],
+  );
 
   const isDineIn = Boolean(table);
   const subtotal = cartSubtotal(lines);
@@ -66,13 +82,13 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Une erreur est survenue. Réessayez.");
+        toast.error(data.error ?? tErrors("generic"));
         return;
       }
       setOrderId(data.id);
       clear();
     } catch {
-      toast.error("Connexion impossible. Vérifiez votre réseau.");
+      toast.error(tErrors("network"));
     } finally {
       setSubmitting(false);
     }
@@ -83,15 +99,13 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       <div className="flex flex-col items-center py-16 text-center">
         <CheckCircle2 className="size-16 text-primary" />
         <h2 className="mt-4 font-display text-2xl font-semibold">
-          Commande envoyée !
+          {t("sentTitle")}
         </h2>
         <p className="mt-2 max-w-sm text-muted-foreground">
-          {isDineIn
-            ? "Votre commande est en cuisine. Elle arrive à votre table."
-            : "Le restaurant prépare votre commande. Paiement à la livraison, en espèces."}
+          {isDineIn ? t("sentDineIn") : t("sentDelivery")}
         </p>
         <Button asChild variant="outline" className="mt-8">
-          <Link href={`/${restaurant.slug}/menu`}>Retour au menu</Link>
+          <Link href={`/${restaurant.slug}/menu`}>{t("backToMenu")}</Link>
         </Button>
       </div>
     );
@@ -100,9 +114,9 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   if (lines.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-muted-foreground">Votre panier est vide.</p>
+        <p className="text-muted-foreground">{t("empty")}</p>
         <Button asChild className="mt-6">
-          <Link href={`/${restaurant.slug}/menu`}>Voir le menu</Link>
+          <Link href={`/${restaurant.slug}/menu`}>{t("seeMenu")}</Link>
         </Button>
       </div>
     );
@@ -112,7 +126,10 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
     <div className="mt-8 space-y-8 pb-24">
       {isDineIn && (
         <p className="rounded-2xl bg-primary/10 text-primary px-6 py-4 text-sm font-medium border border-primary/20 bg-white dark:bg-primary/10">
-          Commande sur place — <strong>table {table}</strong>. Aucune coordonnée requise.
+          {t.rich("dineInNotice", {
+            table: table ?? "",
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
       )}
 
@@ -151,7 +168,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
                 variant="ghost"
                 size="icon"
                 className="size-8 rounded-full hover:bg-background hover:shadow-sm"
-                aria-label={`Retirer un ${l.name}`}
+                aria-label={t("removeOne", { name: l.name })}
                 onClick={() => decrement(l.key)}
               >
                 <Minus className="size-4" />
@@ -163,7 +180,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
                 variant="ghost"
                 size="icon"
                 className="size-8 rounded-full hover:bg-background hover:shadow-sm"
-                aria-label={`Ajouter un ${l.name}`}
+                aria-label={t("addOne", { name: l.name })}
                 onClick={() => increment(l.key)}
               >
                 <Plus className="size-4" />
@@ -176,23 +193,23 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       {/* Totals */}
       <div className="rounded-[24px] bg-white dark:bg-card p-6 ring-1 ring-border/50 space-y-3 shadow-sm">
         <div className="flex justify-between text-muted-foreground font-medium">
-          <span>Sous-total</span>
+          <span>{t("subtotal")}</span>
           <span>{formatPrice(subtotal, restaurant.currency)}</span>
         </div>
         {!isDineIn && (
           <div className="flex justify-between text-muted-foreground font-medium">
-            <span>Livraison</span>
+            <span>{t("delivery")}</span>
             <span>{formatPrice(deliveryFee, restaurant.currency)}</span>
           </div>
         )}
         <Separator className="my-3 opacity-50" />
         <div className="flex justify-between text-xl font-black">
-          <span>Total</span>
+          <span>{t("total")}</span>
           <span className="text-[#FF6B35]">{formatPrice(total, restaurant.currency)}</span>
         </div>
         {!isDineIn && (
           <p className="pt-2 text-xs font-medium text-muted-foreground">
-            Paiement à la livraison, en espèces.
+            {t("cashOnDelivery")}
           </p>
         )}
       </div>
@@ -200,12 +217,12 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       {isDineIn ? (
         <div className="space-y-6">
           <div className="space-y-3">
-            <Label htmlFor="dine-note" className="text-base font-semibold">Note pour la cuisine (optionnel)</Label>
+            <Label htmlFor="dine-note" className="text-base font-semibold">{t("kitchenNote")}</Label>
             <Textarea
               id="dine-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Sans oignons, bien cuit…"
+              placeholder={t("kitchenNotePlaceholder")}
               className="min-h-[120px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
           </div>
@@ -215,7 +232,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             disabled={submitting}
             onClick={() => submitOrder()}
           >
-            {submitting ? "Envoi…" : "Envoyer en cuisine"}
+            {submitting ? t("sending") : t("sendToKitchen")}
           </Button>
         </div>
       ) : (
@@ -225,7 +242,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
           noValidate
         >
           <div className="space-y-3">
-            <Label htmlFor="customer_name" className="text-sm font-semibold text-muted-foreground ml-1">Nom *</Label>
+            <Label htmlFor="customer_name" className="text-sm font-semibold text-muted-foreground ml-1">{t("name")}</Label>
             <Input
               id="customer_name"
               autoComplete="name"
@@ -236,13 +253,13 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             <FieldError message={form.formState.errors.customer_name?.message} />
           </div>
           <div className="space-y-3">
-            <Label htmlFor="customer_phone" className="text-sm font-semibold text-muted-foreground ml-1">Téléphone *</Label>
+            <Label htmlFor="customer_phone" className="text-sm font-semibold text-muted-foreground ml-1">{t("phone")}</Label>
             <Input
               id="customer_phone"
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              placeholder="06 12 34 56 78"
+              placeholder={t("phonePlaceholder")}
               aria-invalid={!!form.formState.errors.customer_phone}
               {...form.register("customer_phone")}
               className="h-14 rounded-2xl bg-white dark:bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
@@ -252,11 +269,11 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             />
           </div>
           <div className="space-y-3">
-            <Label htmlFor="address" className="text-sm font-semibold text-muted-foreground ml-1">Adresse de livraison *</Label>
+            <Label htmlFor="address" className="text-sm font-semibold text-muted-foreground ml-1">{t("address")}</Label>
             <Textarea
               id="address"
               autoComplete="street-address"
-              placeholder="Rue, immeuble, étage, quartier…"
+              placeholder={t("addressPlaceholder")}
               aria-invalid={!!form.formState.errors.address}
               {...form.register("address")}
               className="min-h-[100px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
@@ -264,7 +281,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             <FieldError message={form.formState.errors.address?.message} />
           </div>
           <div className="space-y-3">
-            <Label htmlFor="note" className="text-sm font-semibold text-muted-foreground ml-1">Note (optionnel)</Label>
+            <Label htmlFor="note" className="text-sm font-semibold text-muted-foreground ml-1">{t("note")}</Label>
             <Textarea 
               id="note" 
               {...form.register("note")} 
@@ -275,8 +292,8 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
           <div className="pt-4">
             <Button size="lg" className="w-full rounded-full h-14 text-lg font-bold shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]" type="submit" disabled={submitting}>
               {submitting
-                ? "Envoi…"
-                : `Commander · ${formatPrice(total, restaurant.currency)}`}
+                ? t("sending")
+                : t("order", { price: formatPrice(total, restaurant.currency) })}
             </Button>
           </div>
         </form>

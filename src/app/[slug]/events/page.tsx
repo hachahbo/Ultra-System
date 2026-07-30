@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getRestaurantBySlug, getPublicFeatures, getPublicEvents } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { EventsSection } from "@/components/site/sections/events-section";
 import { FeatureUnavailable } from "@/components/site/feature-unavailable";
 
-export const metadata: Metadata = { title: "Événements & Soirées" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Events");
+  return { title: t("metaTitle") };
+}
 
 export default async function EventsPage({
   params,
@@ -21,7 +25,8 @@ export default async function EventsPage({
     await getPublicFeatures(restaurant.id, restaurant.plan),
   );
   if (!features.events) {
-    return <FeatureUnavailable message="Les événements ne sont pas disponibles pour ce restaurant." />;
+    const t = await getTranslations("Events");
+    return <FeatureUnavailable message={t("unavailable")} />;
   }
 
   const events = await getPublicEvents(restaurant.id);

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
@@ -23,13 +24,18 @@ export function HeroContent({
   activeStep,
   steps,
   ctaLabel,
+  hours,
+  address,
 }: {
   base: string;
   activeStep: number;
   steps: Array<{ title: string; highlightWord: string; subtitle: string; label: string }>;
   ctaLabel?: string;
+  hours?: string | null;
+  address?: string | null;
 }) {
   const currentStep = steps[activeStep] ?? steps[0];
+  const t = useTranslations("Hero");
 
   const renderHeadline = (text: string, highlight: string) => {
     if (text.includes("\n")) {
@@ -135,45 +141,54 @@ export function HeroContent({
           asChild
           className="liquid-glass liquid-glass--light rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold transition-all duration-300 shrink-0 hover:scale-[1.02] border-none !text-white lg:!text-[#1c1712] lg:dark:!text-[#F4ECE3]"
         >
-          <Link href={`${base}/menu`} className="!text-white lg:!text-[#1c1712] lg:dark:!text-[#F4ECE3]">{ctaLabel ?? "Menu"}</Link>
+          <Link href={`${base}/menu`} className="!text-white lg:!text-[#1c1712] lg:dark:!text-[#F4ECE3]">{ctaLabel ?? t("ctaMenu")}</Link>
         </Button>
         <Button
           asChild
           className="liquid-glass liquid-glass--orange rounded-full px-7 py-5 sm:px-9 sm:py-6 text-sm sm:text-base font-semibold group transition-all duration-300 flex items-center gap-2 shrink-0 hover:scale-[1.02] border-none !text-white"
         >
           <Link href={`${base}/reservation`} className="!text-white">
-            Book a table <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>
+            {t("ctaReserve")} <span className="transition-transform duration-300 group-hover:translate-x-1 inline-block">→</span>
           </Link>
         </Button>
       </motion.div>
 
-      {/* 3. Opening Hours & Location Info */}
-      <motion.div 
-        variants={itemVariants} 
-        className="animate-blur-fade-up hidden lg:flex flex-col sm:flex-row gap-8 sm:gap-12 mt-8 ml-3"
-        style={{ animationDelay: '750ms' }}
-      >
-        <div className="flex flex-col gap-1">
-          <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
-            Opening hours
-          </h4>
-          <p className="text-muted-foreground font-medium text-sm md:text-base">
-            lun–dim · 11h00 – 23h00
-          </p>
-        </div>
-        
-        <div className="hidden sm:block w-[1px] bg-border/40 self-stretch" />
-        
-        <div className="flex flex-col gap-1">
-          <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
-            Location
-          </h4>
-          <p className="text-muted-foreground font-medium text-sm md:text-base flex items-center gap-2">
-            <MapPin className="h-4.5 w-4.5 text-[#FF6B35]" />
-            Rue Lafayette, Tanger
-          </p>
-        </div>
-      </motion.div>
+      {/* 3. Opening Hours & Location Info — this restaurant's own data, or
+          nothing at all. Never another restaurant's address. */}
+      {(hours || address) && (
+        <motion.div
+          variants={itemVariants}
+          className="animate-blur-fade-up hidden lg:flex flex-col sm:flex-row gap-8 sm:gap-12 mt-8 ml-3"
+          style={{ animationDelay: '750ms' }}
+        >
+          {hours && (
+            <div className="flex flex-col gap-1">
+              <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
+                {t("openingHours")}
+              </h4>
+              <p className="text-muted-foreground font-medium text-sm md:text-base">
+                {hours}
+              </p>
+            </div>
+          )}
+
+          {hours && address && (
+            <div className="hidden sm:block w-[1px] bg-border/40 self-stretch" />
+          )}
+
+          {address && (
+            <div className="flex flex-col gap-1">
+              <h4 className="text-[10px] font-black tracking-[0.25em] text-foreground/50 uppercase">
+                {t("location")}
+              </h4>
+              <p className="text-muted-foreground font-medium text-sm md:text-base flex items-center gap-2">
+                <MapPin className="h-4.5 w-4.5 text-[#FF6B35]" />
+                {address}
+              </p>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* 5. Socials & Horizontal Line */}
       <motion.div

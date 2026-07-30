@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { NavBar } from "@/components/site/nav-bar";
 import { Footer } from "@/components/site/footer";
 import { getPublicTheme, getRestaurantBySlug } from "@/lib/menu";
@@ -28,11 +29,11 @@ export async function generateMetadata({
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) return {};
   const theme = await getPublicTheme(restaurant.id);
+  const t = await getTranslations("Site");
   return {
     title: { default: restaurant.name, template: `%s · ${restaurant.name}` },
     description:
-      theme.about_body ??
-      `${restaurant.name} — menu, commande et réservation en ligne.`,
+      theme.about_body ?? t("metaDescription", { name: restaurant.name }),
   };
 }
 
@@ -48,6 +49,7 @@ export default async function RestaurantLayout({
   if (!restaurant) notFound();
 
   const { theme, preview } = await getSiteTheme(restaurant);
+  const t = await getTranslations("Site");
 
   // Suspended = the whole public site is down for customers, but super admin can still preview
   if (restaurant.status === "suspended" && !preview) {
@@ -58,7 +60,7 @@ export default async function RestaurantLayout({
             {restaurant.name}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Ce site est momentanément indisponible.
+            {t("unavailable")}
           </p>
         </div>
       </div>
@@ -80,7 +82,7 @@ export default async function RestaurantLayout({
       {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       {preview && (
         <div className="sticky top-0 z-50 bg-amber-500 py-1 text-center text-xs font-medium text-black">
-          Prévisualisation — brouillon non publié
+          {t("previewBanner")}
         </div>
       )}
       <NavBar slug={restaurant.slug} name={restaurant.name} logoUrl={theme.logo_url} />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
@@ -10,23 +11,26 @@ import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 // — the restaurant is resolved server-side from the slug, same pattern as the
 // public reservation intake (/api/reservations).
 export async function POST(request: Request) {
+  // Errors go straight into a toast on the public site, so they follow the
+  // visitor's locale cookie like the rest of the page.
+  const t = await getTranslations("Errors");
   const ip = clientIp(request);
   const ipLimit = await checkRateLimit(`event-inquiry:ip:${ip}`, 5, 60);
   if (!ipLimit.allowed) {
-    return rateLimitResponse(ipLimit.retryAfterSeconds);
+    return rateLimitResponse(ipLimit.retryAfterSeconds, t("rateLimited"));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
+    return NextResponse.json({ error: t("invalidBody") }, { status: 400 });
   }
 
   const parsed = eventInquirySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Données invalides", details: parsed.error.flatten() },
+      { error: t("invalidData"), details: parsed.error.flatten() },
       { status: 400 },
     );
   }
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
     .eq("slug", input.restaurant_slug)
     .maybeSingle();
   if (!restaurant) {
-    return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t("restaurantNotFound") }, { status: 404 });
   }
 
   const features = applyStatusGate(
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
     await getPublicFeatures(restaurant.id, restaurant.plan),
   );
   if (!features.events) {
-    return NextResponse.json({ error: "Événements indisponibles" }, { status: 403 });
+    return NextResponse.json({ error: t("eventsUnavailable") }, { status: 403 });
   }
 
   const { data: inquiry, error } = await supabase
@@ -68,7 +72,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !inquiry) {
-    return NextResponse.json({ error: "Erreur d'enregistrement" }, { status: 500 });
+    return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
   }
 
   return NextResponse.json({ id: inquiry.id }, { status: 201 });

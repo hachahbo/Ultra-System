@@ -3,10 +3,12 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { assertFeature, requireRole } from "@/lib/dashboard";
+import { categoryI18nBagSchema } from "@/lib/schemas";
 
 const createSchema = z.object({
   name_fr: z.string().trim().min(1).max(80),
   name_ar: z.string().trim().max(80).optional(),
+  i18n: categoryI18nBagSchema.optional(),
 });
 
 export async function POST(request: Request) {
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
       name_fr: parsed.data.name_fr,
       name_ar: parsed.data.name_ar || null,
       sort_order: (count ?? 0) + 1,
+      i18n: parsed.data.i18n ?? {},
     })
     .select("id")
     .single();
