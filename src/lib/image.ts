@@ -46,3 +46,19 @@ export async function compressImage(
     return file;
   }
 }
+
+export const DISH_FALLBACK_IMAGES = [
+  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
+  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
+  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
+  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
+  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
+  "/hero-pop-default.webp",
+];
+
+export function getDishImage(item: { id: string; image_url?: string | null }): string {
+  if (item.image_url && !item.image_url.includes("dish-")) return item.image_url;
+  let hash = 0;
+  for (let i = 0; i < item.id.length; i++) hash = (hash * 31 + item.id.charCodeAt(i)) | 0;
+  return DISH_FALLBACK_IMAGES[Math.abs(hash) % DISH_FALLBACK_IMAGES.length];
+}

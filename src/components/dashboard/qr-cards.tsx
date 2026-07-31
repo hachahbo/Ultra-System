@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 import { QRCodeCanvas } from "qrcode.react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export function QrCards({
   tables: DiningTable[];
   restaurantSlug: string;
 }) {
+  const t = useTranslations("QrCards");
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
   const promoRef = useRef<HTMLCanvasElement | null>(null);
@@ -33,27 +35,27 @@ export function QrCards({
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-lg font-semibold">QR codes</h2>
+          <h2 className="font-display text-lg font-semibold">{t("title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Un QR par table, plus un QR promo pour les sacs de livraison.
+            {t("subtitle")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => window.print()} className="w-full sm:w-auto">
-          <Printer className="size-4" /> Imprimer tout
+          <Printer className="size-4" /> {t("printAll")}
         </Button>
       </div>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 print:grid-cols-2">
-        {tables.map((t) => {
-          const url = `${origin}/${restaurantSlug}/menu?table=${encodeURIComponent(t.number)}`;
+        {tables.map((table) => {
+          const url = `${origin}/${restaurantSlug}/menu?table=${encodeURIComponent(table.number)}`;
           return (
             <div
-              key={t.id}
+              key={table.id}
               className="flex flex-col items-center gap-2 rounded-xl border p-4 text-center print:break-inside-avoid"
             >
               <QRCodeCanvas
                 ref={(el) => {
-                  canvasRefs.current[t.id] = el;
+                  canvasRefs.current[table.id] = el;
                 }}
                 value={url}
                 size={QR_SIZE}
@@ -61,17 +63,17 @@ export function QrCards({
                 style={{ width: "128px", height: "128px" }}
                 className="rounded-lg shadow-sm"
               />
-              <p className="text-[13px] font-bold text-foreground">Table {t.number}</p>
+              <p className="text-[13px] font-bold text-foreground">{t("table", { number: table.number })}</p>
               <Button
                 variant="ghost"
                 size="sm"
                 className="print:hidden w-full rounded-lg font-bold text-muted-foreground hover:text-foreground mt-2"
                 onClick={() => {
-                  const canvas = canvasRefs.current[t.id];
-                  if (canvas) download(canvas, `table-${t.number}.png`);
+                  const canvas = canvasRefs.current[table.id];
+                  if (canvas) download(canvas, `table-${table.number}.png`);
                 }}
               >
-                <Download className="size-4 mr-2" /> Télécharger
+                <Download className="size-4 mr-2" /> {t("download")}
               </Button>
             </div>
           );
@@ -86,7 +88,7 @@ export function QrCards({
             style={{ width: "128px", height: "128px" }}
             className="rounded-lg shadow-sm"
           />
-          <p className="text-[13px] font-bold text-primary">QR Livraison / Promo</p>
+          <p className="text-[13px] font-bold text-primary">{t("promoTitle")}</p>
           <Button
             variant="ghost"
             size="sm"
@@ -95,7 +97,7 @@ export function QrCards({
               if (promoRef.current) download(promoRef.current, "promo-livraison.png");
             }}
           >
-            <Download className="size-4 mr-2" /> Télécharger
+            <Download className="size-4 mr-2" /> {t("download")}
           </Button>
         </div>
       </div>

@@ -8,22 +8,7 @@ import { formatPrice } from "@/lib/format";
 import type { Item } from "@/lib/types";
 import { useCart } from "@/store/cart";
 import { ItemDialog } from "@/components/menu/item-dialog";
-
-const DISH_FALLBACK_IMAGES = [
-  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
-  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
-  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
-  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
-  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
-  "/hero-pop-default.webp",
-];
-
-function getDishImage(item: Item) {
-  if (item.image_url && !item.image_url.includes("dish-")) return item.image_url;
-  let hash = 0;
-  for (let i = 0; i < item.id.length; i++) hash = (hash * 31 + item.id.charCodeAt(i)) | 0;
-  return DISH_FALLBACK_IMAGES[Math.abs(hash) % DISH_FALLBACK_IMAGES.length];
-}
+import { getDishImage } from "@/lib/image";
 
 // Home-page dish card (design: photo medallion, price badge, name) — 
 // opens the item details modal on click, and adds to cart via the + button.
@@ -88,7 +73,7 @@ export function DishCard({
                   src={imgSrc}
                   alt={item.name_fr}
                   fill
-                  sizes="200px"
+                  sizes="384px"
                   className="object-cover scale-[1.30]"
                 />
               ) : (

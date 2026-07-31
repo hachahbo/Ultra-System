@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, LayoutGrid, ChevronDown, X, ShoppingBag } from "lucide-react";
+import { Search, LayoutGrid, ChevronDown, X, ShoppingBag, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { ItemDialog } from "@/components/menu/item-dialog";
 import { useCart, cartSubtotal } from "@/store/cart";
 import type { Category, Item } from "@/lib/types";
 import Image from "next/image";
+import { getDishImage } from "@/lib/image";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -209,12 +210,8 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                     )}
                   >
                     {/* Item Thumbnail */}
-                    <div className="relative size-14 sm:size-16 rounded-xl bg-[#2a1f16] flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-white/5">
-                      {item.image_url ? (
-                        <Image src={item.image_url} alt={item.name_fr} fill sizes="64px" className="object-cover" />
-                      ) : (
-                        <span className="text-xl sm:text-2xl">🍽️</span>
-                      )}
+                    <div className="relative size-14 sm:size-16 rounded-full bg-[#2a1f16] flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-white/10 ring-2 ring-white/10">
+                      <Image src={getDishImage(item)} alt={item.name_fr} fill sizes="256px" className="object-cover rounded-full scale-[1.30] transition-transform duration-300 group-hover:scale-[1.40]" />
                     </div>
 
                     {/* Item Details */}
@@ -233,14 +230,15 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                     )}
 
                     {/* + Add Button */}
-                    <div className="absolute right-3 bottom-3">
+                    <div className="absolute right-3.5 bottom-3.5">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); if (item.in_stock) setSelectedItem(item); }}
                         disabled={!item.in_stock}
-                        className="size-8 rounded-full border border-[#ec5b1a] bg-[#ec5b1a]/15 text-[#ec5b1a] text-base font-bold flex items-center justify-center hover:bg-[#ec5b1a] hover:text-white transition-colors disabled:opacity-40"
+                        aria-label={`Ajouter ${item.name_fr}`}
+                        className="size-9 rounded-full bg-[#ec5b1a] text-white flex items-center justify-center shadow-md transition-all hover:bg-[#d94a09] hover:scale-105 active:scale-95 disabled:opacity-40"
                       >
-                        +
+                        <Plus className="size-4 stroke-[2.5]" />
                       </button>
                     </div>
                   </div>
@@ -386,12 +384,8 @@ export function PosView({ onClose }: { onClose?: () => void }) {
               <div className="flex flex-col gap-1">
                 {cartLines.map((line) => (
                   <div key={line.key} className="flex gap-2.5 py-2 border-b border-[#f2eee6] dark:border-white/10 last:border-0">
-                    <div className="size-10 rounded-xl shrink-0 flex items-center justify-center text-lg bg-[#2a1f16] text-white shadow-xs relative overflow-hidden">
-                      {line.image_url ? (
-                        <Image src={line.image_url} alt={line.name} fill sizes="40px" className="object-cover" />
-                      ) : (
-                        <span>🍽️</span>
-                      )}
+                    <div className="size-10 rounded-full shrink-0 flex items-center justify-center text-lg bg-[#2a1f16] text-white shadow-xs relative overflow-hidden ring-1 ring-white/10">
+                      <Image src={getDishImage({ id: line.item_id, image_url: line.image_url })} alt={line.name} fill sizes="160px" className="object-cover rounded-full scale-125" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className="flex justify-between items-start gap-2">

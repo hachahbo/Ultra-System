@@ -664,5 +664,44 @@
     "close": "Fermer",
     "inStock": "En stock",
     "stockLow": "Stock bas"
+  },
+  "Variances": {
+    "title": "Écarts de stock",
+    "empty": "Aucun écart de stock",
+    "emptyHint": "Quand une commande consomme plus d'ingrédients que le stock disponible, l'écart apparaîtra ici — le stock est clampé à zéro, la commande n'est jamais bloquée.",
+    "colDate": "DATE",
+    "colIngredient": "INGRÉDIENT",
+    "colArticle": "ARTICLE",
+    "colDeficit": "DÉFICIT",
+    "colReason": "MOTIF",
+    "available": "({stock} dispo)",
+    "reasonNegativeStock": "Stock insuffisant à la commande"
+  },
+  "QrCards": {
+    "title": "QR codes",
+    "subtitle": "Un QR par table, plus un QR promo pour les sacs de livraison.",
+    "printAll": "Imprimer tout",
+    "table": "Table {number}",
+    "download": "Télécharger",
+    "promoTitle": "QR Livraison / Promo"
+  },
+  "HourlyChart": {
+    "orderCount": "{count, plural, one {# commande} other {# commandes}}",
+    "title": "Rythme de la journée",
+    "empty": "Journée calme pour l'instant",
+    "emptyHint": "Les commandes s'afficheront ici en temps réel."
+  },
+  "Labor": {
+    "title": "Présence & coût horaire",
+    "onDutyNow": "En service maintenant",
+    "since": "depuis {duration}",
+    "colMember": "MEMBRE",
+    "colRate": "TAUX (MAD/H)",
+    "colHours": "HEURES (14J)",
+    "colCost": "COÛT (14J)",
+    "loading": "Chargement…",
+    "noStaff": "Aucun membre du personnel.",
+    "rateUpdateFailed": "Mise à jour du taux impossible",
+    "costNote": "Le coût n'est calculé que pour les membres avec un taux horaire renseigné."
   }
 }

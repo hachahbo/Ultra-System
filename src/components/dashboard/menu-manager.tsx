@@ -53,6 +53,7 @@ import { formatPrice } from "@/lib/format";
 import type { Category, FeatureKey, Item, MenuItemCost } from "@/lib/types";
 import { canWrite, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { getDishImage } from "@/lib/image";
 
 type MenuData = {
   restaurant_id: string;
@@ -305,12 +306,8 @@ export function MenuManager() {
                         )}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="relative flex size-[46px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border/50 bg-background shadow-sm">
-                            {item.image_url ? (
-                              <Image src={item.image_url} alt={item.name_fr} fill sizes="46px" className="object-cover" />
-                            ) : (
-                              <ImageIcon className="size-5 text-muted-foreground/50" />
-                            )}
+                          <div className="relative flex size-[46px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/50 bg-background shadow-sm">
+                            <Image src={getDishImage(item)} alt={item.name_fr} fill sizes="200px" className="object-cover rounded-full scale-120" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="text-[14px] font-extrabold text-foreground">{item.name_fr}</div>
@@ -414,18 +411,14 @@ export function MenuManager() {
                       className={`border-border transition-colors hover:bg-muted/50 ${item.in_stock ? "" : "opacity-60 grayscale-[0.2]"}`}
                     >
                       <TableCell className="pl-5 py-4">
-                        <div className="relative size-[46px] shrink-0 overflow-hidden rounded-[10px] border border-border/50 shadow-sm bg-background flex items-center justify-center">
-                          {item.image_url ? (
-                            <Image
-                              src={item.image_url}
-                              alt={item.name_fr}
-                              fill
-                              sizes="46px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <ImageIcon className="size-5 text-muted-foreground/50" />
-                          )}
+                        <div className="relative size-[46px] shrink-0 overflow-hidden rounded-full border border-border/50 shadow-sm bg-background flex items-center justify-center">
+                          <Image
+                            src={getDishImage(item)}
+                            alt={item.name_fr}
+                            fill
+                            sizes="200px"
+                            className="object-cover rounded-full scale-120"
+                          />
                         </div>
                       </TableCell>
                       <TableCell>

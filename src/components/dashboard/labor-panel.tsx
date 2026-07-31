@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { dateFnsLocale } from "@/lib/date-locale";
@@ -35,6 +35,7 @@ function displayNameOf(email: string) {
 }
 
 export function LaborPanel({ staff }: { staff: StaffRow[] }) {
+  const t = useTranslations("Labor");
   const locale = useLocale();
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({
@@ -56,7 +57,7 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-labor"] });
     },
-    onError: () => toast.error("Mise à jour du taux impossible"),
+    onError: () => toast.error(t("rateUpdateFailed")),
   });
 
   const active = data?.active ?? [];
@@ -72,11 +73,11 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
 
   return (
     <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <h2 className="font-display text-xl font-bold text-foreground mb-4">Présence &amp; coût horaire</h2>
+      <h2 className="font-display text-xl font-bold text-foreground mb-4">{t("title")}</h2>
 
       {active.length > 0 && (
         <div className="rounded-2xl bg-card border border-border p-5 shadow-sm mb-4">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-3">En service maintenant</p>
+          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("onDutyNow")}</p>
           <div className="flex flex-wrap gap-2.5">
             {active.map((s) => (
               <div
@@ -86,7 +87,9 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
                 <Clock className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[12.5px] font-bold text-foreground">{displayNameOf(s.email)}</span>
                 <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                  depuis {formatDistanceToNowStrict(new Date(s.clock_in), { locale: dateFnsLocale(locale) })}
+                  {t("since", {
+                    duration: formatDistanceToNowStrict(new Date(s.clock_in), { locale: dateFnsLocale(locale) }),
+                  })}
                 </span>
               </div>
             ))}
@@ -96,17 +99,17 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="grid grid-cols-[2fr_1.1fr_1fr_1fr] gap-4 border-b border-border bg-muted/30 px-6 py-3.5">
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">MEMBRE</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">TAUX (MAD/H)</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">HEURES (14J)</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">COÛT (14J)</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colMember")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colRate")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colHours")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colCost")}</div>
         </div>
 
         {isPending && (
-          <p className="py-10 text-center text-[13px] text-muted-foreground">Chargement…</p>
+          <p className="py-10 text-center text-[13px] text-muted-foreground">{t("loading")}</p>
         )}
         {!isPending && staff.length === 0 && (
-          <p className="py-10 text-center text-[13.5px] text-muted-foreground">Aucun membre du personnel.</p>
+          <p className="py-10 text-center text-[13.5px] text-muted-foreground">{t("noStaff")}</p>
         )}
 
         {staff.map((s, idx) => {
@@ -151,7 +154,7 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
         })}
       </div>
       <p className="mt-2 text-[11.5px] text-muted-foreground">
-        Le coût n&apos;est calculé que pour les membres avec un taux horaire renseigné.
+        {t("costNote")}
       </p>
     </section>
   );

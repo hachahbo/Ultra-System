@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { dateFnsLocale } from "@/lib/date-locale";
 import { AlertTriangle } from "lucide-react";
@@ -20,8 +20,9 @@ type Variance = {
   order: { id: string; created_at: string } | null;
 };
 
+// Message key into Variances.*, not display text.
 const REASON_LABELS: Record<string, string> = {
-  stock_went_negative: "Stock insuffisant à la commande",
+  stock_went_negative: "reasonNegativeStock",
 };
 
 async function fetchVariances(): Promise<Variance[]> {
@@ -32,6 +33,7 @@ async function fetchVariances(): Promise<Variance[]> {
 }
 
 export function VariancesView() {
+  const t = useTranslations("Variances");
   const locale = useLocale();
   const { data, isPending } = useQuery({
     queryKey: ["inventory-variances"],
@@ -54,8 +56,8 @@ export function VariancesView() {
     return (
       <EmptyState
         icon={AlertTriangle}
-        title="Aucun écart de stock"
-        hint="Quand une commande consomme plus d'ingrédients que le stock disponible, l'écart apparaîtra ici — le stock est clampé à zéro, la commande n'est jamais bloquée."
+        title={t("empty")}
+        hint={t("emptyHint")}
         className="mt-6"
       />
     );
@@ -66,11 +68,11 @@ export function VariancesView() {
       <Table>
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent border-border">
-            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider pl-5">DATE</TableHead>
-            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">INGRÉDIENT</TableHead>
-            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ARTICLE</TableHead>
-            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">DÉFICIT</TableHead>
-            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider pr-5">MOTIF</TableHead>
+            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider pl-5">{t("colDate")}</TableHead>
+            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colIngredient")}</TableHead>
+            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colArticle")}</TableHead>
+            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colDeficit")}</TableHead>
+            <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider pr-5">{t("colReason")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -88,11 +90,11 @@ export function VariancesView() {
               <TableCell className="text-[12.5px] font-bold text-destructive">
                 {(v.expected_deduction - v.available_stock).toFixed(2)} {v.inventory_item?.unit ?? ""}
                 <span className="ml-1.5 font-normal text-muted-foreground">
-                  ({v.available_stock} dispo)
+                  {t("available", { stock: v.available_stock })}
                 </span>
               </TableCell>
               <TableCell className="pr-5 text-[12px] text-muted-foreground">
-                {REASON_LABELS[v.reason] ?? v.reason}
+                {REASON_LABELS[v.reason] ? t(REASON_LABELS[v.reason]) : v.reason}
               </TableCell>
             </TableRow>
           ))}

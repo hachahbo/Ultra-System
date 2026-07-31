@@ -664,5 +664,44 @@
     "close": "Close",
     "inStock": "In stock",
     "stockLow": "Low stock"
+  },
+  "Variances": {
+    "title": "Stock variances",
+    "empty": "No stock variance",
+    "emptyHint": "When an order consumes more ingredients than the available stock, the variance appears here — stock is clamped to zero, the order is never blocked.",
+    "colDate": "DATE",
+    "colIngredient": "INGREDIENT",
+    "colArticle": "ITEM",
+    "colDeficit": "DEFICIT",
+    "colReason": "REASON",
+    "available": "({stock} available)",
+    "reasonNegativeStock": "Insufficient stock at time of order"
+  },
+  "QrCards": {
+    "title": "QR codes",
+    "subtitle": "One QR per table, plus a promo QR for delivery bags.",
+    "printAll": "Print all",
+    "table": "Table {number}",
+    "download": "Download",
+    "promoTitle": "Delivery / Promo QR"
+  },
+  "HourlyChart": {
+    "orderCount": "{count, plural, one {# order} other {# orders}}",
+    "title": "Daily rhythm",
+    "empty": "Quiet day so far",
+    "emptyHint": "Orders will appear here in real time."
+  },
+  "Labor": {
+    "title": "Attendance & hourly cost",
+    "onDutyNow": "On duty now",
+    "since": "since {duration}",
+    "colMember": "MEMBER",
+    "colRate": "RATE (MAD/H)",
+    "colHours": "HOURS (14D)",
+    "colCost": "COST (14D)",
+    "loading": "Loading…",
+    "noStaff": "No staff members.",
+    "rateUpdateFailed": "Could not update the rate",
+    "costNote": "Cost is only calculated for members with a set hourly rate."
   }
 }

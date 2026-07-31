@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
@@ -10,6 +11,7 @@ import { chartMargin, axisTick, primaryChartConfig } from "@/components/dashboar
 const TICKS = [0, 4, 8, 12, 16, 20];
 
 function HourlyTooltip({ active, payload, label }: TooltipContentProps) {
+  const t = useTranslations("HourlyChart");
   if (!active || !payload?.length) return null;
   const orders = Number(payload[0].value);
   return (
@@ -17,24 +19,25 @@ function HourlyTooltip({ active, payload, label }: TooltipContentProps) {
       <span className="font-medium tabular-nums">{label}h</span>
       <span className="text-muted-foreground">
         {" "}
-        · {orders} commande{orders > 1 ? "s" : ""}
+        · {t("orderCount", { count: orders })}
       </span>
     </div>
   );
 }
 
 export function HourlyChart({ data }: { data: { hour: number; orders: number }[] }) {
+  const t = useTranslations("HourlyChart");
   const total = data.reduce((sum, d) => sum + d.orders, 0);
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
-      <h2 className="text-sm font-medium text-muted-foreground">Rythme de la journée</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">{t("title")}</h2>
       {total === 0 ? (
         <div className="mt-3">
           <EmptyState
             icon={Clock}
-            title="Journée calme pour l'instant"
-            hint="Les commandes s'afficheront ici en temps réel."
+            title={t("empty")}
+            hint={t("emptyHint")}
           />
         </div>
       ) : (

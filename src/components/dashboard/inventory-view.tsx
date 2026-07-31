@@ -744,7 +744,7 @@ function ItemFormDialog({
     });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Création impossible");
+      toast.error(t("createFailed"));
       return;
     }
     onSaved();
@@ -754,16 +754,16 @@ function ItemFormDialog({
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-md">
         <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
-          <DialogTitle className="font-display text-xl font-bold">Nouvel article</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("newArticle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 p-6">
           <div className="space-y-2">
             <Label className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-              Catégorie
+              {t("category")}
             </Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger className="h-12 w-full rounded-xl border-border bg-background text-[14px] font-medium">
-                <SelectValue placeholder="Choisir une catégorie" />
+                <SelectValue placeholder={t("pickCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {sorted.map((c) => (
@@ -776,32 +776,32 @@ function ItemFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="item-name" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-              Nom de l&apos;article
+              {t("articleName")}
             </Label>
             <Input
               id="item-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Tomates"
+              placeholder={t("articleNamePlaceholder")}
               className="h-12 rounded-xl border-border bg-background text-[14px] font-medium shadow-sm"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="item-unit" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-                Unité
+                {t("unit")}
               </Label>
               <Input
                 id="item-unit"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                placeholder="kg, Litres…"
+                placeholder={t("unitPlaceholder")}
                 className="h-12 rounded-xl border-border bg-background text-[14px] font-medium shadow-sm"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-price" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-                Prix unitaire (MAD)
+                {t("unitPrice")}
               </Label>
               <Input
                 id="item-price"
@@ -816,7 +816,7 @@ function ItemFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="item-stock" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-                Stock initial
+                {t("initialStock")}
               </Label>
               <Input
                 id="item-stock"
@@ -829,7 +829,7 @@ function ItemFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-min" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-                Seuil minimum
+                {t("minThreshold")}
               </Label>
               <Input
                 id="item-min"
@@ -844,14 +844,14 @@ function ItemFormDialog({
         </div>
         <div className="flex justify-end gap-3 border-t border-border bg-muted/20 px-6 py-4">
           <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={onClose}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             className="rounded-xl px-6 font-bold"
             onClick={save}
             disabled={saving || !name.trim() || !unit.trim() || !categoryId}
           >
-            {saving ? "Création…" : "Créer l'article"}
+            {saving ? t("creating") : t("createArticle")}
           </Button>
         </div>
       </DialogContent>
@@ -870,6 +870,7 @@ function PurchaseOrderDialog({
   items: InventoryItem[];
   categories: InventoryCategory[];
 }) {
+  const t = useTranslations("Inventory");
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? "—";
   const toReorder = items.filter((i) => statusOf(i) !== "in");
 
@@ -877,12 +878,12 @@ function PurchaseOrderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-lg">
         <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
-          <DialogTitle className="font-display text-xl font-bold">Bon de commande</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("purchaseOrder")}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[50vh] overflow-y-auto p-6">
           {toReorder.length === 0 ? (
             <p className="text-[13px] text-muted-foreground">
-              Tous les articles sont au-dessus de leur seuil minimum.
+              {t("allAboveThreshold")}
             </p>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -900,10 +901,10 @@ function PurchaseOrderDialog({
                     </div>
                     <div className="text-right">
                       <span className={cn("rounded-full px-2.5 py-1 text-[10.5px] font-bold", STATUS_CLASSES[status])}>
-                        {STOCK_STATUS_LABEL[status]}
+                        {t(STOCK_STATUS_LABEL[status])}
                       </span>
                       <div className="mt-1 text-[11.5px] font-semibold text-muted-foreground">
-                        Suggéré : {toBuy} {item.unit}
+                        {t("suggested", { qty: toBuy, unit: item.unit })}
                       </div>
                     </div>
                   </div>
