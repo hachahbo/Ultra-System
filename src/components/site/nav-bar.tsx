@@ -61,24 +61,32 @@ export function NavBar({
     let lastScrollY = window.scrollY;
 
     const updateScrollDirection = () => {
+      if (open) {
+        setIsVisible(true);
+        return;
+      }
+
       const scrollY = window.scrollY;
+      const delta = scrollY - lastScrollY;
+
       setIsScrolled(scrollY > 20);
 
       if (scrollY <= 40) {
         setIsVisible(true);
-      } else if (scrollY > lastScrollY && scrollY > 80) {
-        // Scrolling down -> hide navbar
+      } else if (delta > 6 && scrollY > 80) {
+        // Scrolling down past threshold -> hide navbar
         setIsVisible(false);
-      } else if (scrollY < lastScrollY) {
-        // Scrolling up -> show navbar
+      } else if (delta < -6) {
+        // Scrolling up past threshold -> show navbar
         setIsVisible(true);
       }
+
       lastScrollY = scrollY > 0 ? scrollY : 0;
     };
 
     window.addEventListener("scroll", updateScrollDirection, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollDirection);
-  }, []);
+  }, [open]);
 
   return (
     <motion.header
