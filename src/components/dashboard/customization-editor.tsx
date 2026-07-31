@@ -2,6 +2,7 @@
 
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +15,14 @@ import type { ItemInput } from "@/lib/schemas";
  * Must be rendered inside a react-hook-form <FormProvider> for ItemInput.
  */
 export function CustomizationEditor() {
+  const t = useTranslations("Customization");
   const { control, register } = useFormContext<ItemInput>();
   const groups = useFieldArray({ control, name: "customization_groups" });
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Options de personnalisation</Label>
+        <Label>{t("title")}</Label>
         <Button
           type="button"
           variant="outline"
@@ -34,13 +36,13 @@ export function CustomizationEditor() {
             })
           }
         >
-          <Plus className="size-4" /> Groupe
+          <Plus className="size-4" /> {t("group")}
         </Button>
       </div>
 
       {groups.fields.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          Aucune option (ex. choix de sauce, taille…).
+          {t("empty")}
         </p>
       )}
 
@@ -49,7 +51,7 @@ export function CustomizationEditor() {
           <div className="flex items-start gap-2">
             <div className="flex-1 space-y-2">
               <Input
-                placeholder="Titre du groupe (ex. Choix de sauce)"
+                placeholder={t("groupTitlePlaceholder")}
                 {...register(`customization_groups.${groupIndex}.title.fr`)}
               />
               <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -61,10 +63,10 @@ export function CustomizationEditor() {
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     )}
                   />
-                  Obligatoire
+                  {t("required")}
                 </label>
                 <label className="flex items-center gap-2">
-                  Max
+                  {t("max")}
                   <Input
                     type="number"
                     min={1}
@@ -81,7 +83,7 @@ export function CustomizationEditor() {
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Supprimer ce groupe"
+              aria-label={t("deleteGroup")}
               onClick={() => groups.remove(groupIndex)}
             >
               <Trash2 className="size-4 text-destructive" />
@@ -96,6 +98,7 @@ export function CustomizationEditor() {
 }
 
 function OptionsEditor({ groupIndex }: { groupIndex: number }) {
+  const t = useTranslations("Customization");
   const { control, register } = useFormContext<ItemInput>();
   const options = useFieldArray({
     control,
@@ -107,14 +110,14 @@ function OptionsEditor({ groupIndex }: { groupIndex: number }) {
       {options.fields.map((opt, optIndex) => (
         <div key={opt.id} className="flex items-center gap-2">
           <Input
-            placeholder="Nom (ex. Algérienne)"
+            placeholder={t("optionNamePlaceholder")}
             className="flex-1"
             {...register(`customization_groups.${groupIndex}.options.${optIndex}.name`)}
           />
           <Input
             type="number"
             step="0.5"
-            placeholder="+MAD"
+            placeholder={t("priceModifierPlaceholder")}
             className="w-20"
             {...register(
               `customization_groups.${groupIndex}.options.${optIndex}.price_modifier`,
@@ -125,7 +128,7 @@ function OptionsEditor({ groupIndex }: { groupIndex: number }) {
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Supprimer cette option"
+            aria-label={t("deleteOption")}
             onClick={() => options.remove(optIndex)}
           >
             <Trash2 className="size-4 text-muted-foreground" />
@@ -138,7 +141,7 @@ function OptionsEditor({ groupIndex }: { groupIndex: number }) {
         size="sm"
         onClick={() => options.append({ name: "", price_modifier: 0 })}
       >
-        <Plus className="size-3.5" /> Option
+        <Plus className="size-3.5" /> {t("option")}
       </Button>
     </div>
   );

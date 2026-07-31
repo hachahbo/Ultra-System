@@ -5,6 +5,7 @@ import Image from "next/image";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImagePlus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ export function ItemFormDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("ItemForm");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
@@ -83,7 +85,7 @@ export function ItemFormDialog({
       const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
       setImageUrl(data.publicUrl);
     } catch {
-      toast.error("Échec de l'envoi de la photo");
+      toast.error(t("photoUploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -102,7 +104,7 @@ export function ItemFormDialog({
         },
       );
       if (!res.ok) {
-        toast.error("Enregistrement impossible");
+        toast.error(t("saveFailed"));
         return;
       }
       onSaved();
@@ -118,20 +120,20 @@ export function ItemFormDialog({
       <DialogContent className="sm:max-w-xl bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[88vh] flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="font-display text-xl font-bold tracking-tight">
-            {item ? `Modifier « ${item.name_fr} »` : "Nouvel article"}
+            {item ? t("editItem", { name: item.name_fr }) : t("newItem")}
           </DialogTitle>
         </DialogHeader>
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden" noValidate>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
               <div className="space-y-2">
-              <Label>Catégorie</Label>
+              <Label>{t("category")}</Label>
               <Select
                 value={form.watch("category_id")}
                 onValueChange={(v) => form.setValue("category_id", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir…" />
+                  <SelectValue placeholder={t("pickCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
@@ -143,44 +145,44 @@ export function ItemFormDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name_fr">Nom (français)</Label>
+              <Label htmlFor="name_fr">{t("nameFr")}</Label>
               <Input id="name_fr" {...form.register("name_fr")} />
               {errors.name_fr && (
                 <p className="text-sm text-destructive">{errors.name_fr.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name_ar">Nom (arabe, optionnel)</Label>
+              <Label htmlFor="name_ar">{t("nameAr")}</Label>
               <Input id="name_ar" dir="rtl" {...form.register("name_ar")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name_es">Nom (espagnol, optionnel)</Label>
+              <Label htmlFor="name_es">{t("nameEs")}</Label>
               <Input id="name_es" {...form.register("name_es")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description_fr">Description (optionnel)</Label>
+              <Label htmlFor="description_fr">{t("descriptionFr")}</Label>
               <Textarea id="description_fr" {...form.register("description_fr")} />
             </div>
             {/* English is what the public site shows when a visitor switches
                 language; left blank it falls back to the French fields. */}
             <div className="space-y-2">
-              <Label htmlFor="name_en">Nom (anglais, optionnel)</Label>
+              <Label htmlFor="name_en">{t("nameEnOptional")}</Label>
               <Input
                 id="name_en"
-                placeholder={form.watch("name_fr") || "Name in English"}
+                placeholder={form.watch("name_fr") || t("nameEnPlaceholder")}
                 {...form.register("i18n.en.name")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description_en">Description (anglais, optionnel)</Label>
+              <Label htmlFor="description_en">{t("descriptionEnOptional")}</Label>
               <Textarea
                 id="description_en"
-                placeholder={form.watch("description_fr") || "Description in English"}
+                placeholder={form.watch("description_fr") || t("descriptionEnPlaceholder")}
                 {...form.register("i18n.en.description")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="base_price">Prix (MAD)</Label>
+              <Label htmlFor="base_price">{t("price")}</Label>
               <Input
                 id="base_price"
                 type="number"
@@ -196,7 +198,7 @@ export function ItemFormDialog({
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="photo">Photo</Label>
+              <Label htmlFor="photo">{t("photo")}</Label>
               <div className="flex items-center gap-3">
                 {imageUrl && (
                   <Image
@@ -209,7 +211,7 @@ export function ItemFormDialog({
                 )}
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
                   <ImagePlus className="size-4" />
-                  {uploading ? "Envoi…" : imageUrl ? "Changer" : "Ajouter"}
+                  {uploading ? t("uploading") : imageUrl ? t("change") : t("add")}
                   <input
                     id="photo"
                     type="file"
@@ -225,7 +227,7 @@ export function ItemFormDialog({
               </div>
             </div>
             <div className="flex items-center justify-between rounded-lg border px-3 py-2.5">
-              <Label htmlFor="in_stock">En stock</Label>
+              <Label htmlFor="in_stock">{t("inStock")}</Label>
               <Switch
                 id="in_stock"
                 checked={form.watch("in_stock")}
@@ -234,9 +236,9 @@ export function ItemFormDialog({
             </div>
             <div className="flex items-center justify-between rounded-lg border px-3 py-2.5">
               <div>
-                <Label htmlFor="is_smart_menu_eligible">Éligible Menu Smart</Label>
+                <Label htmlFor="is_smart_menu_eligible">{t("smartMenuEligible")}</Label>
                 <p className="text-[12px] text-muted-foreground mt-0.5">
-                  Peut être choisi dans une formule à prix fixe (« Nos formules »)
+                  {t("smartMenuHint")}
                 </p>
               </div>
               <Switch
@@ -252,10 +254,10 @@ export function ItemFormDialog({
             
             <div className="shrink-0 border-t border-border/40 bg-card/95 px-6 pb-6 pt-4 backdrop-blur-md flex justify-end gap-3">
               <Button type="button" variant="ghost" className="rounded-full font-bold hover:bg-muted" onClick={onClose}>
-                Annuler
+                {t("cancel")}
               </Button>
               <Button type="submit" className="rounded-full font-bold px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]" disabled={saving || uploading}>
-                {saving ? "Enregistrement…" : "Enregistrer"}
+                {saving ? t("saving") : t("save")}
               </Button>
             </div>
           </form>

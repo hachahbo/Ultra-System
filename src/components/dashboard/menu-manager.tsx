@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,6 +81,7 @@ async function patchJson(url: string, body: unknown) {
 }
 
 export function MenuManager() {
+  const t = useTranslations("MenuManager");
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: ["dashboard-menu"],
@@ -98,7 +100,7 @@ export function MenuManager() {
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Modification impossible"),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   const deleteItem = useMutation({
@@ -107,7 +109,7 @@ export function MenuManager() {
       if (!res.ok) throw new Error("delete failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   const deleteCategory = useMutation({
@@ -120,7 +122,7 @@ export function MenuManager() {
     },
     onSuccess: refresh,
     onError: (err: Error) =>
-      toast.error(err.message || "Suppression impossible"),
+      toast.error(err.message || t("deleteFailed")),
   });
 
   const reorder = useMutation({
@@ -130,7 +132,7 @@ export function MenuManager() {
       );
     },
     onSuccess: refresh,
-    onError: () => toast.error("Réorganisation impossible"),
+    onError: () => toast.error(t("reorderFailed")),
   });
 
   if (isPending || !data) {
@@ -174,9 +176,9 @@ export function MenuManager() {
       {/* Header section matches Commandes aesthetic */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Menu</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-[13.5px] text-muted-foreground mt-1 font-medium">
-            Gérez vos catégories et vos articles
+            {t("subtitle")}
           </p>
         </div>
         {isOwner && (
@@ -194,7 +196,7 @@ export function MenuManager() {
               disabled={data.categories.length === 0}
               className="bg-primary text-primary-foreground font-bold rounded-full px-6 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2 w-full sm:w-auto"
             >
-              <Plus className="size-4" /> Nouvel article
+              <Plus className="size-4" /> {t("newArticle")}
             </Button>
           </div>
         )}
@@ -204,10 +206,10 @@ export function MenuManager() {
         <div className="flex flex-col items-center justify-center bg-card border border-border border-dashed rounded-2xl h-[300px]">
           <UtensilsCrossed className="size-10 text-muted-foreground/50 mb-4" />
           <p className="text-center text-[15px] font-bold text-foreground">
-            Aucun article pour le moment.
+            {t("noArticlesTitle")}
           </p>
           <p className="text-center text-[13px] text-muted-foreground mt-1">
-            Commencez par créer une catégorie (ex. « Tacos », « Boissons »).
+            {t("noArticlesHint")}
           </p>
         </div>
       )}
@@ -229,7 +231,7 @@ export function MenuManager() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Monter la catégorie"
+                    aria-label={t("moveUpCategory")}
                     disabled={catIndex === 0}
                     onClick={() => moveCategory(catIndex, -1)}
                     className="hover:bg-muted"
@@ -239,7 +241,7 @@ export function MenuManager() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Descendre la catégorie"
+                    aria-label={t("moveDownCategory")}
                     disabled={catIndex === sortedCategories.length - 1}
                     onClick={() => moveCategory(catIndex, 1)}
                     className="hover:bg-muted"
@@ -253,7 +255,7 @@ export function MenuManager() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Supprimer ${cat.name_fr}`}
+                        aria-label={t("deleteCategoryName", { name: cat.name_fr })}
                         className="hover:bg-destructive/10 hover:text-destructive text-destructive/70"
                       >
                         <Trash2 className="size-4" />
@@ -262,22 +264,22 @@ export function MenuManager() {
                     <AlertDialogContent className="bg-card border-border shadow-xl rounded-2xl">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="font-display text-xl">
-                          Supprimer « {cat.name_fr} » ?
+                          {t("confirmDeleteCategory", { name: cat.name_fr })}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground text-[14px]">
                           {items.length > 0
-                            ? "Vous devez d'abord supprimer ou déplacer tous les articles de cette catégorie avant de pouvoir la supprimer."
-                            : "Cette action est définitive et ne peut pas être annulée."}
+                            ? t("deleteCategoryBlocked")
+                            : t("deleteCategoryConfirmText")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="mt-6">
-                        <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">Annuler</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={items.length > 0}
                           onClick={() => deleteCategory.mutate(cat.id)}
                           className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Supprimer
+                          {t("delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -292,7 +294,7 @@ export function MenuManager() {
               <div className="flex flex-col gap-3 p-3.5 md:hidden">
                 {items.length === 0 ? (
                   <div className="py-8 text-center text-[13px] text-muted-foreground">
-                    Aucun article dans cette catégorie.
+                    {t("noArticlesInCategory")}
                   </div>
                 ) : (
                   items.map((item, itemIndex) => {
@@ -317,7 +319,7 @@ export function MenuManager() {
                           </div>
                           <Switch
                             checked={item.in_stock}
-                            aria-label={`${item.name_fr} en stock`}
+                            aria-label={t("inStockLabel", { name: item.name_fr })}
                             disabled={!isOwner}
                             onCheckedChange={(checked) => toggleStock.mutate({ id: item.id, in_stock: checked })}
                             className="shrink-0 data-[state=checked]:bg-emerald-500"
@@ -330,7 +332,7 @@ export function MenuManager() {
                           {showCosts && (
                             <>
                               <span className="text-muted-foreground">
-                                Coût {cost ? formatPrice(cost.computed_cost) : "—"}
+                                {t("cost")} {cost ? formatPrice(cost.computed_cost) : "—"}
                               </span>
                               <span
                                 className={cn(
@@ -346,33 +348,33 @@ export function MenuManager() {
                               >
                                 {cost?.margin_pct === null || cost?.margin_pct === undefined
                                   ? "—"
-                                  : `Marge ${cost.margin_pct.toFixed(0)}%`}
+                                  : t("marginPct", { pct: cost.margin_pct.toFixed(0) })}
                               </span>
                             </>
                           )}
                           {isOwner && (
                             <div className="ml-auto flex items-center gap-0.5">
-                              <Button variant="ghost" size="icon-sm" aria-label="Monter" disabled={itemIndex === 0} onClick={() => moveItem(items, itemIndex, -1)} className="hover:bg-muted">
+                              <Button variant="ghost" size="icon-sm" aria-label={t("moveUp")} disabled={itemIndex === 0} onClick={() => moveItem(items, itemIndex, -1)} className="hover:bg-muted">
                                 <ChevronUp className="size-4 text-muted-foreground" />
                               </Button>
-                              <Button variant="ghost" size="icon-sm" aria-label="Descendre" disabled={itemIndex === items.length - 1} onClick={() => moveItem(items, itemIndex, 1)} className="hover:bg-muted">
+                              <Button variant="ghost" size="icon-sm" aria-label={t("moveDown")} disabled={itemIndex === items.length - 1} onClick={() => moveItem(items, itemIndex, 1)} className="hover:bg-muted">
                                 <ChevronDown className="size-4 text-muted-foreground" />
                               </Button>
                               {showCosts && (
-                                <Button variant="ghost" size="icon-sm" aria-label={`Fiche technique de ${item.name_fr}`} onClick={() => setEditingRecipe(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                                <Button variant="ghost" size="icon-sm" aria-label={t("recipeSheetOf", { name: item.name_fr })} onClick={() => setEditingRecipe(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
                                   <ClipboardList className="size-4" />
                                 </Button>
                               )}
-                              <Button variant="ghost" size="icon-sm" aria-label="Modifier" onClick={() => setEditing(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
+                              <Button variant="ghost" size="icon-sm" aria-label={t("edit")} onClick={() => setEditing(item)} className="text-muted-foreground hover:bg-muted hover:text-foreground">
                                 <Pencil className="size-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label="Supprimer"
+                                aria-label={t("delete")}
                                 className="text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => {
-                                  if (confirm(`Supprimer « ${item.name_fr} » ?`)) deleteItem.mutate(item.id);
+                                  if (confirm(t("confirmDeleteItem", { name: item.name_fr }))) deleteItem.mutate(item.id);
                                 }}
                               >
                                 <Trash2 className="size-4" />
@@ -391,17 +393,17 @@ export function MenuManager() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border">
-                    <TableHead className="w-[70px] pl-5">IMAGE</TableHead>
-                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ARTICLE</TableHead>
-                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">PRIX</TableHead>
+                    <TableHead className="w-[70px] pl-5">{t("colImage")}</TableHead>
+                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colArticle")}</TableHead>
+                    <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colPrice")}</TableHead>
                     {showCosts && (
                       <>
-                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">COÛT</TableHead>
-                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">MARGE</TableHead>
+                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colCost")}</TableHead>
+                        <TableHead className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colMargin")}</TableHead>
                       </>
                     )}
-                    <TableHead className="w-[120px] text-center font-bold text-[11px] text-muted-foreground uppercase tracking-wider">EN STOCK</TableHead>
-                    {isOwner && <TableHead className="w-[200px] text-right pr-5 font-bold text-[11px] text-muted-foreground uppercase tracking-wider">ACTIONS</TableHead>}
+                    <TableHead className="w-[120px] text-center font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colInStock")}</TableHead>
+                    {isOwner && <TableHead className="w-[200px] text-right pr-5 font-bold text-[11px] text-muted-foreground uppercase tracking-wider">{t("colActions")}</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -460,7 +462,7 @@ export function MenuManager() {
                               >
                                 {cost?.margin_pct === null || cost?.margin_pct === undefined
                                   ? "—"
-                                  : `${cost.margin_pct.toFixed(0)}%`}
+                                  : t("pctOnly", { pct: cost.margin_pct.toFixed(0) })}
                               </span>
                             </TableCell>
                           </>
@@ -469,7 +471,7 @@ export function MenuManager() {
                       <TableCell className="text-center">
                         <Switch
                           checked={item.in_stock}
-                          aria-label={`${item.name_fr} en stock`}
+                          aria-label={t("inStockLabel", { name: item.name_fr })}
                           disabled={!isOwner}
                           onCheckedChange={(checked) =>
                             toggleStock.mutate({ id: item.id, in_stock: checked })
@@ -483,7 +485,7 @@ export function MenuManager() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label="Monter"
+                              aria-label={t("moveUp")}
                               disabled={itemIndex === 0}
                               onClick={() => moveItem(items, itemIndex, -1)}
                               className="hover:bg-muted"
@@ -493,7 +495,7 @@ export function MenuManager() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label="Descendre"
+                              aria-label={t("moveDown")}
                               disabled={itemIndex === items.length - 1}
                               onClick={() => moveItem(items, itemIndex, 1)}
                               className="hover:bg-muted"
@@ -505,7 +507,7 @@ export function MenuManager() {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                aria-label={`Fiche technique de ${item.name_fr}`}
+                                aria-label={t("recipeSheetOf", { name: item.name_fr })}
                                 onClick={() => setEditingRecipe(item)}
                                 className="hover:bg-muted hover:text-foreground text-muted-foreground"
                               >
@@ -515,7 +517,7 @@ export function MenuManager() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label="Modifier"
+                              aria-label={t("edit")}
                               onClick={() => setEditing(item)}
                               className="hover:bg-muted hover:text-foreground text-muted-foreground"
                             >
@@ -524,10 +526,10 @@ export function MenuManager() {
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              aria-label="Supprimer"
+                              aria-label={t("delete")}
                               className="text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                               onClick={() => {
-                                if (confirm(`Supprimer « ${item.name_fr} » ?`)) {
+                                if (confirm(t("confirmDeleteItem", { name: item.name_fr }))) {
                                   deleteItem.mutate(item.id);
                                 }
                               }}
@@ -545,7 +547,7 @@ export function MenuManager() {
                         colSpan={4 + (showCosts ? 2 : 0) + (isOwner ? 1 : 0)}
                         className="h-24 text-center text-muted-foreground text-[13px]"
                       >
-                        Aucun article dans cette catégorie.
+                        {t("noArticlesInCategory")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -592,6 +594,7 @@ export function MenuManager() {
 }
 
 function AddCategoryDialog({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("MenuManager");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -606,7 +609,7 @@ function AddCategoryDialog({ onCreated }: { onCreated: () => void }) {
     });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Création impossible");
+      toast.error(t("createFailed"));
       return;
     }
     setName("");
@@ -618,29 +621,29 @@ function AddCategoryDialog({ onCreated }: { onCreated: () => void }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-card text-foreground border border-border font-bold rounded-xl px-5 py-5 hover:bg-muted transition-colors shadow-sm gap-2 w-full sm:w-auto">
-          <Plus className="size-4" /> Nouvelle catégorie
+          <Plus className="size-4" /> {t("newCategory")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md bg-card text-foreground border-border shadow-2xl p-0 overflow-hidden rounded-2xl">
         <DialogHeader className="px-6 py-5 border-b border-border bg-muted/20">
-          <DialogTitle className="font-display text-xl font-bold">Nouvelle catégorie</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("newCategory")}</DialogTitle>
         </DialogHeader>
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="cat-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom de la catégorie</Label>
+            <Label htmlFor="cat-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("categoryName")}</Label>
             <Input
               id="cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Tacos, Burgers, Boissons…"
+              placeholder={t("categoryNamePlaceholder")}
               className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium placeholder:text-muted-foreground/50"
             />
           </div>
         </div>
         <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3">
-          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>{t("cancel")}</Button>
           <Button className="rounded-xl font-bold gap-2 px-6" onClick={save} disabled={saving || !name.trim()}>
-            {saving ? "Création…" : "Créer la catégorie"}
+            {saving ? t("creating") : t("createCategory")}
           </Button>
         </div>
       </DialogContent>
@@ -655,6 +658,7 @@ function EditCategoryDialog({
   category: Category;
   onSaved: () => void;
 }) {
+  const t = useTranslations("MenuManager");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(category.name_fr);
   const [nameEn, setNameEn] = useState(category.i18n?.en?.name ?? "");
@@ -669,7 +673,7 @@ function EditCategoryDialog({
     });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Modification impossible");
+      toast.error(t("updateFailed"));
       return;
     }
     setOpen(false);
@@ -679,17 +683,17 @@ function EditCategoryDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Renommer ${category.name_fr}`} className="hover:bg-muted hover:text-foreground text-muted-foreground">
+        <Button variant="ghost" size="icon-sm" aria-label={t("renameCategory", { name: category.name_fr })} className="hover:bg-muted hover:text-foreground text-muted-foreground">
           <Pencil className="size-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md bg-card text-foreground border-border shadow-2xl p-0 overflow-hidden rounded-2xl">
         <DialogHeader className="px-6 py-5 border-b border-border bg-muted/20">
-          <DialogTitle className="font-display text-xl font-bold">Renommer la catégorie</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("renameCategoryTitle")}</DialogTitle>
         </DialogHeader>
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="cat-edit-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom</Label>
+            <Label htmlFor="cat-edit-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("name")}</Label>
             <Input
               id="cat-edit-name"
               value={name}
@@ -700,20 +704,20 @@ function EditCategoryDialog({
           {/* Shown on the public site when a visitor switches to English;
               blank falls back to the French name. */}
           <div className="space-y-2">
-            <Label htmlFor="cat-edit-name-en" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom (anglais)</Label>
+            <Label htmlFor="cat-edit-name-en" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("nameEn")}</Label>
             <Input
               id="cat-edit-name-en"
               value={nameEn}
-              placeholder={name || "Name in English"}
+              placeholder={name || t("nameEnPlaceholder")}
               onChange={(e) => setNameEn(e.target.value)}
               className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
             />
           </div>
         </div>
         <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3">
-          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>Annuler</Button>
+          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>{t("cancel")}</Button>
           <Button className="rounded-xl font-bold gap-2 px-6" onClick={save} disabled={saving || !name.trim()}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </div>
       </DialogContent>

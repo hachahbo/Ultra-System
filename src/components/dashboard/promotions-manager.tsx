@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ export function PromotionsManager({
   categories: Category[];
   items: Item[];
 }) {
+  const t = useTranslations("Promotions");
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: ["dashboard-promotions"],
@@ -68,7 +70,7 @@ export function PromotionsManager({
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Modification impossible"),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   const deletePromo = useMutation({
@@ -77,7 +79,7 @@ export function PromotionsManager({
       if (!res.ok) throw new Error("delete failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name_fr ?? "—";
@@ -90,9 +92,9 @@ export function PromotionsManager({
     <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div>
-          <h2 className="font-display text-xl font-bold text-foreground">Nos formules</h2>
+          <h2 className="font-display text-xl font-bold text-foreground">{t("title")}</h2>
           <p className="text-[12.5px] text-muted-foreground mt-0.5">
-            Menus combo affichés sur le site public — prix fixe pour un choix d&apos;articles.
+            {t("subtitle")}
           </p>
         </div>
         <Button
@@ -100,15 +102,15 @@ export function PromotionsManager({
           disabled={categories.length === 0}
           className="bg-primary text-primary-foreground font-bold rounded-full px-5 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2"
         >
-          <Plus className="size-4" /> Nouvelle formule
+          <Plus className="size-4" /> {t("newPromotion")}
         </Button>
       </div>
 
       {!isPending && promotions.length === 0 && (
         <div className="flex flex-col items-center justify-center bg-card border border-border border-dashed rounded-2xl h-[160px]">
-          <p className="text-center text-[14px] font-bold text-foreground">Aucune formule pour le moment.</p>
+          <p className="text-center text-[14px] font-bold text-foreground">{t("emptyTitle")}</p>
           <p className="text-center text-[12.5px] text-muted-foreground mt-1">
-            Créez un menu combo, ex. « Menu Smart » : 1 plat + 1 boisson à prix fixe.
+            {t("emptyHint")}
           </p>
         </div>
       )}
@@ -139,7 +141,7 @@ export function PromotionsManager({
                   key={idx}
                   className="text-[11px] font-semibold text-muted-foreground bg-muted/50 border border-border/50 rounded-full px-2.5 py-1"
                 >
-                  {r.count}× {categoryName(r.category_id)}
+                  {t("ruleCategory", { count: r.count, category: categoryName(r.category_id) })}
                 </span>
               ))}
             </div>
@@ -148,19 +150,19 @@ export function PromotionsManager({
               <div className="flex items-center gap-2">
                 <Switch
                   checked={p.active}
-                  aria-label={`${p.name} active`}
+                  aria-label={t("activeLabel", { name: p.name })}
                   onCheckedChange={(checked) => toggleActive.mutate({ id: p.id, active: checked })}
                   className="data-[state=checked]:bg-emerald-500"
                 />
                 <span className="text-[12px] font-semibold text-muted-foreground">
-                  {p.active ? "Visible" : "Masquée"}
+                  {p.active ? t("visible") : t("hidden")}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`Modifier ${p.name}`}
+                  aria-label={t("editPromotion", { name: p.name })}
                   onClick={() => setEditing(p)}
                   className="hover:bg-muted text-muted-foreground hover:text-foreground"
                 >
@@ -171,7 +173,7 @@ export function PromotionsManager({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Supprimer ${p.name}`}
+                      aria-label={t("deletePromotion", { name: p.name })}
                       className="hover:bg-destructive/10 text-destructive/70 hover:text-destructive"
                     >
                       <Trash2 className="size-4" />
@@ -179,18 +181,18 @@ export function PromotionsManager({
                   </AlertDialogTrigger>
                   <AlertDialogContent className="bg-card border-border shadow-xl rounded-2xl">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="font-display text-xl">Supprimer « {p.name} » ?</AlertDialogTitle>
+                      <AlertDialogTitle className="font-display text-xl">{t("confirmDeletePromotion", { name: p.name })}</AlertDialogTitle>
                       <AlertDialogDescription className="text-muted-foreground text-[14px]">
-                        Cette formule ne sera plus proposée sur le site. Action définitive.
+                        {t("deletePromotionText")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6">
-                      <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">Annuler</AlertDialogCancel>
+                      <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">{t("cancel")}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => deletePromo.mutate(p.id)}
                         className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Supprimer
+                        {t("delete")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -230,6 +232,7 @@ function PromotionFormDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("Promotions");
   const [name, setName] = useState(promotion?.name ?? "");
   const [description, setDescription] = useState(promotion?.description ?? "");
   const [price, setPrice] = useState(promotion ? String(promotion.price) : "");
@@ -275,7 +278,7 @@ function PromotionFormDialog({
     );
     setSaving(false);
     if (!res.ok) {
-      toast.error("Enregistrement impossible");
+      toast.error(t("saveFailed"));
       return;
     }
     onSaved();
@@ -286,24 +289,24 @@ function PromotionFormDialog({
       <DialogContent className="sm:max-w-lg bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[88vh] flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="font-display text-xl font-bold tracking-tight">
-            {promotion ? `Modifier « ${promotion.name} »` : "Nouvelle formule"}
+            {promotion ? t("editPromotionTitle", { name: promotion.name }) : t("newPromotionTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4">
             <div className="space-y-2">
-              <Label htmlFor="promo-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nom</Label>
+              <Label htmlFor="promo-name" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("name")}</Label>
               <Input
                 id="promo-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Menu Smart"
+                placeholder={t("namePlaceholder")}
                 className="h-12 rounded-xl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="promo-price" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Prix fixe (MAD)</Label>
+              <Label htmlFor="promo-price" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("fixedPrice")}</Label>
               <Input
                 id="promo-price"
                 type="number"
@@ -317,24 +320,24 @@ function PromotionFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="promo-desc" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Description (optionnel)</Label>
+            <Label htmlFor="promo-desc" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("description")}</Label>
             <Input
               id="promo-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ex: 1 plat au choix + 1 boisson"
+              placeholder={t("descriptionPlaceholder")}
               className="h-12 rounded-xl"
             />
           </div>
 
           <div className="flex items-center gap-3">
             <Switch checked={active} onCheckedChange={setActive} className="data-[state=checked]:bg-emerald-500" />
-            <span className="text-[13px] font-semibold text-foreground">Visible sur le site public</span>
+            <span className="text-[13px] font-semibold text-foreground">{t("visibleOnSite")}</span>
           </div>
 
           <div className="space-y-3">
             <Label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
-              Composition — le client choisit parmi les articles éligibles de chaque catégorie
+              {t("compositionLabel")}
             </Label>
             <div className="space-y-2">
               {rules.map((rule, idx) => {
@@ -343,7 +346,7 @@ function PromotionFormDialog({
                   <div key={idx} className="flex items-center gap-2">
                     <Select value={rule.category_id} onValueChange={(v) => updateRule(idx, { category_id: v })}>
                       <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Catégorie…" />
+                        <SelectValue placeholder={t("pickCategory")} />
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((c) => (
@@ -365,7 +368,7 @@ function PromotionFormDialog({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="Retirer cette règle"
+                      aria-label={t("removeRule")}
                       onClick={() => removeRule(idx)}
                       disabled={rules.length === 1}
                       className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 shrink-0"
@@ -373,7 +376,7 @@ function PromotionFormDialog({
                       <X className="size-4" />
                     </Button>
                     {rule.category_id && count === 0 && (
-                      <span className="text-[11px] text-destructive shrink-0">0 article éligible</span>
+                      <span className="text-[11px] text-destructive shrink-0">{t("noEligibleItem")}</span>
                     )}
                   </div>
                 );
@@ -386,18 +389,18 @@ function PromotionFormDialog({
               onClick={addRule}
               disabled={categories.length === 0}
             >
-              <Plus className="size-4" /> Ajouter une règle
+              <Plus className="size-4" /> {t("addRule")}
             </Button>
             <p className="text-[11.5px] text-muted-foreground">
-              Seuls les articles marqués « éligible Menu Smart » dans leur fiche comptent. Une catégorie à 0 article éligible n&apos;affichera aucun choix pour cette règle.
+              {t("eligibilityNote")}
             </p>
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-3 shrink-0">
-          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={onClose}>{t("cancel")}</Button>
           <Button className="rounded-xl font-bold gap-2 px-6" onClick={save} disabled={saving || !valid}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </div>
       </DialogContent>

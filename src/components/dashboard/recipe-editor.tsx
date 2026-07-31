@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,7 @@ export function RecipeEditorDialog({
   item: Item;
   onClose: () => void;
 }) {
+  const t = useTranslations("Recipe");
   const queryClient = useQueryClient();
 
   const recipesQuery = useQuery({
@@ -78,7 +80,7 @@ export function RecipeEditorDialog({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Ajout impossible");
+        throw new Error(body?.error ?? t("addFailed"));
       }
     },
     onSuccess: () => {
@@ -93,10 +95,10 @@ export function RecipeEditorDialog({
   const removeLine = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/dashboard/recipes/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Suppression impossible");
+      if (!res.ok) throw new Error(t("deleteFailed"));
     },
     onSuccess: refresh,
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   const recipes = recipesQuery.data ?? [];
@@ -122,7 +124,7 @@ export function RecipeEditorDialog({
       <DialogContent className="sm:max-w-lg bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[88vh] flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="font-display text-xl font-bold tracking-tight">
-            Fiche technique — {item.name_fr}
+            {t("title", { name: item.name_fr })}
           </DialogTitle>
         </DialogHeader>
 
@@ -136,9 +138,7 @@ export function RecipeEditorDialog({
             <>
               {recipes.length === 0 ? (
                 <p className="text-[13px] text-muted-foreground">
-                  Aucun ingrédient lié. Ajoutez les ingrédients consommés par cet
-                  article — le stock sera déduit automatiquement à chaque
-                  commande.
+                  {t("empty")}
                 </p>
               ) : (
                 <div className="rounded-2xl border border-border overflow-hidden">
@@ -162,7 +162,7 @@ export function RecipeEditorDialog({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Retirer ${r.inventory_item.name}`}
+                        aria-label={t("removeIngredient", { name: r.inventory_item.name })}
                         className="text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                         onClick={() => removeLine.mutate(r.id)}
                       >
@@ -175,15 +175,15 @@ export function RecipeEditorDialog({
 
               <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Coût</div>
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t("cost")}</div>
                   <div className="text-[14px] font-extrabold text-foreground mt-0.5">{formatPrice(totalCost)}</div>
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Marge</div>
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t("margin")}</div>
                   <div className="text-[14px] font-extrabold text-foreground mt-0.5">{formatPrice(margin)}</div>
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Marge %</div>
+                  <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t("marginPct")}</div>
                   <div
                     className={cn(
                       "text-[14px] font-extrabold mt-0.5",
@@ -203,17 +203,17 @@ export function RecipeEditorDialog({
 
               <div className="space-y-3">
                 <Label className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Ajouter un ingrédient
+                  {t("addIngredient")}
                 </Label>
                 <div className="grid grid-cols-[2fr_1fr_1fr] gap-2">
                   <Select value={inventoryItemId} onValueChange={selectIngredient}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Ingrédient…" />
+                      <SelectValue placeholder={t("ingredientPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableIngredients.length === 0 ? (
                         <div className="px-2 py-1.5 text-[12.5px] text-muted-foreground">
-                          Aucun ingrédient disponible
+                          {t("noIngredientsAvailable")}
                         </div>
                       ) : (
                         availableIngredients.map((i) => (
@@ -228,12 +228,12 @@ export function RecipeEditorDialog({
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="Qté"
+                    placeholder={t("qty")}
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                   />
                   <Input
-                    placeholder="Unité"
+                    placeholder={t("unit")}
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
                   />
@@ -251,7 +251,7 @@ export function RecipeEditorDialog({
                   }
                   onClick={() => addLine.mutate()}
                 >
-                  <Plus className="size-4" /> Ajouter
+                  <Plus className="size-4" /> {t("add")}
                 </Button>
               </div>
             </>
@@ -260,7 +260,7 @@ export function RecipeEditorDialog({
 
         <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end shrink-0">
           <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={onClose}>
-            Fermer
+            {t("close")}
           </Button>
         </div>
       </DialogContent>

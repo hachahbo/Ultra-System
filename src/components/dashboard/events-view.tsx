@@ -82,6 +82,7 @@ const INQUIRY_BADGE: Record<EventInquiry["status"], string> = {
 
 export function EventsView({ canManage }: { canManage: boolean }) {
   const locale = useLocale();
+  const t = useTranslations("EventsDashboard");
   const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<RestaurantEvent | null>(null);
@@ -114,9 +115,9 @@ export function EventsView({ canManage }: { canManage: boolean }) {
       refresh();
       setCreating(false);
       setEditing(null);
-      toast.success("Événement enregistré");
+      toast.success(t("eventSaved"));
     },
-    onError: () => toast.error("Enregistrement impossible"),
+    onError: () => toast.error(t("saveFailed")),
   });
 
   const remove = useMutation({
@@ -127,9 +128,9 @@ export function EventsView({ canManage }: { canManage: boolean }) {
     onSuccess: () => {
       refresh();
       setDeleting(null);
-      toast.success("Événement supprimé");
+      toast.success(t("eventDeleted"));
     },
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   const setInquiryStatus = useMutation({
@@ -142,7 +143,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["event-inquiries"] }),
-    onError: () => toast.error("Mise à jour impossible"),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   const pendingCount = useMemo(
@@ -155,17 +156,17 @@ export function EventsView({ canManage }: { canManage: boolean }) {
   return (
     <div className="w-full space-y-6">
       <div className="flex flex-col gap-1 mt-2">
-        <h1 className="font-display text-3xl font-bold text-foreground">Événements</h1>
+        <h1 className="font-display text-3xl font-bold text-foreground">{t("title")}</h1>
         <p className="text-[13.5px] text-muted-foreground font-medium">
-          Gérez vos soirées et vos demandes de privatisation.
+          {t("subtitle")}
         </p>
       </div>
 
       <Tabs defaultValue="events">
         <TabsList variant="line">
-          <TabsTrigger value="events">Événements</TabsTrigger>
+          <TabsTrigger value="events">{t("tabEvents")}</TabsTrigger>
           <TabsTrigger value="inquiries">
-            Demandes privées{pendingCount > 0 && ` (${pendingCount})`}
+            {t("tabInquiries", { count: pendingCount > 0 ? ` (${pendingCount})` : "" })}
           </TabsTrigger>
         </TabsList>
 
@@ -177,7 +178,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                 onClick={() => setCreating(true)}
                 className="rounded-full bg-primary px-6 py-5 font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
-                <Plus className="size-4" /> Nouvel événement
+                <Plus className="size-4" /> {t("newEvent")}
               </Button>
             </div>
           )}
@@ -191,8 +192,8 @@ export function EventsView({ canManage }: { canManage: boolean }) {
           ) : (events?.length ?? 0) === 0 ? (
             <EmptyState
               icon={PartyPopper}
-              title="Aucun événement"
-              hint="Créez votre première soirée pour l'afficher sur votre site."
+              title={t("noEvents")}
+              hint={t("noEventsHint")}
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -229,7 +230,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                     )}
                     <div className="mt-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                       <CalendarClock className="size-3.5" />
-                      {format(parseISO(e.start_date), "EEE d MMM · HH'h'mm", { locale: dateFnsLocale(locale) })}
+                      {format(parseISO(e.start_date), t("dateFormat"), { locale: dateFnsLocale(locale) })}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
                       {e.max_seats != null && (
@@ -238,10 +239,10 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                         </span>
                       )}
                       {e.minimum_spend_per_person > 0 && (
-                        <span>Min. {formatPrice(e.minimum_spend_per_person, e.currency)}</span>
+                        <span>{t("minSpend", { price: formatPrice(e.minimum_spend_per_person, e.currency) })}</span>
                       )}
                       {!e.is_free_entry && e.ticket_price > 0 && (
-                        <span>Billet {formatPrice(e.ticket_price, e.currency)}</span>
+                        <span>{t("ticketPrice", { price: formatPrice(e.ticket_price, e.currency) })}</span>
                       )}
                     </div>
 
@@ -253,12 +254,12 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                           className="flex-1 rounded-lg font-semibold"
                           onClick={() => setEditing(e)}
                         >
-                          <Pencil className="size-3.5" /> Modifier
+                          <Pencil className="size-3.5" /> {t("edit")}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Supprimer"
+                          aria-label={t("delete")}
                           className="text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => setDeleting(e)}
                         >
@@ -278,8 +279,8 @@ export function EventsView({ canManage }: { canManage: boolean }) {
           {(inquiries?.length ?? 0) === 0 ? (
             <EmptyState
               icon={Mail}
-              title="Aucune demande"
-              hint="Les demandes de privatisation soumises depuis votre site apparaîtront ici."
+              title={t("noInquiries")}
+              hint={t("noInquiriesHint")}
             />
           ) : (
             <div className="space-y-3">
@@ -304,21 +305,21 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <Users className="size-3.5" /> {q.guest_count} pers.
+                            <Users className="size-3.5" /> {t("guestCount", { count: q.guest_count })}
                           </span>
                           {q.preferred_date && (
                             <span className="flex items-center gap-1">
                               <CalendarClock className="size-3.5" />
-                              {format(parseISO(q.preferred_date), "d MMM yyyy", { locale: dateFnsLocale(locale) })}
+                              {format(parseISO(q.preferred_date), t("dateFormatShort"), { locale: dateFnsLocale(locale) })}
                               {q.preferred_time_slot && ` · ${tl(TIME_SLOT_LABELS[q.preferred_time_slot])}`}
                             </span>
                           )}
                           {q.budget_estimated_mad != null && (
-                            <span>Budget ~ {formatPrice(q.budget_estimated_mad)}</span>
+                            <span>{t("budgetApprox", { amount: formatPrice(q.budget_estimated_mad) })}</span>
                           )}
                         </div>
                         {q.special_requests && (
-                          <p className="mt-2 text-[13px] italic text-muted-foreground">« {q.special_requests} »</p>
+                          <p className="mt-2 text-[13px] italic text-muted-foreground">{t("specialRequests", { text: q.special_requests })}</p>
                         )}
                         <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                           <a
@@ -396,19 +397,19 @@ export function EventsView({ canManage }: { canManage: boolean }) {
         <AlertDialogContent className="rounded-2xl border-border bg-card shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-xl">
-              Supprimer « {deleting?.title} » ?
+              {t("confirmDeleteEvent", { name: deleting?.title ?? "" })}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] text-muted-foreground">
-              Cet événement sera retiré de votre site publiquement.
+              {t("deleteEventText")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-xl bg-destructive font-bold text-white hover:bg-destructive/90"
               onClick={() => deleting && remove.mutate(deleting.id)}
             >
-              Supprimer
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
