@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
@@ -22,6 +23,7 @@ async function fetchActive(): Promise<ActiveShift> {
 // by canAccessRoute the way pages are, it's a per-person action available
 // regardless of what the rest of the dashboard shows this role.
 export function ClockWidget() {
+  const t = useTranslations("Shift");
   const { isMobile } = useSidebar();
   const queryClient = useQueryClient();
   // Ticks once a minute purely to force a re-render so the elapsed-time
@@ -45,11 +47,11 @@ export function ClockWidget() {
       const res = await fetch("/api/dashboard/shifts/clock-in", { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Pointage impossible");
+        throw new Error(body?.error ?? t("clockInFailed"));
       }
     },
     onSuccess: () => {
-      toast.success("Service commencé");
+      toast.success(t("started"));
       queryClient.invalidateQueries({ queryKey: ["shift-active"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -60,11 +62,11 @@ export function ClockWidget() {
       const res = await fetch("/api/dashboard/shifts/clock-out", { method: "POST" });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Dépointage impossible");
+        throw new Error(body?.error ?? t("clockOutFailed"));
       }
     },
     onSuccess: () => {
-      toast.success("Service terminé");
+      toast.success(t("ended"));
       queryClient.invalidateQueries({ queryKey: ["shift-active"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -77,7 +79,7 @@ export function ClockWidget() {
       <SidebarMenuButton
         onClick={() => (active ? clockOut.mutate() : clockIn.mutate())}
         disabled={clockIn.isPending || clockOut.isPending}
-        tooltip={active ? "Terminer le service" : "Commencer le service"}
+        tooltip={active ? t("end") : t("start")}
         className={cn(
           "min-h-[44px] rounded-[14px] px-3.5 font-semibold transition-all duration-300",
           "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
@@ -89,8 +91,8 @@ export function ClockWidget() {
         <Clock className={cn("size-[18px] mr-1.5 shrink-0 group-data-[collapsible=icon]:mr-0", active && "fill-current")} />
         <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">
           {active && shift
-            ? `En service · ${formatDistanceToNowStrict(new Date(shift.clock_in), { locale: fr })}`
-            : "Commencer le service"}
+            ? `En service · ${formatDistanceToNowStrict(new Date(shift.clock_in), { locale: dateFnsLocale(locale) })}`
+            : t("start")}
         </span>
       </SidebarMenuButton>
     </SidebarMenuItem>

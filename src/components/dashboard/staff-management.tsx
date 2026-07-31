@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,6 +104,7 @@ function displayNameOf(email: string) {
 }
 
 export function StaffManagement() {
+  const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const { data: staff, isPending } = useQuery({ queryKey: ["staff"], queryFn: fetchStaff });
   const [open, setOpen] = useState(false);
@@ -220,7 +222,7 @@ export function StaffManagement() {
                   : "border border-border bg-card text-muted-foreground hover:text-foreground",
               )}
             >
-              {ROLE_LABELS[r]}
+              {tl(ROLE_LABELS[r])}
             </button>
           ))}
         </div>
@@ -281,7 +283,7 @@ export function StaffManagement() {
               <div className="flex items-center justify-between md:block">
                 <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">RÔLE</span>
                 <Badge className={cn("rounded-full font-bold", colors.bg, colors.text)}>
-                  {ROLE_LABELS[s.role]}
+                  {tl(ROLE_LABELS[s.role])}
                 </Badge>
               </div>
 
@@ -328,7 +330,7 @@ export function StaffManagement() {
                         className="gap-2.5 text-[13px] font-semibold"
                       >
                         <span className={cn("size-2 rounded-full", ROLE_COLORS[r].dot)} />
-                        {ROLE_LABELS[r]}
+                        {tl(ROLE_LABELS[r])}
                         {s.role === r && <span className="ml-auto text-[11px] text-muted-foreground">Actuel</span>}
                       </DropdownMenuItem>
                     ))}
@@ -365,7 +367,7 @@ export function StaffManagement() {
               {roleTally.map((t) => (
                 <div key={t.role} className="flex items-center gap-1.5">
                   <span className={cn("size-2 rounded-full", ROLE_COLORS[t.role].dot)} />
-                  {t.count} {ROLE_LABELS[t.role]}
+                  {t.count} {tl(ROLE_LABELS[t.role])}
                 </div>
               ))}
             </div>
@@ -403,6 +405,7 @@ export function StaffManagement() {
 }
 
 function AddStaffForm({ onCreated }: { onCreated: () => void }) {
+  const tl = useTranslations("Labels");
   const [saving, setSaving] = useState(false);
   const form = useForm<StaffInput>({
     resolver: zodResolver(staffSchema),
@@ -473,7 +476,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
                   )}
                 >
                   <span className={cn("size-2 shrink-0 rounded-full", colors.dot)} />
-                  {ROLE_LABELS[r]}
+                  {tl(ROLE_LABELS[r])}
                 </button>
               );
             })}

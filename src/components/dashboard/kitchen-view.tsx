@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bike,
@@ -43,12 +44,13 @@ async function fetchOrders(): Promise<Order[]> {
 
 type Filter = "active" | "dine_in" | "delivery" | "all" | "done";
 
+// `label` indexes into the Kitchen.* messages.
 const filters: { value: Filter; label: string }[] = [
-  { value: "active", label: "Actives" },
-  { value: "dine_in", label: "Sur place" },
-  { value: "delivery", label: "Livraison" },
-  { value: "all", label: "Toutes" },
-  { value: "done", label: "Terminées" },
+  { value: "active", label: "filterActive" },
+  { value: "dine_in", label: "filterDineIn" },
+  { value: "delivery", label: "filterDelivery" },
+  { value: "all", label: "filterAll" },
+  { value: "done", label: "filterDone" },
 ];
 
 const ACTIVE_STATUSES: Order["status"][] = ["new", "preparing"];
@@ -70,6 +72,7 @@ function matchesFilter(order: Order, filter: Filter): boolean {
 }
 
 export function KitchenView() {
+  const t = useTranslations("Kitchen");
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "map">("list");
   const [filter, setFilter] = useState<Filter>("active");
@@ -135,11 +138,11 @@ export function KitchenView() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
     onError: (err) => {
       if (err instanceof ConcurrencyError) {
-        toast.message("Commande déjà mise à jour — actualisation");
+        toast.message(t("alreadyUpdated"));
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         return;
       }
-      toast.error("Impossible de mettre à jour la commande");
+      toast.error(t("updateFailed"));
     },
   });
 
@@ -180,7 +183,7 @@ export function KitchenView() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={soundOn ? "Désactiver le son" : "Activer le son"}
+            aria-label={soundOn ? t("soundOff") : t("soundOn")}
             onClick={toggleSound}
           >
             {soundOn ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
@@ -189,7 +192,7 @@ export function KitchenView() {
             <Button
               variant={view === "list" ? "secondary" : "ghost"}
               size="icon-sm"
-              aria-label="Vue liste"
+              aria-label={t("listView")}
               onClick={() => setView("list")}
             >
               <List className="size-4" />
@@ -197,7 +200,7 @@ export function KitchenView() {
             <Button
               variant={view === "map" ? "secondary" : "ghost"}
               size="icon-sm"
-              aria-label="Vue plan de salle"
+              aria-label={t("floorView")}
               onClick={() => setView("map")}
             >
               <LayoutGrid className="size-4" />
@@ -226,7 +229,7 @@ export function KitchenView() {
           <TabsList variant="line" className="flex-wrap">
             {filters.map((f) => (
               <TabsTrigger key={f.value} value={f.value}>
-                {f.label} · <span className="tabular-nums">{allOrders.filter((o) => matchesFilter(o, f.value)).length}</span>
+                {t(f.label)} · <span className="tabular-nums">{allOrders.filter((o) => matchesFilter(o, f.value)).length}</span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -240,8 +243,8 @@ export function KitchenView() {
             {!isPending && filtered.length === 0 && (
               <EmptyState
                 icon={ShoppingBag}
-                title="Aucune commande ici pour le moment"
-                hint="Les nouvelles commandes apparaîtront automatiquement."
+                title={t("empty")}
+                hint={t("emptyHint")}
               />
             )}
             {filtered.map((order) => (
@@ -276,7 +279,7 @@ export function KitchenView() {
               ))}
             {mapTable && (activeDineInByTable.get(mapTable.number) ?? []).length === 0 && (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Aucune commande en cours pour cette table.
+                {t("emptyTable")}
               </p>
             )}
           </div>
@@ -303,6 +306,7 @@ function OrderCard({
   onAdvance?: (status: Order["status"]) => void;
   marking?: boolean;
 }) {
+  const t = useTranslations("Kitchen");
   return (
     <Card>
       <CardContent className="p-4">
@@ -324,7 +328,7 @@ function OrderCard({
             )}
             {order.status === "preparing" && (
               <Badge variant="outline">
-                <ChefHat className="size-3.5" /> En préparation
+                <ChefHat className="size-3.5" /> {t("preparing")}
               </Badge>
             )}
             <span className="text-xs text-muted-foreground">
@@ -385,7 +389,7 @@ function OrderCard({
             disabled={marking}
             onClick={() => onAdvance("done")}
           >
-            <Check className="size-4" /> Marquer terminée
+            <Check className="size-4" /> {t("markDone")}
           </Button>
         )}
       </CardContent>

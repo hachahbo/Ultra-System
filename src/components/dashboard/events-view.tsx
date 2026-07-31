@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import {
   CalendarClock,
   Mail,
@@ -80,6 +81,7 @@ const INQUIRY_BADGE: Record<EventInquiry["status"], string> = {
 };
 
 export function EventsView({ canManage }: { canManage: boolean }) {
+  const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<RestaurantEvent | null>(null);
   const [creating, setCreating] = useState(false);
@@ -213,12 +215,12 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                         STATUS_BADGE[e.status],
                       )}
                     >
-                      {EVENT_STATUS_LABELS[e.status]}
+                      {tl(EVENT_STATUS_LABELS[e.status])}
                     </span>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                     <span className="text-[11px] font-bold uppercase tracking-wide text-primary">
-                      {EVENT_CATEGORY_LABELS[e.category]}
+                      {tl(EVENT_CATEGORY_LABELS[e.category])}
                     </span>
                     <h3 className="mt-1 text-[15px] font-extrabold text-foreground">{e.title}</h3>
                     {e.tagline && (
@@ -226,7 +228,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                     )}
                     <div className="mt-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                       <CalendarClock className="size-3.5" />
-                      {format(parseISO(e.start_date), "EEE d MMM · HH'h'mm", { locale: fr })}
+                      {format(parseISO(e.start_date), "EEE d MMM · HH'h'mm", { locale: dateFnsLocale(locale) })}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
                       {e.max_seats != null && (
@@ -288,7 +290,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[14px] font-extrabold text-foreground">{q.full_name}</span>
                           <Badge variant="outline" className="rounded-full font-bold">
-                            {EVENT_TYPE_LABELS[q.event_type]}
+                            {tl(EVENT_TYPE_LABELS[q.event_type])}
                           </Badge>
                           <span
                             className={cn(
@@ -296,7 +298,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                               INQUIRY_BADGE[q.status],
                             )}
                           >
-                            {INQUIRY_STATUS_LABELS[q.status]}
+                            {tl(INQUIRY_STATUS_LABELS[q.status])}
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
@@ -306,8 +308,8 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                           {q.preferred_date && (
                             <span className="flex items-center gap-1">
                               <CalendarClock className="size-3.5" />
-                              {format(parseISO(q.preferred_date), "d MMM yyyy", { locale: fr })}
-                              {q.preferred_time_slot && ` · ${TIME_SLOT_LABELS[q.preferred_time_slot]}`}
+                              {format(parseISO(q.preferred_date), "d MMM yyyy", { locale: dateFnsLocale(locale) })}
+                              {q.preferred_time_slot && ` · ${tl(TIME_SLOT_LABELS[q.preferred_time_slot])}`}
                             </span>
                           )}
                           {q.budget_estimated_mad != null && (
@@ -357,7 +359,7 @@ export function EventsView({ canManage }: { canManage: boolean }) {
                             <SelectContent>
                               {(Object.keys(INQUIRY_STATUS_LABELS) as EventInquiry["status"][]).map((s) => (
                                 <SelectItem key={s} value={s}>
-                                  {INQUIRY_STATUS_LABELS[s]}
+                                  {tl(INQUIRY_STATUS_LABELS[s])}
                                 </SelectItem>
                               ))}
                             </SelectContent>

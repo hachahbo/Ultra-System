@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   CalendarDays,
   ChevronLeft,
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 
 type Item = {
   href: string;
+  /** Key into the Dashboard.* messages. */
   label: string;
   icon: LucideIcon;
   exact?: boolean;
@@ -53,35 +55,35 @@ type Group = { label: string; items: Item[] };
 // cosmetic only; feature flags stay a separate, plan-driven gate.
 const groups: Group[] = [
   {
-    label: "Opération",
+    label: "groupOperations",
     items: [
-      { href: "/dashboard", label: "Aperçu", icon: LayoutDashboard, exact: true },
-      { href: "/dashboard/kds", label: "Cuisine (KDS)", icon: UtensilsCrossed, feature: "kds" },
-      { href: "/dashboard/orders", label: "Commandes", icon: ShoppingBag },
-      { href: "/dashboard/reservations", label: "Réservations", icon: CalendarDays, feature: "reservations" },
+      { href: "/dashboard", label: "navOverview", icon: LayoutDashboard, exact: true },
+      { href: "/dashboard/kds", label: "navKds", icon: UtensilsCrossed, feature: "kds" },
+      { href: "/dashboard/orders", label: "navOrders", icon: ShoppingBag },
+      { href: "/dashboard/reservations", label: "navReservations", icon: CalendarDays, feature: "reservations" },
     ],
   },
   {
-    label: "Contenu",
+    label: "groupContent",
     items: [
-      { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, feature: "menu_editor" },
-      { href: "/dashboard/events", label: "Événements", icon: PartyPopper, feature: "events" },
-      { href: "/dashboard/tables", label: "Tables", icon: LayoutGrid, feature: "floor_plan" },
+      { href: "/dashboard/menu", label: "navMenu", icon: UtensilsCrossed, feature: "menu_editor" },
+      { href: "/dashboard/events", label: "navEvents", icon: PartyPopper, feature: "events" },
+      { href: "/dashboard/tables", label: "navTables", icon: LayoutGrid, feature: "floor_plan" },
     ],
   },
   {
-    label: "Gestion",
+    label: "groupManagement",
     items: [
-      { href: "/dashboard/inventory", label: "Inventaire", icon: Package, feature: "inventory" },
-      { href: "/dashboard/customers", label: "Clients", icon: Users },
-      { href: "/dashboard/analytics", label: "Statistiques", icon: LineChart, feature: "analytics" },
+      { href: "/dashboard/inventory", label: "navInventory", icon: Package, feature: "inventory" },
+      { href: "/dashboard/customers", label: "navCustomers", icon: Users },
+      { href: "/dashboard/analytics", label: "navAnalytics", icon: LineChart, feature: "analytics" },
     ],
   },
   {
-    label: "Système",
+    label: "groupSystem",
     items: [
-      { href: "/dashboard/team", label: "Équipe", icon: UserCog, feature: "staff_management" },
-      { href: "/dashboard/settings", label: "Réglages", icon: Settings },
+      { href: "/dashboard/team", label: "navTeam", icon: UserCog, feature: "staff_management" },
+      { href: "/dashboard/settings", label: "navSettings", icon: Settings },
     ],
   },
 ];
@@ -97,6 +99,7 @@ export function AppSidebar({
   role: Role;
   features: Record<FeatureKey, boolean>;
 }) {
+  const t = useTranslations("Dashboard");
   const pathname = usePathname();
   const router = useRouter();
   const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar();
@@ -139,7 +142,7 @@ export function AppSidebar({
         {visibleGroups.map((group) => (
           <SidebarGroup key={group.label} className="pt-2 pb-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2">
             <SidebarGroupLabel className="px-3 text-[10px] font-bold tracking-[1.2px] text-muted-foreground uppercase">
-              {group.label}
+              {t(group.label)}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -152,7 +155,7 @@ export function AppSidebar({
                       <SidebarMenuButton
                         asChild
                         isActive={active}
-                        tooltip={item.label}
+                        tooltip={t(item.label)}
                         className={cn(
                           "min-h-[44px] rounded-[14px] px-3.5 transition-all duration-300",
                           "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
@@ -167,7 +170,7 @@ export function AppSidebar({
                           className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0"
                         >
                           <item.icon className="size-[18px] shrink-0" />
-                          <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">{item.label}</span>
+                          <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">{t(item.label)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -185,7 +188,7 @@ export function AppSidebar({
           <SidebarMenuItem className="w-full">
             <SidebarMenuButton
               onClick={signOut}
-              tooltip="Déconnexion"
+              tooltip={t("signOut")}
               className={cn(
                 "min-h-[44px] rounded-[14px] px-3.5 text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground transition-all duration-300",
                 "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
@@ -201,7 +204,7 @@ export function AppSidebar({
             type="button"
             onClick={toggleSidebar}
             aria-expanded={!collapsed}
-            aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
+            aria-label={collapsed ? t("expandMenu") : t("collapseMenu")}
             className="flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3.5 text-[13.5px] font-semibold text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden mt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:mx-auto"
           >
             {collapsed ? <ChevronRight className="size-4 shrink-0" /> : <ChevronLeft className="size-4 shrink-0" />}

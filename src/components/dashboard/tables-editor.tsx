@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +37,7 @@ import { tableSchema, type TableInput } from "@/lib/schemas";
 import type { DiningTable } from "@/lib/types";
 
 export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
+  const t = useTranslations("Tables");
   const queryClient = useQueryClient();
   const { data: tables } = useQuery({ queryKey: tablesQueryKey, queryFn: fetchTables });
   const [addOpen, setAddOpen] = useState(false);
@@ -51,7 +53,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
         body: JSON.stringify({ pos_x: x, pos_y: y, updated_at: table.updated_at }),
       });
       if (res.status === 409) {
-        toast.message("Cette table a été modifiée entre-temps — actualisation");
+        toast.message(t("staleRow"));
       } else if (!res.ok) {
         throw new Error("move failed");
       }
@@ -66,7 +68,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(tablesQueryKey, context.previous);
-      toast.error("Déplacement impossible");
+      toast.error(t("moveFailed"));
     },
     onSettled: refresh,
   });
@@ -87,7 +89,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       refresh();
       setAddOpen(false);
     },
-    onError: (err: Error) => toast.error(err.message || "Création impossible"),
+    onError: (err: Error) => toast.error(err.message || t("createFailed")),
   });
 
   const update = useMutation({
@@ -107,7 +109,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       refresh();
       setEditing(null);
     },
-    onError: (err: Error) => toast.error(err.message || "Modification impossible"),
+    onError: (err: Error) => toast.error(err.message || t("updateFailed")),
   });
 
   const remove = useMutation({
@@ -119,7 +121,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       refresh();
       setEditing(null);
     },
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   const list = tables ?? [];
@@ -131,9 +133,9 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       {/* Header section matches Commandes/Menu aesthetic */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mt-2">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Tables &amp; Plan</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-xs sm:text-[13.5px] text-muted-foreground mt-0.5 sm:mt-1 font-medium">
-            Gérez vos tables, générez les QR codes et ajustez le plan de salle.
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -142,7 +144,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
               <Button
                 className="bg-primary text-primary-foreground font-bold rounded-full px-6 py-5 hover:bg-primary/90 transition-all active:scale-[0.98] shadow-sm gap-2 w-full sm:w-auto text-xs sm:text-sm"
               >
-                <Plus className="size-4" /> Nouvelle table
+                <Plus className="size-4" /> {t("newTable")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none flex flex-col">
@@ -159,11 +161,11 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="bg-card border border-border p-4 sm:p-5 rounded-2xl shadow-sm">
-          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Tables</p>
+          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t("total")}</p>
           <p className="text-2xl sm:text-3xl font-display font-bold text-foreground">{list.length}</p>
         </div>
         <div className="bg-card border border-border p-4 sm:p-5 rounded-2xl shadow-sm">
-          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Capacité totale</p>
+          <p className="text-[11px] sm:text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t("totalCapacity")}</p>
           <p className="text-2xl sm:text-3xl font-display font-bold text-primary">{totalSeats} <span className="text-xs sm:text-sm text-muted-foreground lowercase tracking-normal font-medium">places</span></p>
         </div>
       </div>
@@ -173,7 +175,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
       {/* Floor Plan */}
       <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
-        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Plan de salle</h2>
+        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">{t("floorPlan")}</h2>
         <div className="rounded-[24px] bg-card border border-border p-2 sm:p-4 shadow-xl overflow-hidden relative group">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
           <div className="relative z-10 w-full rounded-xl ring-1 ring-border/50 bg-background/50 backdrop-blur-sm">
@@ -192,24 +194,24 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
       {/* Tables List */}
       <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">Liste des tables</h2>
+        <h2 className="font-display text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">{t("list")}</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {list.map((t) => (
+          {list.map((table) => (
             <div
-              key={t.id}
+              key={table.id}
               className="group flex flex-col justify-between rounded-[20px] border border-border/60 bg-card p-5 shadow-sm hover:border-border hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary font-display font-bold text-2xl border border-primary/20 shadow-inner">
-                  {t.number}
+                  {table.number}
                 </div>
                 <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Modifier la table ${t.number}`}
-                    onClick={() => setEditing(t)}
+                    aria-label={t("editTable", { number: table.number })}
+                    onClick={() => setEditing(table)}
                     className="hover:bg-muted text-muted-foreground hover:text-foreground"
                   >
                     <Pencil className="size-4" />
@@ -219,7 +221,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Supprimer la table ${t.number}`}
+                        aria-label={t("deleteTable", { number: table.number })}
                         className="hover:bg-destructive/10 text-destructive/70 hover:text-destructive"
                       >
                         <Trash2 className="size-4" />
@@ -227,15 +229,15 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-card border-border shadow-xl rounded-2xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="font-display text-xl">Supprimer la table {t.number} ?</AlertDialogTitle>
+                        <AlertDialogTitle className="font-display text-xl">Supprimer la table {table.number} ?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground text-[14px]">
-                          Le QR code de cette table ne fonctionnera plus. Cette action est définitive.
+                          {t("deleteWarning")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="mt-6">
                         <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">Annuler</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => remove.mutate(t.id)}
+                          onClick={() => remove.mutate(table.id)}
                           className="rounded-xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Supprimer
@@ -248,14 +250,14 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
               <div className="flex items-center gap-2 text-muted-foreground bg-muted/40 w-fit px-3 py-1.5 rounded-lg border border-border/50">
                 <Users className="size-3.5" />
-                <span className="text-[13px] font-semibold">{t.seats} places</span>
+                <span className="text-[13px] font-semibold">{table.seats} places</span>
               </div>
             </div>
           ))}
           {list.length === 0 && (
             <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-2xl bg-card/50">
-              <p className="text-[15px] font-bold text-foreground">Aucune table</p>
-              <p className="text-[13px] text-muted-foreground mt-1">Créez votre première table pour l'ajouter au plan.</p>
+              <p className="text-[15px] font-bold text-foreground">{t("empty")}</p>
+              <p className="text-[13px] text-muted-foreground mt-1">{t("emptyHint")}</p>
             </div>
           )}
         </div>
@@ -263,7 +265,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
 
       {/* QR Codes Section */}
       <section className="animate-in fade-in slide-in-from-bottom-5 duration-500 delay-300">
-        <h2 className="font-display text-xl font-bold text-foreground mb-4">Générateur de QR Codes</h2>
+        <h2 className="font-display text-xl font-bold text-foreground mb-4">{t("qrGenerator")}</h2>
         <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
           <QrCards tables={list} restaurantSlug={restaurantSlug} />
         </div>
@@ -300,6 +302,7 @@ function TableForm({
   onSubmit: (values: TableInput) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("Tables");
   const form = useForm<TableInput>({
     resolver: zodResolver(tableSchema),
     defaultValues: table ? { number: table.number, seats: table.seats } : { number: "", seats: 2 },
@@ -329,7 +332,7 @@ function TableForm({
               </div>
               <div className="flex flex-col text-center sm:text-left gap-1.5 relative z-10 w-full justify-center h-[112px]">
                 <h3 className="font-display font-bold text-2xl text-foreground mt-1">Table {table.number}</h3>
-                <p className="text-[13px] text-muted-foreground font-medium">QR Code de commande pour cette table</p>
+                <p className="text-[13px] text-muted-foreground font-medium">{t("qrForTable")}</p>
                 <div className="mt-2 text-[12px] bg-primary/10 text-primary border border-primary/20 font-bold px-3 py-1 rounded-full w-fit mx-auto sm:mx-0">
                   {table.seats} places
                 </div>
@@ -338,13 +341,13 @@ function TableForm({
           )}
 
           <div className="space-y-4">
-            {table && <h4 className="font-display text-sm font-bold text-foreground">Paramètres</h4>}
+            {table && <h4 className="font-display text-sm font-bold text-foreground">{t("settings")}</h4>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="table-number" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Numéro de table</Label>
+                <Label htmlFor="table-number" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("number")}</Label>
                 <Input
                   id="table-number"
-                  placeholder="Ex: 12, Terasse 1..."
+                  placeholder={t("numberPlaceholder")}
                   className="border-border bg-background h-12 rounded-xl shadow-sm text-[14px] font-medium"
                   {...form.register("number")}
                 />
@@ -353,7 +356,7 @@ function TableForm({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="table-seats" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Nombre de places</Label>
+                <Label htmlFor="table-seats" className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{t("seats")}</Label>
                 <Input
                   id="table-seats"
                   type="number"

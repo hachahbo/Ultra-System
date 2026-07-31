@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -84,7 +85,7 @@ export function LaborPanel({ staff }: { staff: StaffRow[] }) {
                 <Clock className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[12.5px] font-bold text-foreground">{displayNameOf(s.email)}</span>
                 <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                  depuis {formatDistanceToNowStrict(new Date(s.clock_in), { locale: fr })}
+                  depuis {formatDistanceToNowStrict(new Date(s.clock_in), { locale: dateFnsLocale(locale) })}
                 </span>
               </div>
             ))}

@@ -157,13 +157,26 @@ export async function getPublicEvents(restaurantId: string): Promise<RestaurantE
 const getPublicThemeRow = unstable_cache(
   async (restaurantId: string): Promise<ResolvedTheme> => {
     const admin = createAdminClient();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("restaurant_theme")
       .select(
         "restaurant_id, color_primary, color_secondary, color_background, color_text, font_pair, logo_url, hero_image_urls, about_title, about_body, address, sections, custom_copy, welcome_gallery_urls, values_items, testimonials, about_gallery_urls, about_rating, about_review_count, about_map_url, specials_image_url, social_facebook_url, social_instagram_url, social_twitter_url, i18n, updated_at",
       )
       .eq("restaurant_id", restaurantId)
       .maybeSingle();
+
+    // A *failed* read is not the same thing as "this restaurant has no theme
+    // row yet", but `data` is null for both. Silently returning DEFAULT_THEME
+    // on an error strips the restaurant's colours, fonts, hero images and copy
+    // and looks exactly like a design bug — which is how a missing `i18n`
+    // column (migration 0023) cost a full debugging cycle. Fail loudly
+    // instead; only a genuinely absent row falls through to the defaults.
+    if (error) {
+      throw new Error(
+        `restaurant_theme read failed for ${restaurantId}: ${error.message}. ` +
+          "Schema drift? Check that every migration in supabase/migrations has been applied.",
+      );
+    }
     return resolveTheme(data as ResolvedTheme | null, restaurantId);
   },
   ["public-theme"],

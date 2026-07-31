@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { getSessionContext } from "@/lib/dashboard";
@@ -6,7 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 import { defaultRouteFor } from "@/lib/permissions";
 import type { Subscription } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Réglages" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navSettings") };
+}
 
 export default async function SettingsPage() {
   const ctx = await getSessionContext();

@@ -1,41 +1,43 @@
 import type { EventCategory, EventStatus, EventInquiry, RestaurantEvent } from "@/lib/types";
 
-// Shared display labels for the events feature (dashboard + public site).
+// Message keys into the Labels.* namespace, not display text — resolve them
+// with a translator at the call site (the public site has its own Events.*
+// category keys and does not use these).
 
 export const EVENT_CATEGORY_LABELS: Record<EventCategory, string> = {
-  live_music: "Musique live",
-  theme_night: "Soirée à thème",
-  tasting: "Dégustation",
-  dj_set: "DJ set",
-  special_menu: "Menu spécial",
+  live_music: "eventCategoryLiveMusic",
+  theme_night: "eventCategoryThemeNight",
+  tasting: "eventCategoryTasting",
+  dj_set: "eventCategoryDjSet",
+  special_menu: "eventCategorySpecialMenu",
 };
 
 export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
-  upcoming: "À venir",
-  sold_out: "Complet",
-  cancelled: "Annulé",
-  completed: "Terminé",
+  upcoming: "eventStatusUpcoming",
+  sold_out: "eventStatusSoldOut",
+  cancelled: "eventStatusCancelled",
+  completed: "eventStatusCompleted",
 };
 
 export const EVENT_TYPE_LABELS: Record<EventInquiry["event_type"], string> = {
-  birthday: "Anniversaire",
-  corporate: "Entreprise",
-  wedding: "Mariage",
-  privatization: "Privatisation",
-  other: "Autre",
+  birthday: "inquiryBirthday",
+  corporate: "inquiryCorporate",
+  wedding: "inquiryWedding",
+  privatization: "inquiryPrivatization",
+  other: "inquiryOther",
 };
 
 export const TIME_SLOT_LABELS: Record<NonNullable<EventInquiry["preferred_time_slot"]>, string> = {
-  lunch: "Déjeuner",
-  evening: "Soirée",
-  full_day: "Journée complète",
+  lunch: "slotLunch",
+  evening: "slotEvening",
+  full_day: "slotFullDay",
 };
 
 export const INQUIRY_STATUS_LABELS: Record<EventInquiry["status"], string> = {
-  pending: "En attente",
-  contacted: "Contacté",
-  approved: "Approuvé",
-  rejected: "Refusé",
+  pending: "inquiryPending",
+  contacted: "inquiryContacted",
+  approved: "inquiryApproved",
+  rejected: "inquiryRejected",
 };
 
 /** A public event is fully booked when its seats are exhausted or it's marked sold out. */

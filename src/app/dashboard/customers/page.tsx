@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,10 @@ import { getSessionContext } from "@/lib/dashboard";
 import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 import type { Customer } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Clients" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navCustomers") };
+}
 
 // The payoff (plan.md §3E): the exportable list the restaurant owns.
 export default async function CustomersPage() {

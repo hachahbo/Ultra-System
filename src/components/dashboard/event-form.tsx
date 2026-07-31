@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export function EventForm({
   onSubmit: (values: EventInput) => void;
   onCancel: () => void;
 }) {
+  const tl = useTranslations("Labels");
   const form = useForm<EventFormInput, unknown, EventInput>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -157,7 +159,7 @@ export function EventForm({
                 <SelectTrigger className={FIELD}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(EVENT_CATEGORY_LABELS) as EventCategory[]).map((c) => (
-                    <SelectItem key={c} value={c}>{EVENT_CATEGORY_LABELS[c]}</SelectItem>
+                    <SelectItem key={c} value={c}>{tl(EVENT_CATEGORY_LABELS[c])}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -171,7 +173,7 @@ export function EventForm({
                 <SelectTrigger className={FIELD}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {(Object.keys(EVENT_STATUS_LABELS) as EventStatus[]).map((s) => (
-                    <SelectItem key={s} value={s}>{EVENT_STATUS_LABELS[s]}</SelectItem>
+                    <SelectItem key={s} value={s}>{tl(EVENT_STATUS_LABELS[s])}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

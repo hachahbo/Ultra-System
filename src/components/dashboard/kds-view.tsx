@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistanceToNowStrict } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { Check, Clock, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -40,18 +41,19 @@ type KdsTicket = {
 
 async function fetchKdsData(): Promise<{ tickets: KdsTicket[]; stations: Station[] }> {
   const res = await fetch("/api/dashboard/kds");
-  if (!res.ok) throw new Error("Impossible de charger le KDS");
+  if (!res.ok) throw new Error("kds fetch failed");
   return res.json();
 }
 
 async function bumpTicket(ticketId: string): Promise<void> {
   const res = await fetch(`/api/dashboard/kds/${ticketId}`, { method: "PATCH" });
-  if (!res.ok) throw new Error("Impossible de terminer le bon");
+  if (!res.ok) throw new Error("kds bump failed");
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function KdsView() {
+  const t = useTranslations("Kds");
   const supabase = createClient();
   const queryClient = useQueryClient();
   const [selectedStation, setSelectedStation] = useState<string | "all">("all");
@@ -87,7 +89,7 @@ export function KdsView() {
     },
     onError: (err, id, ctx) => {
       if (ctx?.prev) queryClient.setQueryData(["kds-tickets"], ctx.prev);
-      toast.error(err.message);
+      toast.error(t("completeFailed"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["kds-tickets"] });
@@ -151,7 +153,7 @@ export function KdsView() {
               : "bg-white text-muted-foreground border-border hover:bg-accent hover:text-foreground dark:bg-white/5"
           )}
         >
-          Toutes les stations
+          {t("allStations")}
         </button>
         {stations.map((s) => (
           <button
@@ -174,8 +176,8 @@ export function KdsView() {
         {pendingTickets.length === 0 ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
             <UtensilsCrossed className="size-12 mb-4 opacity-20" />
-            <p className="text-lg font-medium">Aucun bon en attente</p>
-            <p className="text-sm opacity-60">La cuisine est propre !</p>
+            <p className="text-lg font-medium">{t("emptyTickets")}</p>
+            <p className="text-sm opacity-60">{t("allClear")}</p>
           </div>
         ) : (
           pendingTickets.map((ticket) => {
@@ -209,7 +211,7 @@ export function KdsView() {
                 >
                   <div>
                     <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      {st ? st.name : "Général"}
+                      {st ? st.name : t("general")}
                     </div>
                     <div className="text-[15px] font-extrabold flex items-center gap-2">
                       #{ticket.order.id.slice(0, 5).toUpperCase()}
@@ -228,10 +230,10 @@ export function KdsView() {
                       )}
                     >
                       <Clock className="size-3.5" />
-                      {formatDistanceToNowStrict(new Date(ticket.created_at), { locale: fr, addSuffix: false })}
+                      {formatDistanceToNowStrict(new Date(ticket.created_at), { locale: dateFnsLocale(locale), addSuffix: false })}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 font-medium">
-                      {ticket.order.type === "dine_in" ? "Sur place" : ticket.order.type === "takeaway" ? "À emporter" : "Livraison"}
+                      {ticket.order.type === "dine_in" ? t("dineIn") : ticket.order.type === "takeaway" ? t("takeaway") : "Livraison"}
                     </div>
                   </div>
                 </div>
@@ -271,7 +273,7 @@ export function KdsView() {
                     className="w-full py-3 rounded-xl bg-[#ec5b1a] text-white font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#d94a09] transition-colors disabled:opacity-50"
                   >
                     <Check className="size-4" />
-                    Terminer le bon
+                    {t("completeTicket")}
                   </button>
                 </div>
               </div>

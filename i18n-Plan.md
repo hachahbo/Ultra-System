@@ -257,3 +257,251 @@ translated in `ItemDialog`; only the stored string is canonical.
 | 5 | 5 forms + 4 API routes | M |
 | 6 | content seed SQL | M (writing/translating copy) |
 | 7 | 1 e2e spec, 1 unit test, 1 CI script | S |
+
+---
+
+# Part 2 — Making the menu itself switch language
+
+Written after the Part 1 work shipped and the language switcher still left dish
+names, category tabs and descriptions in French.
+
+## 1. Why nothing switches (root cause)
+
+The mechanism from Part 1 is complete and correct. Two things stop it working:
+
+**A. The migrations were never applied to the live database.** Verified against
+the project's Supabase instance:
+
+```
+items.i18n            -> 42703 column does not exist
+categories.i18n       -> 42703 column does not exist
+restaurant_theme.i18n -> 42703 column does not exist
+```
+
+`supabase/migrations/0023_content_i18n.sql` exists in the repo but has not been
+run. There is no migration runner in this project — README §Setup says schema
+changes go through the Supabase SQL editor by hand — so writing the file was
+never going to be enough.
+
+**B. Even with the column, no English text exists.** `i18n` defaults to `{}`,
+and the resolver's contract is "missing translation → French". So the switch
+would still show French dish names until someone writes them.
+
+### A live regression that must be fixed first
+
+`getPublicTheme` reads an explicit column list, and Part 1 added `i18n` to it.
+Against the current database that whole query returns **400**, so
+`resolveTheme(null, …)` kicks in and the site renders `DEFAULT_THEME`: no brand
+colours, no fonts, no hero images, no about text, no values, no testimonials.
+
+Confirmed by running the exact select from `src/lib/menu.ts:146` against the
+live project. **This ships broken unless 0023 is applied before the deploy.**
+
+### Unrelated pre-existing breakage found on the way
+
+`public.events` does not exist either — `0021_events.sql` was never applied.
+The events page has been dead independently of any i18n work. Same fix
+(apply the migration), separate problem; noted so it isn't mistaken for a
+regression from this workstream.
+
+## 2. Scope of the content to translate
+
+Measured from the live DB. Only `orendezvous` has a menu; the other five
+restaurants (`nezres`, `dar-lahwa`, `pizza-rif`, `sushi-bay`, `cafe-atlas`)
+have zero categories and zero items, so they need nothing.
+
+| Content | Count |
+| --- | --- |
+| Category names (`Entrées`, `Plats Principaux`, `Accompagnements`, `Desserts`) | 4 |
+| Dish names | 29 |
+| Dish descriptions (the other 9 items have none) | 20 |
+| `about_body` (3 paragraphs) | 1 |
+| values / testimonials / about cards | already covered by `0024` |
+| hero / specials / welcome copy | not set in the DB — already served from `messages/*.json`, so already translated |
+
+**≈ 54 strings.** Small enough to seed in one migration rather than build
+tooling first.
+
+## 3. Plan
+
+### Phase A — unblock (must happen before anything else is visible)
+
+1. Apply `0023_content_i18n.sql` in the Supabase SQL editor. This alone fixes
+   the theme regression in §1.
+2. Apply `0024_rendezvous_en_content.sql` (English values/testimonials/about
+   cards, already written).
+3. Apply `0021_events.sql` if the events feature is wanted — otherwise leave it
+   and accept that `/[slug]/events` 500s.
+4. **Harden the theme read** so a schema drift like this can never again
+   silently blank a restaurant's branding: in `getPublicThemeRow`, check the
+   Supabase `error` and throw rather than falling through to `resolveTheme(null)`.
+   A hard failure surfaces in logs; a silent default looks like a design bug and
+   cost a full debugging cycle here.
+
+*Verification:* switch to English on `/orendezvous` — values, testimonials and
+the About cards flip; dish names stay French (expected until Phase B).
+
+### Phase B — seed the English menu
+
+`supabase/migrations/0025_rendezvous_en_menu.sql`: one `update … set i18n =
+i18n || '{"en":{…}}'::jsonb` per category and per item, matched on
+`(restaurant_id, name_fr)` so it is re-runnable and cannot touch another
+tenant's rows.
+
+Translation notes worth deciding before writing:
+- **Dish names that are proper nouns stay as-is** — `Tiramisu`, `La primavera`,
+  `Gambas « Al Ajillo »`, `Carpaccio`, `Linguine`. Translating these would be
+  wrong, not helpful. Roughly 8 of the 29 fall in this bucket and should keep
+  their French/Italian/Spanish form with at most the article adjusted.
+- **Descriptions are ingredient lists** — translate literally and keep them
+  short; they are the one place a bad translation becomes a food-accuracy
+  problem, so anything ambiguous gets left in French rather than guessed.
+- `about_body` translates as three blank-line-separated paragraphs, matching
+  the split the About page now does.
+
+*Verification:* the e2e sweep in `e2e/i18n.spec.ts` already fails on French
+markers; extend it with an explicit assertion that the menu page shows
+`Starters`/`Main courses` in English mode.
+
+### Phase C — keep it translated as the menu changes
+
+Seeding is a one-off; the menu changes every two weeks (per the restaurant's
+own about copy). Part 1 added English fields to the item form, the category
+rename dialog and the event form, so translations *can* be maintained — but
+one dish at a time, with no visibility into what is missing.
+
+Add a **translation view to the menu manager**: a table of every category and
+item with FR on the left and an editable EN column on the right, one save for
+the whole menu, plus a per-row "missing" marker and a header count
+("22/53 translated"). This is the difference between the feature being usable
+and being technically present.
+
+### Phase D — optional, only if Phase C proves tedious
+
+A **"Translate to English" button** that sends the untranslated French strings
+to Claude in one batch and pre-fills the EN column for the operator to review
+before saving. Never auto-saves: a machine translation of an ingredient list is
+a suggestion, not a fact. Worth building only after Phase C exists, since it
+needs the same UI to review the output.
+
+## 4. Recommendation
+
+Phases A and B are the actual answer to "the menu doesn't switch" and are a
+few hours of work, most of it careful translation. Phase C is what stops the
+problem coming back next time the chef changes the carte. Phase D is a
+convenience.
+
+Phase A is urgent regardless of the menu question, because of the theme
+regression in §1.
+
+---
+
+# Part 3 — Translating the dashboard
+
+Requested after Part 2: the owner/staff dashboard should switch language too,
+with the selector living in **Réglages**.
+
+## 1. Size of the job (measured)
+
+| Surface | Files | ~strings |
+| --- | --- | --- |
+| Owner dashboard (`src/components/dashboard/*`, `src/app/dashboard/**`) | 43 | ~453 |
+| Super Admin + login + change-password | 26 | ~214 |
+| **Total** | **69** | **~670** |
+
+Worst offenders: `inventory-view` (46), `orders-view` (36), `menu-manager` (23),
+`tables-editor` (22), `staff-management` (22), `promotions-manager` (21),
+`event-form` (21), `pos-view` (20), `overview-view` (20).
+
+Three shared French label maps also feed these screens and must move to message
+keys rather than being duplicated per locale:
+`src/lib/events.ts` (`EVENT_CATEGORY_LABELS`, `EVENT_STATUS_LABELS`,
+`EVENT_TYPE_LABELS`, `TIME_SLOT_LABELS`), `src/lib/feature-labels.ts`,
+`src/lib/permissions.ts` (role labels).
+
+This is ~3× the public-site job and entirely mechanical. It is worth phasing by
+how often a screen is actually looked at, not by file size.
+
+## 2. Design decisions
+
+**Where the selector lives.** A "Langue / Language" field in dashboard
+**Réglages** (`src/components/dashboard/settings-form.tsx`), reusing the
+`LanguageSwitcher` already built for the storefront.
+
+**What it writes.** The same `NEXT_LOCALE` cookie and `setLocale` server action
+from Part 1 — no new mechanism, no schema change. One consequence worth stating
+plainly: the switch is **per browser and covers both surfaces**, so an owner who
+sets the dashboard to English also sees their own storefront in English. For
+someone checking how their site looks to an English visitor that is the right
+behaviour, not a bug.
+
+**Not per-user.** Storing the preference on `profiles` would follow a person
+across devices, but the dashboard runs on shared hardware — the POS terminal,
+the kitchen tablet — where "this device is in Arabic because the last person to
+log in preferred it" is worse than a per-device setting. Cookie stays.
+Revisit only if staff ask for it.
+
+**Kitchen-facing order data stays French.** Order option strings
+(`Sans oignons`), stored notes and printed tickets are not translated — same
+reasoning as the storefront limitation in Part 1 §6. The kitchen reads one
+language; the UI chrome around it is what changes.
+
+## 3. Phasing
+
+Each phase ends green on `npm run typecheck && npm run lint && npm run test`,
+and adds its keys to both catalogues (the parity test in
+`src/lib/messages.test.ts` enforces that automatically).
+
+**D1 — Shell, navigation, settings (~60 keys).**
+`app-sidebar`, `dashboard-header`, `dashboard-toolbar`, `settings-tabs`,
+`settings-form` (**including the new language selector**), `empty-state`,
+`feature-locked`, `suspended-notice`, `subscription-card`, plus
+`src/app/dashboard/**/page.tsx` titles and metadata.
+Ships the selector first so everything after it is verifiable by clicking.
+
+**D2 — Daily operations (~150 keys).**
+`orders-view`, `kitchen-view`, `kds-view`, `pos-view`, `reservations-view`,
+`tables-editor`, `table-picker-modal`, `floor-plan`, `clock-widget`,
+`table-turnover`. These are read hourly by staff — the highest-value screens.
+
+**D3 — Management (~200 keys).**
+`menu-manager`, `item-form`, `recipe-editor`, `promotions-manager`,
+`inventory-view`, `variances-view`, `events-view`, `event-form`,
+`customers-view`, `staff-management`, `analytics-view`, `overview-view`,
+`hourly-chart`, `labor-panel`, `qr-cards`, `customization-editor`.
+
+**D4 — Shared label maps (~40 keys).**
+Convert `EVENT_*_LABELS`, `FEATURE_LABELS` and the role labels from
+`Record<K, string>` constants into `Record<K, messageKey>` plus a `t()` lookup
+at the call site. Doing this *after* D2/D3 means the call sites already have a
+translator in scope.
+
+**D5 — Super Admin + auth (~214 keys).**
+`src/app/admin/**`, `src/components/admin/**`, `login`, `change-password`.
+Lowest traffic and single-operator, so last — but it is the surface where the
+site builder lives, so its English tab labels matter for whoever writes the
+translations.
+
+**D6 — Dashboard date/number formatting.**
+`formatDateTime` in `src/lib/format.ts` hardcodes `toLocaleString("fr-MA", …)`
+and is used by 8 dashboard/admin views; another 8 files import `{ fr }` from
+date-fns directly (`reservations-view`, `events-view`, `dashboard-header`,
+`clock-widget`, `table-turnover`, `inventory-query`, `orders-view`,
+`event-form`). Extend the `dateFnsLocale()` helper from Part 1 §4 across them
+and give `formatDateTime` a locale argument.
+
+## 4. Verification
+
+- Extend `e2e/i18n.spec.ts` with an authenticated pass: log in (reusing
+  `loginAndClearForcedPasswordChange` from `e2e/rbac.spec.ts`), set the cookie
+  to `en`, visit each dashboard route and run the same French-marker sweep.
+- The existing message key-parity / placeholder test covers the new namespaces
+  for free.
+
+## 5. Recommendation
+
+D1 first and on its own: without the selector in Réglages there is nothing to
+demonstrate, and with it every later phase becomes visually verifiable. D2 next
+(staff-facing, hourly use). D3–D5 are volume work that can land incrementally
+without ever leaving the dashboard in a broken half-state, because any
+untranslated screen simply stays French.

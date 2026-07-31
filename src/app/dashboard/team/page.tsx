@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { StaffManagement } from "@/components/dashboard/staff-management";
 import { FeatureLocked } from "@/components/dashboard/feature-locked";
 import { getSessionContext } from "@/lib/dashboard";
 import { defaultRouteFor } from "@/lib/permissions";
 
-export const metadata: Metadata = { title: "Équipe" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navTeam") };
+}
 
 export default async function TeamPage() {
   const ctx = await getSessionContext();

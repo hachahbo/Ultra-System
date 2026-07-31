@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { KdsView } from "@/components/dashboard/kds-view";
 import { FeatureLocked } from "@/components/dashboard/feature-locked";
 import { getSessionContext } from "@/lib/dashboard";
 
-export const metadata: Metadata = { title: "Cuisine (KDS)" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navKds") };
+}
 
 export default async function KdsPage() {
   const ctx = await getSessionContext();

@@ -10,11 +10,12 @@ export type Role = "owner" | "manager" | "serveur" | "cuisine";
 
 export const ROLES: Role[] = ["owner", "manager", "serveur", "cuisine"];
 
+// Message keys into the Labels.* namespace, not display text.
 export const ROLE_LABELS: Record<Role, string> = {
-  owner: "Admin",
-  manager: "Manager",
-  serveur: "Serveur",
-  cuisine: "Cuisine",
+  owner: "roleOwner",
+  manager: "roleManager",
+  serveur: "roleServeur",
+  cuisine: "roleCuisine",
 };
 
 // Ordered most-specific-first; canAccessRoute picks the first prefix match.

@@ -2,10 +2,12 @@
 
 import { Bell, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function DashboardToolbar() {
+  const t = useTranslations("Dashboard");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -18,7 +20,7 @@ export function DashboardToolbar() {
       <button
         onClick={() => {}}
         className="relative flex size-10 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground shadow-sm"
-        aria-label="Notifications"
+        aria-label={t("notifications")}
       >
         <Bell className="size-5" />
         <span className="absolute right-2 top-2 size-2 rounded-full bg-primary" />
@@ -27,7 +29,7 @@ export function DashboardToolbar() {
       <button
         onClick={() => setTheme(isDark ? "light" : "dark")}
         className="relative flex size-10 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground shadow-sm"
-        aria-label="Toggle theme"
+        aria-label={t("toggleTheme")}
       >
         {mounted && (
           <AnimatePresence mode="wait" initial={false}>

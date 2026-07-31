@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, LayoutGrid, ChevronDown, X, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,20 +22,15 @@ type DashboardMenu = {
   items: Item[];
 };
 
-type OrderType = "Sur place" | "À emporter" | "Livraison";
-const ORDER_TYPES: OrderType[] = ["Sur place", "À emporter", "Livraison"];
+type OrderType = "dine_in" | "takeaway" | "delivery";
+const ORDER_TYPES: OrderType[] = ["dine_in", "takeaway", "delivery"];
 
-const ORDER_TYPE_MAP: Record<OrderType, "dine_in" | "takeaway" | "delivery"> = {
-  "Sur place": "dine_in",
-  "À emporter": "takeaway",
-  "Livraison": "delivery",
-};
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
 async function fetchDashboardMenu(): Promise<DashboardMenu> {
   const res = await fetch("/api/dashboard/menu");
-  if (!res.ok) throw new Error("Impossible de charger le menu");
+  if (!res.ok) throw new Error("dashboard menu fetch failed");
   return res.json();
 }
 
@@ -52,7 +48,7 @@ async function placeStaffOrder(body: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error ?? "Erreur lors de la commande");
+    throw new Error(err.error ?? "pos order failed");
   }
   return res.json();
 }
@@ -60,6 +56,7 @@ async function placeStaffOrder(body: {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function PosView({ onClose }: { onClose?: () => void }) {
+  const t = useTranslations("Pos");
   const queryClient = useQueryClient();
   const [category, setCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,7 +64,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
   const [customerName, setCustomerName] = useState("");
   const [table, setTable] = useState("");
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
-  const [orderType, setOrderType] = useState<OrderType>("Sur place");
+  const [orderType, setOrderType] = useState<OrderType>("dine_in");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
 
@@ -84,12 +81,12 @@ export function PosView({ onClose }: { onClose?: () => void }) {
       clearCart();
       setCustomerName("");
       setTable("");
-      setOrderType("Sur place");
+      setOrderType("dine_in");
       setMobileSummaryOpen(false);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       onClose?.();
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || t("orderFailed")),
   });
 
   const categories = menuData?.categories ?? [];
@@ -114,9 +111,9 @@ export function PosView({ onClose }: { onClose?: () => void }) {
 
   function handlePlaceOrder() {
     if (cartEmpty || submitOrder.isPending) return;
-    const apiType = ORDER_TYPE_MAP[orderType];
+    const apiType = orderType;
     if (apiType === "dine_in" && !table) {
-      toast.error("Sélectionnez une table pour une commande sur place.");
+      toast.error(t("pickTableHint"));
       return;
     }
     submitOrder.mutate({
@@ -139,7 +136,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
         <div className="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {/* Top header with close button */}
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h1 className="m-0 text-xl sm:text-2xl font-extrabold tracking-tight">Nouvelle commande</h1>
+            <h1 className="m-0 text-xl sm:text-2xl font-extrabold tracking-tight">{t("newOrder")}</h1>
             {onClose && (
               <button
                 type="button"
@@ -156,7 +153,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
           <div className="flex items-center gap-2 bg-white dark:bg-[#1a1a1c] border border-[#ece6dc] dark:border-white/10 rounded-xl px-3.5 py-2.5 mb-4 shadow-sm dark:shadow-none w-full">
             <Search className="size-4 text-[#928a7e] dark:text-white/50 shrink-0" />
             <input
-              placeholder="Rechercher un plat"
+              placeholder={t("searchDish")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="border-none outline-none text-sm w-full bg-transparent text-[#1c1712] dark:text-white placeholder:text-[#b6ada0] dark:placeholder:text-white/40"
@@ -231,7 +228,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
 
                     {!item.in_stock && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-[20px] bg-black/50">
-                        <span className="text-xs font-bold text-white/80 bg-black/60 px-2 py-0.5 rounded-full">Épuisé</span>
+                        <span className="text-xs font-bold text-white/80 bg-black/60 px-2 py-0.5 rounded-full">{t("soldOut")}</span>
                       </div>
                     )}
 
@@ -250,7 +247,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                 ))}
                 {!isLoading && visibleItems.length === 0 && (
                   <div className="col-span-full py-12 text-center text-[#b6ada0] dark:text-gray-500 font-medium">
-                    Aucun plat trouvé.
+                    {t("noDish")}
                   </div>
                 )}
               </div>
@@ -287,7 +284,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
         >
           {/* Mobile Drawer Top Bar */}
           <div className="flex items-center justify-between mb-4 lg:mb-5 border-b border-[#ece6dc] dark:border-white/10 pb-3">
-            <span className="text-base sm:text-lg font-extrabold">Résumé de la commande</span>
+            <span className="text-base sm:text-lg font-extrabold">{t("summary")}</span>
             <button
               type="button"
               onClick={() => setMobileSummaryOpen(false)}
@@ -297,40 +294,40 @@ export function PosView({ onClose }: { onClose?: () => void }) {
             </button>
           </div>
 
-          <label className="text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400 mb-1 block">Nom du client</label>
+          <label className="text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400 mb-1 block">{t("customerName")}</label>
           <input
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="Entrer un nom"
+            placeholder={t("enterName")}
             className="w-full border border-[#ece6dc] dark:border-white/10 rounded-xl px-3 py-2 text-sm mb-3 outline-none focus:border-[#ec5b1a] focus:ring-1 focus:ring-[#ec5b1a] transition-all bg-white dark:bg-white/5 dark:text-white"
           />
 
           {/* Table picker — only for sur place */}
-          <div className={cn("transition-opacity duration-200", orderType !== "Sur place" && "opacity-40 pointer-events-none select-none")}>
+          <div className={cn("transition-opacity duration-200", orderType !== "dine_in" && "opacity-40 pointer-events-none select-none")}>
             <label className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400 mb-1">
               <LayoutGrid className="size-3.5 opacity-70" />
               Table
-              {orderType !== "Sur place" && (
-                <span className="ml-auto text-[11px] font-normal text-[#928a7e] dark:text-white/30 italic">Non applicable</span>
+              {orderType !== "dine_in" && (
+                <span className="ml-auto text-[11px] font-normal text-[#928a7e] dark:text-white/30 italic">{t("notApplicable")}</span>
               )}
             </label>
             <button
               type="button"
-              disabled={orderType !== "Sur place"}
+              disabled={orderType !== "dine_in"}
               onClick={() => setTablePickerOpen(true)}
               className={cn(
                 "w-full flex items-center justify-between gap-2 mb-3 h-10 rounded-xl border px-3 text-sm transition-all",
                 table
                   ? "border-[#ec5b1a] bg-[#ec5b1a]/[0.08] text-[#ec5b1a] dark:bg-[#ec5b1a]/[0.12]"
                   : "border-[#ece6dc] dark:border-white/10 bg-white dark:bg-white/5 text-[#928a7e] dark:text-white/40",
-                orderType === "Sur place" && "hover:border-[#ec5b1a] focus-visible:outline-none",
+                orderType === "dine_in" && "hover:border-[#ec5b1a] focus-visible:outline-none",
               )}
             >
               <span className={cn("font-medium", table ? "text-[#ec5b1a]" : "")}>
-                {table ? `Table ${table}` : "Sélectionner une table"}
+                {table ? `Table ${table}` : t("pickTable")}
               </span>
               <span className="flex items-center gap-1 shrink-0">
-                {table && orderType === "Sur place" && (
+                {table && orderType === "dine_in" && (
                   <span
                     role="button"
                     onClick={(e) => { e.stopPropagation(); setTable(""); }}
@@ -351,12 +348,12 @@ export function PosView({ onClose }: { onClose?: () => void }) {
           </div>
 
           {/* Order type buttons */}
-          <label className="text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400 mb-1 block">Type de commande</label>
+          <label className="text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400 mb-1 block">{t("orderType")}</label>
           <div className="flex gap-1.5 mb-4">
             {ORDER_TYPES.map((ot) => (
               <button
                 key={ot}
-                onClick={() => { setOrderType(ot); if (ot !== "Sur place") setTable(""); }}
+                onClick={() => { setOrderType(ot); if (ot !== "dine_in") setTable(""); }}
                 className={cn(
                   "flex-1 text-center py-2 px-1 rounded-xl text-xs font-bold transition-all border",
                   ot === orderType
@@ -364,7 +361,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                     : "border-[#ece6dc] dark:border-white/10 bg-white dark:bg-[#1a1a1c] text-[#5a544c] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5",
                 )}
               >
-                {ot}
+                {ot === "dine_in" ? t("dineIn") : ot === "takeaway" ? t("takeaway") : t("delivery")}
               </button>
             ))}
           </div>
@@ -383,7 +380,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
             {cartEmpty ? (
               <div className="text-center text-[#b6ada0] dark:text-gray-500 text-xs py-8 flex flex-col items-center gap-2">
                 <span className="text-3xl opacity-50">🛒</span>
-                <span>Le panier est vide.<br />Ajoutez des articles du menu.</span>
+                <span>{t("cartEmpty")}<br />{t("addItems")}</span>
               </div>
             ) : (
               <div className="flex flex-col gap-1">
@@ -432,7 +429,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
               <span>Sous-total</span><span>{subtotal} MAD</span>
             </div>
             <div className="flex justify-between text-xs text-[#5a544c] dark:text-gray-400 mb-3 font-medium">
-              <span>TVA (10%)</span><span>{tax} MAD</span>
+              <span>{t("vat")}</span><span>{tax} MAD</span>
             </div>
             <div className="flex justify-between text-base sm:text-lg font-extrabold mb-4 text-[#1c1712] dark:text-white">
               <span>Total</span><span>{total} MAD</span>
@@ -448,9 +445,9 @@ export function PosView({ onClose }: { onClose?: () => void }) {
               )}
             >
               {submitOrder.isPending
-                ? "Envoi en cours…"
+                ? t("sending")
                 : cartEmpty
-                ? "Panier vide"
+                ? t("emptyCart")
                 : `Placer la commande · ${total} MAD`}
             </Button>
           </div>

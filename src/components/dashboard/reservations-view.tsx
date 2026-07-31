@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import {
   CalendarDays,
   Check,
@@ -57,6 +58,7 @@ async function fetchReservations(): Promise<Reservation[]> {
 type DayFilter = "today" | "upcoming" | "past";
 
 export function ReservationsView() {
+  const t = useTranslations("Reservations");
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "map">("list");
   const [dayFilter, setDayFilter] = useState<DayFilter>("upcoming");
@@ -81,7 +83,7 @@ export function ReservationsView() {
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reservations"] }),
-    onError: () => toast.error("Impossible de mettre à jour la réservation"),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   const assignTable = useMutation({
@@ -103,7 +105,7 @@ export function ReservationsView() {
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
       setAssigning(null);
     },
-    onError: () => toast.error("Attribution impossible"),
+    onError: () => toast.error(t("assignFailed")),
   });
 
   const todayCasa = dayBucket(new Date());
@@ -124,12 +126,12 @@ export function ReservationsView() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold">Réservations</h1>
+        <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
         <div className="flex rounded-lg border p-0.5">
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
             size="icon-sm"
-            aria-label="Vue liste"
+            aria-label={t("listView")}
             onClick={() => setView("list")}
           >
             <List className="size-4" />
@@ -137,7 +139,7 @@ export function ReservationsView() {
           <Button
             variant={view === "map" ? "secondary" : "ghost"}
             size="icon-sm"
-            aria-label="Vue plan de salle"
+            aria-label={t("floorView")}
             onClick={() => setView("map")}
           >
             <LayoutGrid className="size-4" />
@@ -168,7 +170,7 @@ export function ReservationsView() {
             </Select>
           </div>
           <p className="mb-3 text-sm text-muted-foreground">
-            Tables réservées (rouge) et libres (vert) pour ce créneau.
+            {t("floorHint")}
           </p>
           <FloorPlanMap
             tables={tables ?? []}
@@ -193,8 +195,8 @@ export function ReservationsView() {
           <Tabs value={dayFilter} onValueChange={(v) => setDayFilter(v as DayFilter)} className="mt-4">
             <TabsList variant="line">
               <TabsTrigger value="today">Aujourd&apos;hui</TabsTrigger>
-              <TabsTrigger value="upcoming">À venir</TabsTrigger>
-              <TabsTrigger value="past">Passées</TabsTrigger>
+              <TabsTrigger value="upcoming">{t("upcoming")}</TabsTrigger>
+              <TabsTrigger value="past">{t("past")}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -212,8 +214,8 @@ export function ReservationsView() {
               {!isPending && pending.length === 0 && (
                 <EmptyState
                   icon={CalendarDays}
-                  title="Aucune demande en attente"
-                  hint="Les nouvelles réservations apparaîtront ici."
+                  title={t("empty")}
+                  hint={t("emptyHint")}
                 />
               )}
               {pending.map((r) => (
@@ -246,7 +248,7 @@ export function ReservationsView() {
 
           {decided.length > 0 && (
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-muted-foreground">Réservations</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">{t("title")}</h2>
               <div className="mt-2 space-y-3">
                 {decided.map((r) => (
                   <ReservationCard
@@ -271,7 +273,7 @@ export function ReservationsView() {
           {assigning && (
             <>
               <p className="text-sm text-muted-foreground">
-                {format(parseISO(assigning.date), "EEEE d MMMM", { locale: fr })} ·{" "}
+                {format(parseISO(assigning.date), "EEEE d MMMM", { locale: dateFnsLocale(locale) })} ·{" "}
                 {assigning.time.slice(0, 5)} · {assigning.party_size} pers.
               </p>
               <FloorPlanMap
@@ -312,7 +314,8 @@ function ReservationCard({
   children?: React.ReactNode;
   onAssign?: () => void;
 }) {
-  const dateLabel = format(parseISO(r.date), "EEEE d MMMM", { locale: fr });
+  const t = useTranslations("Reservations");
+  const dateLabel = format(parseISO(r.date), "EEEE d MMMM", { locale: dateFnsLocale(locale) });
   // Manual confirmation via a wa.me tap is allowed in v1 (plan.md §3D).
   const waHref = `https://wa.me/${r.customer_phone.replace(/\D/g, "").replace(/^0/, "212")}`;
 
@@ -353,7 +356,7 @@ function ReservationCard({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
           >
-            <MessageCircle className="size-4" /> Écrire sur WhatsApp
+            <MessageCircle className="size-4" /> {t("whatsapp")}
           </a>
           {onAssign && (
             <button
@@ -364,7 +367,7 @@ function ReservationCard({
               <MapPin className="size-4" />
               {r.assigned_table_number
                 ? `Table ${r.assigned_table_number}`
-                : "Assigner une table"}
+                : t("assignTable")}
             </button>
           )}
         </div>
@@ -375,7 +378,8 @@ function ReservationCard({
 }
 
 function StatusBadge({ status }: { status: Reservation["status"] }) {
-  if (status === "confirmed") return <Badge>Confirmée</Badge>;
-  if (status === "declined") return <Badge variant="outline">Refusée</Badge>;
+  const t = useTranslations("Reservations");
+  if (status === "confirmed") return <Badge>{t("confirmed")}</Badge>;
+  if (status === "declined") return <Badge variant="outline">{t("declined")}</Badge>;
   return <Badge variant="secondary">Nouvelle</Badge>;
 }

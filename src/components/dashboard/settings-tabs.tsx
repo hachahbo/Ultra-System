@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { SubscriptionCard } from "@/components/dashboard/subscription-card";
 import { cn } from "@/lib/utils";
 import type { FeatureKey, Restaurant, Subscription } from "@/lib/types";
 
+// `label` indexes into the Settings.* messages.
 const TABS = [
-  { id: "general", label: "Général" },
-  { id: "billing", label: "Abonnement" },
+  { id: "general", label: "tabGeneral" },
+  { id: "billing", label: "tabBilling" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -24,24 +26,25 @@ export function SettingsTabs({
   subscription: Subscription | null;
   features: Record<FeatureKey, boolean>;
 }) {
+  const t = useTranslations("Settings");
   const [tab, setTab] = useState<TabId>("general");
 
   return (
     <div>
       <div className="flex gap-1.5 border-b border-border">
-        {TABS.map((t) => (
+        {TABS.map((tabDef) => (
           <button
-            key={t.id}
+            key={tabDef.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => setTab(tabDef.id)}
             className={cn(
               "-mb-px border-b-2 px-4 py-2.5 text-[13.5px] font-bold transition-colors",
-              tab === t.id
+              tab === tabDef.id
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
-            {t.label}
+            {t(tabDef.label)}
           </button>
         ))}
       </div>

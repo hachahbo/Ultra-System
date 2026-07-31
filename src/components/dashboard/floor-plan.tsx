@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Smartphone, Monitor } from "lucide-react";
 import type { DiningTable } from "@/lib/types";
@@ -40,6 +41,7 @@ export function FloorPlanMap({
   onTableTap?: (t: DiningTable) => void;
   onTableMove?: (id: string, posX: number, posY: number) => void;
 }) {
+  const t = useTranslations("Tables");
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragPos, setDragPos] = useState<Record<string, { x: number; y: number }>>({});
   const [verticalMobile, setVerticalMobile] = useState(true);
@@ -114,11 +116,11 @@ export function FloorPlanMap({
           >
             {isVertical ? (
               <>
-                <Smartphone className="size-3.5" /> Affichage vertical
+                <Smartphone className="size-3.5" /> {t("verticalView")}
               </>
             ) : (
               <>
-                <Monitor className="size-3.5" /> Mode panoramique
+                <Monitor className="size-3.5" /> {t("panoramaMode")}
               </>
             )}
           </button>
@@ -230,7 +232,7 @@ export function FloorPlanMap({
 
           {tables.length === 0 && (
             <div className="flex h-full items-center justify-center text-sm font-medium text-muted-foreground">
-              Aucune table configurée.
+              {t("noneConfigured")}
             </div>
           )}
         </div>

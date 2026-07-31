@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Languages } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { restaurantSettingsSchema, type RestaurantSettingsInput } from "@/lib/schemas";
 import type { Restaurant } from "@/lib/types";
 
@@ -51,6 +53,7 @@ function ReadonlyField({ label, value, hint }: { label: string; value: string; h
 // currency are set by the Super Admin in the Site Builder now.
 export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [saving, setSaving] = useState(false);
+  const t = useTranslations("Settings");
 
   const form = useForm<RestaurantSettingsInput>({
     resolver: zodResolver(restaurantSettingsSchema),
@@ -73,10 +76,10 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
         body: JSON.stringify(values),
       });
       if (!res.ok) {
-        toast.error("Enregistrement impossible");
+        toast.error(t("saveFailed"));
         return;
       }
-      toast.success("Réglages enregistrés");
+      toast.success(t("saved"));
     } finally {
       setSaving(false);
     }
@@ -86,54 +89,54 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-      <SettingsCard title="Profil du restaurant" hint="Informations publiques affichées à vos clients.">
+      <SettingsCard title={t("profileTitle")} hint={t("profileHint")}>
         <ReadonlyField
-          label="Nom du restaurant"
+          label={t("restaurantName")}
           value={restaurant.name}
-          hint="Modifiable par l'équipe Darna."
+          hint={t("editableByDarna")}
         />
       </SettingsCard>
 
-      <SettingsCard title="Contact">
+      <SettingsCard title={t("contactTitle")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="phone" className="mb-1.5 block text-[12.5px] font-bold text-foreground/80">
-              Téléphone
+              {t("phone")}
             </Label>
             <Input id="phone" className={inputClass} {...form.register("phone")} />
           </div>
           <div>
             <Label htmlFor="whatsapp_number" className="mb-1.5 block text-[12.5px] font-bold text-foreground/80">
-              WhatsApp
+              {t("whatsapp")}
             </Label>
             <Input id="whatsapp_number" className={inputClass} {...form.register("whatsapp_number")} />
           </div>
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Horaires d'ouverture" hint="Affichés aux clients sur votre page publique.">
+      <SettingsCard title={t("hoursTitle")} hint={t("hoursHint")}>
         <div>
           <Label htmlFor="hours" className="mb-1.5 block text-[12.5px] font-bold text-foreground/80">
-            Horaires
+            {t("hours")}
           </Label>
           <Input
             id="hours"
-            placeholder="Lun–Dim, 11h–23h"
+            placeholder={t("hoursPlaceholder")}
             className={inputClass}
             {...form.register("hours")}
           />
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Livraison & Commande">
+      <SettingsCard title={t("deliveryTitle")}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <ReadonlyField label="Devise" value={restaurant.currency} hint="Modifiable par l'équipe Darna." />
+          <ReadonlyField label={t("currency")} value={restaurant.currency} hint={t("editableByDarna")} />
           <div>
             <Label
               htmlFor="base_delivery_fee"
               className="mb-1.5 block text-[12.5px] font-bold text-foreground/80"
             >
-              Frais de livraison
+              {t("deliveryFee")}
             </Label>
             <Input
               id="base_delivery_fee"
@@ -150,9 +153,9 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
         <div className="flex flex-col">
           <div className="flex items-center justify-between border-t border-border py-3.5">
             <div>
-              <div className="text-[13.5px] font-bold text-foreground">Commande sur place</div>
+              <div className="text-[13.5px] font-bold text-foreground">{t("dineIn")}</div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                Accepter les commandes en salle via QR code.
+                {t("dineInHint")}
               </div>
             </div>
             <Switch
@@ -163,9 +166,9 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
           </div>
           <div className="flex items-center justify-between border-t border-border py-3.5">
             <div>
-              <div className="text-[13.5px] font-bold text-foreground">Livraison</div>
+              <div className="text-[13.5px] font-bold text-foreground">{t("delivery")}</div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                Proposer la livraison à domicile.
+                {t("deliveryHint")}
               </div>
             </div>
             <Switch
@@ -177,12 +180,24 @@ export function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
         </div>
       </SettingsCard>
 
+      <SettingsCard title={t("languageTitle")} hint={t("languageHint")}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <Languages className="size-4 text-muted-foreground" />
+            <span className="text-[13.5px] font-bold text-foreground">{t("language")}</span>
+          </div>
+          {/* Applies on selection (cookie + refresh), so it is not part of
+              this form's submit — nothing to save, nothing to lose. */}
+          <LanguageSwitcher />
+        </div>
+      </SettingsCard>
+
       <Button
         type="submit"
         disabled={saving}
         className="w-full rounded-xl py-5 font-bold sm:w-auto sm:self-end sm:px-8"
       >
-        {saving ? "Enregistrement…" : "Enregistrer"}
+        {saving ? t("saving") : t("save")}
       </Button>
     </form>
   );

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { PlanBadge, StatusBadge } from "@/components/admin/badges";
+import { useTranslations } from "next-intl";
 import { FEATURE_LABELS } from "@/lib/feature-labels";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import type { FeatureKey, Restaurant, Subscription } from "@/lib/types";
@@ -16,6 +17,7 @@ export function SubscriptionCard({
   subscription: Subscription | null;
   features: Record<FeatureKey, boolean>;
 }) {
+  const tl = useTranslations("Labels");
   if (!subscription) return null;
 
   const includedFeatures = (Object.keys(features) as FeatureKey[]).filter((k) => features[k]);
@@ -48,7 +50,7 @@ export function SubscriptionCard({
           {includedFeatures.map((key) => (
             <div key={key} className="flex items-center gap-2 text-[12.5px] font-semibold text-foreground/80">
               <Check className="size-4 shrink-0 text-emerald-500" />
-              {FEATURE_LABELS[key]}
+              {tl(FEATURE_LABELS[key])}
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -49,15 +50,17 @@ async function fetchOrders(): Promise<Order[]> {
 
 type Filter = "all" | "active" | "done";
 
+// `label` indexes into the Orders.* messages.
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string; darkBg: string; darkColor: string }> = {
-  new: { label: "En cours", bg: "rgba(236, 91, 26, 0.14)", color: "#c94e10", darkBg: "rgba(236, 91, 26, 0.2)", darkColor: "#f7814b" },
-  preparing: { label: "Prête", bg: "rgba(111, 143, 208, 0.16)", color: "#3a5fa0", darkBg: "rgba(111, 143, 208, 0.25)", darkColor: "#84a5e0" },
-  done: { label: "Terminée", bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
+  new: { label: "inProgress", bg: "rgba(236, 91, 26, 0.14)", color: "#c94e10", darkBg: "rgba(236, 91, 26, 0.2)", darkColor: "#f7814b" },
+  preparing: { label: "ready", bg: "rgba(111, 143, 208, 0.16)", color: "#3a5fa0", darkBg: "rgba(111, 143, 208, 0.25)", darkColor: "#84a5e0" },
+  done: { label: "done", bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
 };
 
 const getStatusBadge = (status: string) => STATUS_MAP[status] || STATUS_MAP.new;
 
 export function OrdersView() {
+  const t = useTranslations("Orders");
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Filter>("all");
   const [globalFilter, setGlobalFilter] = useState("");
@@ -111,11 +114,11 @@ export function OrdersView() {
         }),
       });
       if (!res.ok) throw new Error("Failed to update order");
-      toast.success("Commande mise à jour avec succès");
+      toast.success(t("updated"));
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setSelectedOrderForEdit(null);
     } catch {
-      toast.error("Erreur lors de la mise à jour de la commande");
+      toast.error(t("updateFailed"));
     } finally {
       setIsSavingEdit(false);
     }
@@ -129,12 +132,12 @@ export function OrdersView() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete order");
-      toast.success("Commande supprimée avec succès");
+      toast.success(t("deleted"));
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setSelectedOrderForDelete(null);
       setRowSelection({});
     } catch {
-      toast.error("Erreur lors de la suppression");
+      toast.error(t("deleteFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -163,7 +166,7 @@ export function OrdersView() {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setRowSelection({});
     } catch {
-      toast.error("Erreur lors de la mise à jour des commandes");
+      toast.error(t("bulkUpdateFailed"));
     }
   };
 
@@ -183,7 +186,7 @@ export function OrdersView() {
       setRowSelection({});
       setIsBulkDeleteModalOpen(false);
     } catch {
-      toast.error("Erreur lors de la suppression des commandes");
+      toast.error(t("bulkDeleteFailed"));
     } finally {
       setIsDeleting(false);
     }
@@ -198,7 +201,7 @@ export function OrdersView() {
             type="checkbox"
             checked={table.getIsAllPageRowsSelected()}
             onChange={table.getToggleAllPageRowsSelectedHandler()}
-            aria-label="Sélectionner tout"
+            aria-label={t("selectAll")}
             className="size-4 rounded border-border accent-primary cursor-pointer align-middle"
           />
         ),
@@ -207,14 +210,14 @@ export function OrdersView() {
             type="checkbox"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
-            aria-label="Sélectionner la ligne"
+            aria-label={t("selectRow")}
             className="size-4 rounded border-border accent-primary cursor-pointer align-middle"
           />
         ),
       },
       {
         accessorKey: "id",
-        header: "N° CMD",
+        header: t("colNumber"),
         cell: ({ row }) => {
           const order = row.original;
           const code = "CMD-" + order.id.slice(0, 4).toUpperCase();
@@ -262,7 +265,7 @@ export function OrdersView() {
       },
       {
         id: "quantity",
-        header: () => <div className="text-center">QTÉ</div>,
+        header: () => <div className="text-center">{t("colQty")}</div>,
         cell: ({ row }) => {
           const order = row.original;
           const totalQty = order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
@@ -324,13 +327,13 @@ export function OrdersView() {
                 className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-colors dark:hidden"
                 style={{ background: badge.bg, color: badge.color }}
               >
-                {badge.label}
+                {t(badge.label)}
               </span>
               <span 
                 className="hidden items-center justify-center px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-colors dark:inline-flex"
                 style={{ background: badge.darkBg, color: badge.darkColor }}
               >
-                {badge.label}
+                {t(badge.label)}
               </span>
             </div>
           );
@@ -348,7 +351,7 @@ export function OrdersView() {
                   e.stopPropagation();
                   openEditModal(order);
                 }}
-                title="Modifier la commande"
+                title={t("editOrder")}
                 className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 <Pencil className="size-4" />
@@ -397,10 +400,10 @@ export function OrdersView() {
     const revenu = orders.reduce((sum, o) => sum + Number(o.total), 0);
 
     return [
-      { label: "Commandes du jour", value: String(orders.length) },
-      { label: "En cours", value: String(enCours), textClass: "text-primary" },
-      { label: "Terminées", value: String(terminees), textClass: "text-emerald-600 dark:text-emerald-400" },
-      { label: "Revenu du jour", value: `${revenu} MAD` },
+      { label: t("title"), value: String(orders.length) },
+      { label: t("inProgress"), value: String(enCours), textClass: "text-primary" },
+      { label: t("donePlural"), value: String(terminees), textClass: "text-emerald-600 dark:text-emerald-400" },
+      { label: t("revenue"), value: `${revenu} MAD` },
     ];
   }, [orders]);
 
@@ -421,7 +424,7 @@ export function OrdersView() {
             className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-[18px] py-[11px] rounded-xl text-[13.5px] font-bold hover:bg-primary/90 transition-colors shadow-sm w-full sm:w-auto"
           >
             <Plus className="size-4 stroke-[2.5px]" />
-            Nouvelle commande
+            {t("newOrder")}
           </button>
         </div>
 
@@ -450,14 +453,14 @@ export function OrdersView() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold text-muted-foreground mr-1">Changer statut:</span>
+              <span className="text-xs font-semibold text-muted-foreground mr-1">{t("changeStatus")}</span>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleBulkStatusChange("new")}
                 className="rounded-xl text-xs font-bold border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
               >
-                En cours
+                {t("inProgress")}
               </Button>
               <Button
                 size="sm"
@@ -465,7 +468,7 @@ export function OrdersView() {
                 onClick={() => handleBulkStatusChange("preparing")}
                 className="rounded-xl text-xs font-bold border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
               >
-                Prête
+                {t("ready")}
               </Button>
               <Button
                 size="sm"
@@ -473,7 +476,7 @@ export function OrdersView() {
                 onClick={() => handleBulkStatusChange("done")}
                 className="rounded-xl text-xs font-bold border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
               >
-                Terminée
+                {t("done")}
               </Button>
 
               <div className="h-4 w-px bg-border mx-1" />
@@ -505,21 +508,21 @@ export function OrdersView() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
             {[
-              { id: "all", label: "Toutes" },
-              { id: "active", label: "En cours" },
-              { id: "done", label: "Terminées" },
-            ].map(t => (
+              { id: "all", label: t("all") },
+              { id: "active", label: t("inProgress") },
+              { id: "done", label: t("donePlural") },
+            ].map((tab_) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id as Filter)}
+                key={tab_.id}
+                onClick={() => setTab(tab_.id as Filter)}
                 className={cn(
                   "px-4 py-2 rounded-full text-[13px] font-bold transition-colors border whitespace-nowrap",
-                  tab === t.id 
+                  tab === tab_.id 
                     ? "bg-foreground border-foreground text-background" 
                     : "bg-card border-border text-foreground hover:bg-muted"
                 )}
               >
-                {t.label}
+                {tab_.label}
               </button>
             ))}
           </div>
@@ -529,7 +532,7 @@ export function OrdersView() {
             <input 
               value={globalFilter ?? ""}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder="Rechercher client ou n° commande"
+              placeholder={t("search")}
               className="border-none outline-none text-[13px] w-full bg-transparent text-foreground placeholder:text-muted-foreground"
             />
           </div>
@@ -564,7 +567,7 @@ export function OrdersView() {
                           className="inline-flex shrink-0 items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold"
                           style={{ background: badge.bg, color: badge.color }}
                         >
-                          {badge.label}
+                          {t(badge.label)}
                         </span>
                       </div>
                       <div className="mt-3 text-[13.5px] font-bold text-foreground truncate">{firstItemName}</div>
@@ -608,7 +611,7 @@ export function OrdersView() {
                 })
               ) : (
                 <div className="py-12 text-center text-[13.5px] text-muted-foreground">
-                  Aucune commande ne correspond.
+                  {t("empty")}
                 </div>
               )}
             </div>
@@ -652,7 +655,7 @@ export function OrdersView() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-32 text-center text-[13.5px] text-muted-foreground">
-                      Aucune commande ne correspond.
+                      {t("empty")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -691,7 +694,7 @@ export function OrdersView() {
       <Dialog open={isPosModalOpen} onOpenChange={setPosModalOpen}>
         {isPosModalOpen && (
           <DialogContent showCloseButton={false} className="w-full max-w-full sm:max-w-[1440px] sm:w-[95vw] h-[100dvh] sm:h-[92vh] p-0 overflow-hidden bg-transparent border-none shadow-none rounded-none sm:rounded-[24px]">
-            <DialogTitle className="sr-only">Nouvelle commande</DialogTitle>
+            <DialogTitle className="sr-only">{t("newOrder")}</DialogTitle>
             <PosView onClose={() => setPosModalOpen(false)} />
           </DialogContent>
         )}
@@ -716,7 +719,7 @@ export function OrdersView() {
               {/* Status Pills */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Statut de la commande
+                  {t("orderStatus")}
                 </Label>
                 <div className="flex gap-2">
                   {(["new", "preparing", "done"] as const).map((st) => (
@@ -731,7 +734,7 @@ export function OrdersView() {
                           : "border-border bg-card text-muted-foreground hover:bg-muted"
                       )}
                     >
-                      {STATUS_MAP[st]?.label}
+                      {t(STATUS_MAP[st]?.label ?? "inProgress")}
                     </button>
                   ))}
                 </div>
@@ -741,25 +744,25 @@ export function OrdersView() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-customer" className="text-xs font-bold text-muted-foreground">
-                    Nom du client
+                    {t("customerName")}
                   </Label>
                   <Input
                     id="edit-customer"
                     value={editCustomerName}
                     onChange={(e) => setEditCustomerName(e.target.value)}
-                    placeholder="Sur place / Nom"
+                    placeholder={t("colDineIn")}
                     className="rounded-xl text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-table" className="text-xs font-bold text-muted-foreground">
-                    Table N°
+                    {t("colTable")}
                   </Label>
                   <Input
                     id="edit-table"
                     value={editTableNumber}
                     onChange={(e) => setEditTableNumber(e.target.value)}
-                    placeholder="Ex: T3"
+                    placeholder={t("tablePlaceholder")}
                     className="rounded-xl text-sm"
                   />
                 </div>
@@ -789,7 +792,7 @@ export function OrdersView() {
 
               {/* Financial Total */}
               <div className="flex items-center justify-between pt-2 border-t border-border">
-                <span className="font-bold text-base text-foreground">Total de la commande</span>
+                <span className="font-bold text-base text-foreground">{t("orderTotal")}</span>
                 <span className="font-extrabold text-xl text-primary">
                   {formatPrice(Number(selectedOrderForEdit.total), "MAD")}
                 </span>
@@ -823,7 +826,7 @@ export function OrdersView() {
           <DialogHeader>
             <DialogTitle className="font-display text-xl font-bold flex items-center gap-2 text-red-500">
               <AlertTriangle className="size-5" />
-              Supprimer la commande
+              {t("deleteOrder")}
             </DialogTitle>
           </DialogHeader>
 
@@ -850,7 +853,7 @@ export function OrdersView() {
               className="rounded-xl font-bold text-xs gap-1.5"
             >
               <Trash2 className="size-4" />
-              {isDeleting ? "Suppression..." : "Confirmer la suppression"}
+              {isDeleting ? "Suppression..." : t("confirmDelete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -862,7 +865,7 @@ export function OrdersView() {
           <DialogHeader>
             <DialogTitle className="font-display text-xl font-bold flex items-center gap-2 text-red-500">
               <AlertTriangle className="size-5" />
-              Suppression groupée
+              {t("bulkDelete")}
             </DialogTitle>
           </DialogHeader>
 
@@ -887,7 +890,7 @@ export function OrdersView() {
               className="rounded-xl font-bold text-xs gap-1.5"
             >
               <Trash2 className="size-4" />
-              {isDeleting ? "Suppression..." : "Supprimer tout"}
+              {isDeleting ? "Suppression..." : t("deleteAll")}
             </Button>
           </DialogFooter>
         </DialogContent>

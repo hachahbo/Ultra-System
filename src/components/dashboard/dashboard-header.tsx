@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -49,11 +50,13 @@ const NOTIF_STYLE: Record<NotificationItem["kind"], { icon: LucideIcon; classNam
   event_inquiry: { icon: PartyPopper, className: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400" },
 };
 
-const ROLE_FRENCH: Record<Role, string> = {
-  owner: "Gérant",
-  manager: "Manager",
-  serveur: "Serveur",
-  cuisine: "Cuisine",
+// The header calls the owner "Gérant" rather than ROLE_LABELS' "Admin".
+// Message keys into Labels.*, not display text.
+const ROLE_HEADER_LABELS: Record<Role, string> = {
+  owner: "roleOwnerHeader",
+  manager: "roleManager",
+  serveur: "roleServeur",
+  cuisine: "roleCuisine",
 };
 
 export function DashboardHeader({
@@ -71,6 +74,7 @@ export function DashboardHeader({
   restaurantId: string;
   restaurantSlug?: string;
 }) {
+  const tl = useTranslations("Labels");
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -145,7 +149,7 @@ export function DashboardHeader({
 
   const isDark = theme === "dark";
   const initialLetter = restaurantName.charAt(0).toUpperCase();
-  const roleLabel = ROLE_FRENCH[role] || ROLE_LABELS[role] || role;
+  const roleLabel = tl(ROLE_HEADER_LABELS[role] ?? ROLE_LABELS[role] ?? "roleOwner");
 
   async function signOut() {
     await createClient().auth.signOut();
@@ -230,7 +234,7 @@ export function DashboardHeader({
                           <p className="text-[13px] font-bold text-foreground leading-snug">{n.title}</p>
                           <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{n.subtitle}</p>
                           <span className="text-[10px] text-muted-foreground/80 mt-1 block">
-                            {formatDistanceToNowStrict(new Date(n.created_at), { locale: fr, addSuffix: true })}
+                            {formatDistanceToNowStrict(new Date(n.created_at), { locale: dateFnsLocale(locale), addSuffix: true })}
                           </span>
                         </div>
                         {isUnread && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
@@ -52,6 +53,7 @@ function FeatureToggleCard({
   state: boolean | undefined;
   onCycle: () => void;
 }) {
+  const tl = useTranslations("Labels");
   return (
     <button
       type="button"
@@ -76,7 +78,7 @@ function FeatureToggleCard({
         {state === true ? <Check className="size-4" /> : state === false ? <X className="size-4" /> : null}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-bold">{FEATURE_LABELS[featureKey]}</p>
+        <p className="text-[13.5px] font-bold">{tl(FEATURE_LABELS[featureKey])}</p>
         <p className="text-[11px] text-muted-foreground">
           {state === true ? "Sera activé" : state === false ? "Sera désactivé" : "Inchangé"}
         </p>
@@ -99,6 +101,7 @@ function FeatureToggleCard({
 }
 
 export function PermissionsView() {
+  const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const { data: restaurants, isPending } = useQuery({
     queryKey: ["admin-permissions"],
@@ -277,7 +280,7 @@ export function PermissionsView() {
                       <div className="flex flex-wrap gap-1.5">
                         {r.activeFeatures.map((f) => (
                           <Badge key={f} variant="secondary" className="rounded-full font-semibold">
-                            {FEATURE_LABELS[f]}
+                            {tl(FEATURE_LABELS[f])}
                           </Badge>
                         ))}
                       </div>

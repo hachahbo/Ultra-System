@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
@@ -11,7 +12,10 @@ import { DashboardToolbar } from "@/components/dashboard/dashboard-toolbar";
 import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 import type { Item, Order, Reservation } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Aperçu" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navOverview") };
+}
 
 const HISTORY_DAYS = 14;
 

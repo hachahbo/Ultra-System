@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -75,7 +76,7 @@ export function VariancesView() {
           {variances.map((v) => (
             <TableRow key={v.id} className="border-border">
               <TableCell className="pl-5 text-[12.5px] text-muted-foreground whitespace-nowrap">
-                {format(new Date(v.created_at), "d MMM HH:mm", { locale: fr })}
+                {format(new Date(v.created_at), "d MMM HH:mm", { locale: dateFnsLocale(locale) })}
               </TableCell>
               <TableCell className="text-[13px] font-bold text-foreground">
                 {v.inventory_item?.name ?? "—"}

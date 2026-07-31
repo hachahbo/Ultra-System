@@ -150,3 +150,14 @@ describe("localize* — English overrides", () => {
     expect(theme.values_items[0].title).toBe("Accueil");
   });
 });
+
+describe("localize* — the i18n bag never reaches the client", () => {
+  it("strips the bag in both locales", () => {
+    for (const locale of ["fr", "en"]) {
+      expect(localizeCategory(category, locale).i18n).toBeUndefined();
+      expect(localizeItem(item, locale).i18n).toBeUndefined();
+      expect(localizeEvent(event, locale).i18n).toBeUndefined();
+      expect(localizeTheme(theme, locale).i18n).toEqual({});
+    }
+  });
+});

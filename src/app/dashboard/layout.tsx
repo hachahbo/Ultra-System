@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { cookies, headers } from "next/headers";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -10,7 +11,10 @@ import { getSessionContext, isSuspended } from "@/lib/dashboard";
 import { getAdminContext } from "@/lib/admin-auth";
 import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 
-export const metadata: Metadata = { title: "Tableau de bord" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navDashboard") };
+}
 
 export default async function DashboardLayout({
   children,

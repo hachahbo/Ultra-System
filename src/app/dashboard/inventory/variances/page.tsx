@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { VariancesView } from "@/components/dashboard/variances-view";
 import { FeatureLocked } from "@/components/dashboard/feature-locked";
 import { getSessionContext } from "@/lib/dashboard";
 import { canAccessRoute, defaultRouteFor } from "@/lib/permissions";
 
-export const metadata: Metadata = { title: "Écarts de stock" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Dashboard");
+  return { title: t("navVariances") };
+}
 
 export default async function VariancesPage() {
   const ctx = await getSessionContext();

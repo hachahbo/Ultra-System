@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -76,6 +77,7 @@ export function RestaurantDetailPanel({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
@@ -306,7 +308,7 @@ export function RestaurantDetailPanel({
                     return (
                       <div key={key} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
                         <div className="min-w-0">
-                          <p className="text-sm">{FEATURE_LABELS[key]}</p>
+                          <p className="text-sm">{tl(FEATURE_LABELS[key])}</p>
                           <p className="text-xs text-muted-foreground">
                             {f.overridden ? "Remplacé par l'admin" : "Défaut du plan"}
                           </p>

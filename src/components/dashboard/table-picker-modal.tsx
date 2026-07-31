@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import {
   Drawer,
   DrawerClose,
@@ -46,6 +47,7 @@ const TABLE_DEFS = [
 
 // ── Shared Legend ──────────────────────────────────────────────
 function TableLegend() {
+  const t = useTranslations("Tables");
   return (
     <div className="flex items-center gap-4 text-[11px] mt-2 font-medium">
       <div className="flex items-center gap-1.5">
@@ -74,6 +76,7 @@ function TableGrid({
   reservedTables: Set<string>;
   onSelect: (id: number) => void;
 }) {
+  const t = useTranslations("Tables");
   return (
     <div className="grid grid-cols-3 gap-3 md:gap-4 mx-auto">
       {TABLE_DEFS.map((t) => {
@@ -135,6 +138,7 @@ function ConfirmButton({
   selected?: string;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("Tables");
   return (
     <Button
       size="lg"
@@ -147,7 +151,7 @@ function ConfirmButton({
           : "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-[#DF6C32] dark:text-white dark:hover:bg-[#C95A26]"
       )}
     >
-      {selected ? `Confirmer — Table ${selected}` : "Sélectionnez une table"}
+      {selected ? `Confirmer — Table ${selected}` : t("pickTablePrompt")}
     </Button>
   );
 }
@@ -160,6 +164,7 @@ export function TablePickerModal({
   onSelect,
   reservedTables = new Set(),
 }: TablePickerModalProps) {
+  const t = useTranslations("Tables");
   const isMobile = useIsMobile();
   const selectedNum = selected ? Number(selected) : undefined;
 
@@ -181,7 +186,7 @@ export function TablePickerModal({
 
             {/* Header */}
             <DrawerHeader className="text-left px-4">
-              <DrawerTitle className="text-lg">Choisir une table</DrawerTitle>
+              <DrawerTitle className="text-lg">{t("pickTable")}</DrawerTitle>
               <TableLegend />
             </DrawerHeader>
 
@@ -221,7 +226,7 @@ export function TablePickerModal({
         <DialogHeader className="px-6 pt-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-bold">
-              Choisir une table
+              {t("pickTable")}
             </DialogTitle>
             <DialogClose asChild>
               <button

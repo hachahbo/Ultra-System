@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { customizationGroupSchema } from "@/lib/schemas";
+import { customizationGroupSchema, itemI18nBagSchema } from "@/lib/schemas";
 import { assertFeature, requireRole } from "@/lib/dashboard";
 
+// This route keeps its own schema rather than reusing itemSchema.partial(),
+// so every new column has to be added here too — `i18n` (0023) included,
+// otherwise zod silently strips it and the English fields never save.
 const patchSchema = z
   .object({
+    i18n: itemI18nBagSchema,
     category_id: z.string().uuid(),
     name_fr: z.string().trim().min(1).max(120),
     name_ar: z.string().trim().max(120).nullable(),

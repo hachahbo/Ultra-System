@@ -229,16 +229,16 @@ function InventoryContent({
             <Button
               variant="outline"
               onClick={onOpenPurchaseOrder}
-              className="w-full gap-2 rounded-xl border-border font-bold sm:w-auto"
+              className="w-full gap-2.5 rounded-full border border-border bg-card px-6 py-5 text-[14px] font-bold text-foreground shadow-xs transition-all hover:bg-muted hover:border-border/80 active:scale-[0.98] sm:w-auto"
             >
-              <Truck className="size-4" /> Bon de commande
+              <Truck className="size-4 text-muted-foreground" /> Bon de commande
             </Button>
             <Button
               onClick={onCreateItem}
               disabled={sortedCategories.length === 0}
-              className="w-full gap-2 rounded-full bg-primary px-6 font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
+              className="w-full gap-2 rounded-full bg-primary px-6 py-5 text-[14px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
             >
-              <Plus className="size-4" /> Article
+              <Plus className="size-4 stroke-[2.5]" /> Article
             </Button>
           </div>
         )}

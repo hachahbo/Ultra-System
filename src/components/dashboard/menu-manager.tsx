@@ -48,6 +48,7 @@ import {
 import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { RecipeEditorDialog } from "@/components/dashboard/recipe-editor";
 import { PromotionsManager } from "@/components/dashboard/promotions-manager";
+import { MenuTranslationsDialog } from "@/components/dashboard/menu-translations";
 import { formatPrice } from "@/lib/format";
 import type { Category, FeatureKey, Item, MenuItemCost } from "@/lib/types";
 import { canWrite, type Role } from "@/lib/permissions";
@@ -179,6 +180,13 @@ export function MenuManager() {
         </div>
         {isOwner && (
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            {data.categories.length > 0 && (
+              <MenuTranslationsDialog
+                categories={data.categories}
+                items={data.items}
+                onSaved={refresh}
+              />
+            )}
             <AddCategoryDialog onCreated={refresh} />
             <Button 
               onClick={() => setCreating(true)} 

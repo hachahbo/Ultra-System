@@ -35,25 +35,28 @@ function pick<T, K extends keyof T>(
   return value as T[K];
 }
 
+// The bag is consumed here, so it's dropped from the result. Otherwise every
+// dish's English name and description would be serialized into the RSC payload
+// of a French page (and vice versa) — dead weight that grows with each locale.
+// Dashboard forms read `i18n` from /api/dashboard/*, which never goes through
+// these functions.
 export function localizeCategory(category: Category, locale: string): Category {
   const l = contentLocale(locale);
-  if (!l) return category;
-  return { ...category, name_fr: pick(category.i18n, l, "name") ?? category.name_fr };
+  const { i18n, ...rest } = category;
+  return { ...rest, name_fr: pick(i18n, l, "name") ?? category.name_fr };
 }
 
 export function localizeItem(item: Item, locale: string): Item {
   const l = contentLocale(locale);
-  if (!l) return item;
+  const { i18n, ...rest } = item;
   return {
-    ...item,
-    name_fr: pick(item.i18n, l, "name") ?? item.name_fr,
-    description_fr: pick(item.i18n, l, "description") ?? item.description_fr,
+    ...rest,
+    name_fr: pick(i18n, l, "name") ?? item.name_fr,
+    description_fr: pick(i18n, l, "description") ?? item.description_fr,
   };
 }
 
 export function localizeMenu(menu: PublicMenu, locale: string): PublicMenu {
-  const l = contentLocale(locale);
-  if (!l) return menu;
   return {
     ...menu,
     categories: menu.categories.map((c) => localizeCategory(c, locale)),
@@ -63,13 +66,13 @@ export function localizeMenu(menu: PublicMenu, locale: string): PublicMenu {
 
 export function localizeEvent(event: RestaurantEvent, locale: string): RestaurantEvent {
   const l = contentLocale(locale);
-  if (!l) return event;
+  const { i18n, ...rest } = event;
   return {
-    ...event,
-    title: pick(event.i18n, l, "title") ?? event.title,
-    tagline: pick(event.i18n, l, "tagline") ?? event.tagline,
-    description: pick(event.i18n, l, "description") ?? event.description,
-    badge_label: pick(event.i18n, l, "badge_label") ?? event.badge_label,
+    ...rest,
+    title: pick(i18n, l, "title") ?? event.title,
+    tagline: pick(i18n, l, "tagline") ?? event.tagline,
+    description: pick(i18n, l, "description") ?? event.description,
+    badge_label: pick(i18n, l, "badge_label") ?? event.badge_label,
   };
 }
 
@@ -79,7 +82,7 @@ export function localizeEvents(events: RestaurantEvent[], locale: string): Resta
 
 export function localizeTheme(theme: ResolvedTheme, locale: string): ResolvedTheme {
   const l = contentLocale(locale);
-  if (!l) return theme;
+  if (!l) return { ...theme, i18n: {} };
 
   const copyOverrides = pick(theme.i18n, l, "custom_copy") ?? {};
   // Only non-empty overrides win, so a partially filled English panel keeps
@@ -96,6 +99,7 @@ export function localizeTheme(theme: ResolvedTheme, locale: string): ResolvedThe
 
   return {
     ...theme,
+    i18n: {},
     about_title: pick(theme.i18n, l, "about_title") ?? theme.about_title,
     about_body: pick(theme.i18n, l, "about_body") ?? theme.about_body,
     custom_copy,

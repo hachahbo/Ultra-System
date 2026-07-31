@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
-import { fr } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/date-locale";
 import { Clock, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ async function fetchTurnover(): Promise<TurnoverData> {
 const LONG_SESSION_MINUTES = 90;
 
 export function TableTurnoverPanel() {
+  const t = useTranslations("Turnover");
   const supabase = createClient();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(() => Date.now());
@@ -73,11 +75,11 @@ export function TableTurnoverPanel() {
 
   return (
     <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <h2 className="font-display text-xl font-bold text-foreground mb-4">Rotation des tables</h2>
+      <h2 className="font-display text-xl font-bold text-foreground mb-4">{t("title")}</h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div className="bg-card border border-border p-5 rounded-2xl shadow-sm">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Occupées</p>
+          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t("occupied")}</p>
           <p className="text-3xl font-display font-bold text-foreground">{active.length}</p>
         </div>
         <div className="bg-card border border-border p-5 rounded-2xl shadow-sm">
@@ -87,7 +89,7 @@ export function TableTurnoverPanel() {
           </p>
         </div>
         <div className="bg-card border border-border p-5 rounded-2xl shadow-sm col-span-2 md:col-span-2">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Durée moyenne (7 jours)</p>
+          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{t("avgDuration")}</p>
           <p className="text-3xl font-display font-bold text-foreground">
             {week.avgMinutes > 0 ? `${week.avgMinutes} min` : "—"}
             <span className="text-sm text-muted-foreground lowercase tracking-normal font-medium ml-2">
@@ -99,7 +101,7 @@ export function TableTurnoverPanel() {
 
       {active.length > 0 && (
         <div className="rounded-[24px] bg-card border border-border p-5 shadow-sm">
-          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Occupées maintenant</p>
+          <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("occupiedNow")}</p>
           <div className="flex flex-wrap gap-2.5">
             {active.map((s) => {
               const minutes = Math.round((now - new Date(s.seated_at).getTime()) / 60_000);
@@ -125,7 +127,7 @@ export function TableTurnoverPanel() {
                       )}
                     >
                       <Clock className="size-3" />
-                      {formatDistanceToNowStrict(new Date(s.seated_at), { locale: fr })}
+                      {formatDistanceToNowStrict(new Date(s.seated_at), { locale: dateFnsLocale(locale) })}
                     </span>
                     <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                       <Users className="size-3" />
