@@ -53,6 +53,7 @@ async function bumpTicket(ticketId: string): Promise<void> {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function KdsView() {
+  const locale = useLocale();
   const t = useTranslations("Kds");
   const supabase = createClient();
   const queryClient = useQueryClient();

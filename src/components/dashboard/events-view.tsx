@@ -81,6 +81,7 @@ const INQUIRY_BADGE: Record<EventInquiry["status"], string> = {
 };
 
 export function EventsView({ canManage }: { canManage: boolean }) {
+  const locale = useLocale();
   const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<RestaurantEvent | null>(null);

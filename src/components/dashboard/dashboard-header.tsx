@@ -74,6 +74,7 @@ export function DashboardHeader({
   restaurantId: string;
   restaurantSlug?: string;
 }) {
+  const locale = useLocale();
   const tl = useTranslations("Labels");
   const router = useRouter();
   const queryClient = useQueryClient();

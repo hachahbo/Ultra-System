@@ -35,6 +35,7 @@ function displayNameOf(email: string) {
 }
 
 export function LaborPanel({ staff }: { staff: StaffRow[] }) {
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: ["dashboard-labor"],

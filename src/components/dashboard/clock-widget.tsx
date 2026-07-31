@@ -23,6 +23,7 @@ async function fetchActive(): Promise<ActiveShift> {
 // by canAccessRoute the way pages are, it's a per-person action available
 // regardless of what the rest of the dashboard shows this role.
 export function ClockWidget() {
+  const locale = useLocale();
   const t = useTranslations("Shift");
   const { isMobile } = useSidebar();
   const queryClient = useQueryClient();

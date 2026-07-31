@@ -35,6 +35,7 @@ async function fetchTurnover(): Promise<TurnoverData> {
 const LONG_SESSION_MINUTES = 90;
 
 export function TableTurnoverPanel() {
+  const locale = useLocale();
   const t = useTranslations("Turnover");
   const supabase = createClient();
   const queryClient = useQueryClient();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -79,6 +80,7 @@ async function patchJson(url: string, body: unknown) {
 }
 
 export function InventoryView() {
+  const t = useTranslations("Inventory");
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery({
     queryKey: inventoryQueryKey,
@@ -96,7 +98,7 @@ export function InventoryView() {
       if (!res.ok) throw new Error("update failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Modification impossible"),
+    onError: () => toast.error(t("updateFailed")),
   });
 
   const deleteItem = useMutation({
@@ -105,7 +107,7 @@ export function InventoryView() {
       if (!res.ok) throw new Error("delete failed");
     },
     onSuccess: refresh,
-    onError: () => toast.error("Suppression impossible"),
+    onError: () => toast.error(t("deleteFailed")),
   });
 
   if (isPending || !data) {
@@ -131,7 +133,7 @@ export function InventoryView() {
       }
       onAdjust={(id, delta) => adjustStock.mutate({ id, delta })}
       onDelete={(id) => {
-        if (confirm("Supprimer cet article ?")) deleteItem.mutate(id);
+        if (confirm(t("confirmDeleteItem"))) deleteItem.mutate(id);
       }}
       onCreateItem={() => setCreatingItem(true)}
       onOpenPurchaseOrder={() => setPurchaseOrderOpen(true)}
@@ -178,6 +180,7 @@ function InventoryContent({
   onRefresh: () => void;
   children?: React.ReactNode;
 }) {
+  const t = useTranslations("Inventory");
   const isOwner = canWrite(data.role, "inventory");
   const sortedCategories = [...data.categories].sort((a, b) => a.sort_order - b.sort_order);
   const lowCount = lowStockCount(data.items);
@@ -186,30 +189,30 @@ function InventoryContent({
 
   const stats = [
     {
-      label: "Alertes stock bas",
+      label: t("alertsTitle"),
       value: String(lowCount),
-      sub: "à réapprovisionner",
+      sub: t("toRestock"),
       icon: AlertTriangle,
       tone: "text-destructive bg-destructive/10",
     },
     {
-      label: "Valeur du stock",
+      label: t("stockValue"),
       value: formatPrice(Math.round(value)),
-      sub: "stock actuel",
+      sub: t("currentStock"),
       icon: Coins,
       tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400",
     },
     {
-      label: "Livraisons en attente",
+      label: t("pendingDeliveries"),
       value: String(data.deliveries.length),
-      sub: "en route",
+      sub: t("enRoute"),
       icon: Truck,
       tone: "text-primary bg-primary/10",
     },
     {
-      label: "Fournisseurs actifs",
+      label: t("activeSuppliers"),
       value: String(activeSuppliers),
-      sub: `sur ${data.suppliers.length} au total`,
+      sub: t("ofTotal", { total: data.suppliers.length }),
       icon: Users,
       tone: "text-blue-600 bg-blue-500/10 dark:text-blue-400",
     },
@@ -219,9 +222,9 @@ function InventoryContent({
     <div className="w-full space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Inventaire</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="mt-1 text-[13.5px] font-medium text-muted-foreground">
-            Suivez vos stocks, seuils d&apos;alerte et fournisseurs en temps réel.
+            {t("subtitle")}
           </p>
         </div>
         {isOwner && (
@@ -231,14 +234,14 @@ function InventoryContent({
               onClick={onOpenPurchaseOrder}
               className="w-full gap-2.5 rounded-full border border-border bg-card px-6 py-5 text-[14px] font-bold text-foreground shadow-xs transition-all hover:bg-muted hover:border-border/80 active:scale-[0.98] sm:w-auto"
             >
-              <Truck className="size-4 text-muted-foreground" /> Bon de commande
+              <Truck className="size-4 text-muted-foreground" /> {t("purchaseOrder")}
             </Button>
             <Button
               onClick={onCreateItem}
               disabled={sortedCategories.length === 0}
               className="w-full gap-2 rounded-full bg-primary px-6 py-5 text-[14px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
             >
-              <Plus className="size-4 stroke-[2.5]" /> Article
+              <Plus className="size-4 stroke-[2.5]" /> {t("article")}
             </Button>
           </div>
         )}
@@ -267,20 +270,20 @@ function InventoryContent({
       {sortedCategories.length === 0 ? (
         <EmptyState
           icon={Package}
-          title="Aucune catégorie d'inventaire pour le moment."
-          hint="Commencez par créer une catégorie (ex. « Boissons », « Viandes & Protéines »)."
+          title={t("noCategoryTitle")}
+          hint={t("noCategoryHint")}
           cta={isOwner ? <AddCategoryDialog onCreated={onRefresh} /> : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_320px]">
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-              <div className="text-[14px] font-extrabold text-foreground">Gestion des stocks</div>
+              <div className="text-[14px] font-extrabold text-foreground">{t("stockManagement")}</div>
               <div className="flex items-center gap-4">
                 {(["in", "low", "out"] as StockStatus[]).map((s) => (
                   <div key={s} className="flex items-center gap-1.5 text-[11.5px] font-semibold text-muted-foreground">
                     <span className={cn("size-2 rounded-full", STATUS_DOT[s])} />
-                    {STOCK_STATUS_LABEL[s]}
+                    {t(STOCK_STATUS_LABEL[s])}
                   </div>
                 ))}
                 {isOwner && <AddCategoryDialog onCreated={onRefresh} compact />}
@@ -288,11 +291,11 @@ function InventoryContent({
             </div>
 
             <div className="hidden grid-cols-[2fr_1fr_1.2fr_1fr_1.1fr] gap-2.5 border-b border-border/70 px-5 py-2.5 text-[10.5px] font-bold tracking-wide text-muted-foreground md:grid">
-              <div>ARTICLE</div>
-              <div>UNITÉ</div>
-              <div>STOCK ACTUEL</div>
-              <div>SEUIL MIN</div>
-              <div className="text-right">STATUT / ACTIONS</div>
+              <div>{t("colArticle")}</div>
+              <div>{t("colUnit")}</div>
+              <div>{t("colStock")}</div>
+              <div>{t("colThreshold")}</div>
+              <div className="text-right">{t("colStatus")}</div>
             </div>
 
             {sortedCategories.map((cat) => {
@@ -315,7 +318,7 @@ function InventoryContent({
                       </span>
                       <span className="text-[13.5px] font-extrabold text-foreground">{cat.name}</span>
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-bold text-muted-foreground">
-                        {items.length} article{items.length > 1 ? "s" : ""}
+                        {t("articleCount", { count: items.length })}
                       </span>
                     </div>
                     <div />
@@ -336,7 +339,7 @@ function InventoryContent({
                     ))}
                   {isOpen && items.length === 0 && (
                     <div className="px-5 py-4 text-center text-[12.5px] text-muted-foreground">
-                      Aucun article dans cette catégorie.
+                      {t("noArticles")}
                     </div>
                   )}
                 </div>
@@ -370,6 +373,7 @@ function ItemRow({
   onAdjust: (id: string, delta: number) => void;
   onDelete: (id: string) => void;
 }) {
+  const t = useTranslations("Inventory");
   const status = statusOf(item);
   return (
     <div
@@ -380,11 +384,11 @@ function ItemRow({
     >
       <div className="text-[14px] font-bold text-foreground md:pl-7 md:text-[13.5px] md:font-semibold">{item.name}</div>
       <div className="flex items-center justify-between md:block">
-        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">UNITÉ</span>
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">{t("colUnit")}</span>
         <span className="text-[12.5px] text-muted-foreground">{item.unit}</span>
       </div>
       <div className="flex items-center justify-between md:block">
-        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">STOCK ACTUEL</span>
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">{t("colStock")}</span>
         <span
           className={cn(
             "text-[13px] font-bold",
@@ -397,20 +401,20 @@ function ItemRow({
         </span>
       </div>
       <div className="flex items-center justify-between md:block">
-        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">SEUIL MIN</span>
+        <span className="text-[10.5px] font-bold tracking-wide text-muted-foreground md:hidden">{t("colThreshold")}</span>
         <span className="text-[12.5px] text-muted-foreground">
           {item.min_threshold} {item.unit}
         </span>
       </div>
       <div className="flex items-center justify-between gap-2 md:justify-end">
         <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", STATUS_CLASSES[status])}>
-          {STOCK_STATUS_LABEL[status]}
+          {t(STOCK_STATUS_LABEL[status])}
         </span>
         {canEdit && (
           <>
             <button
               type="button"
-              aria-label={`Diminuer le stock de ${item.name}`}
+              aria-label={t("decreaseStock", { name: item.name })}
               onClick={() => onAdjust(item.id, -1)}
               className="flex size-7 items-center justify-center rounded-lg border border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted"
             >
@@ -418,7 +422,7 @@ function ItemRow({
             </button>
             <button
               type="button"
-              aria-label={`Augmenter le stock de ${item.name}`}
+              aria-label={t("increaseStock", { name: item.name })}
               onClick={() => onAdjust(item.id, 1)}
               className="flex size-7 items-center justify-center rounded-lg border border-border bg-muted/40 text-muted-foreground transition-colors hover:bg-muted"
             >
@@ -426,7 +430,7 @@ function ItemRow({
             </button>
             <button
               type="button"
-              aria-label={`Supprimer ${item.name}`}
+              aria-label={t("deleteArticle", { name: item.name })}
               onClick={() => onDelete(item.id)}
               className="flex size-7 items-center justify-center rounded-lg text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
             >
@@ -448,15 +452,16 @@ function SuppliersPanel({
   onRefresh: () => void;
   isOwner: boolean;
 }) {
+  const t = useTranslations("Inventory");
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3.5 flex items-center justify-between">
-        <div className="text-[14px] font-extrabold text-foreground">Fournisseurs</div>
+        <div className="text-[14px] font-extrabold text-foreground">{t("suppliers")}</div>
         {isOwner && <AddSupplierDialog onCreated={onRefresh} />}
       </div>
       <div className="flex flex-col gap-3">
         {data.suppliers.length === 0 && (
-          <p className="text-[12.5px] text-muted-foreground">Aucun fournisseur enregistré.</p>
+          <p className="text-[12.5px] text-muted-foreground">{t("noSuppliers")}</p>
         )}
         {data.suppliers.map((v) => {
           const initials = v.name
@@ -483,7 +488,7 @@ function SuppliersPanel({
                     : "bg-amber-500/10 text-amber-600 dark:text-amber-400",
                 )}
               >
-                {good ? "Actif" : "À relancer"}
+                {good ? t("active") : t("toFollowUp")}
               </span>
             </div>
           );
@@ -494,20 +499,22 @@ function SuppliersPanel({
 }
 
 function DeliveriesPanel({ data }: { data: InventoryData }) {
+  const tInv = useTranslations("Inventory");
+  const locale = useLocale();
   const supplierName = (id: string | null) =>
     data.suppliers.find((s) => s.id === id)?.name ?? "—";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3.5 flex items-center justify-between">
-        <div className="text-[14px] font-extrabold text-foreground">Livraisons à venir</div>
+        <div className="text-[14px] font-extrabold text-foreground">{tInv("upcomingDeliveries")}</div>
         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
-          {data.deliveries.length} en cours
+          {tInv("inProgress", { count: data.deliveries.length })}
         </span>
       </div>
       <div className="flex flex-col gap-3">
         {data.deliveries.length === 0 && (
-          <p className="text-[12.5px] text-muted-foreground">Aucune livraison prévue.</p>
+          <p className="text-[12.5px] text-muted-foreground">{tInv("noDeliveries")}</p>
         )}
         {data.deliveries.map((d) => (
           <div key={d.id} className="flex items-center gap-3">
@@ -516,7 +523,12 @@ function DeliveriesPanel({ data }: { data: InventoryData }) {
               <div className="text-[12.5px] font-bold text-foreground">{d.label}</div>
               <div className="text-[11px] text-muted-foreground">{supplierName(d.supplier_id)}</div>
             </div>
-            <div className="text-[11.5px] font-bold text-muted-foreground">{formatEta(d.eta_at)}</div>
+            <div className="text-[11.5px] font-bold text-muted-foreground">{formatEta(d.eta_at, locale, {
+              today: (time) => tInv("etaToday", { time }),
+              tomorrow: tInv("etaTomorrow"),
+              formatToday: tInv("etaFormatToday"),
+              formatOther: tInv("etaFormatOther"),
+            })}</div>
           </div>
         ))}
       </div>
@@ -525,24 +537,24 @@ function DeliveriesPanel({ data }: { data: InventoryData }) {
 }
 
 function RecipeLinkCard() {
+  const t = useTranslations("Inventory");
   return (
     <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-5">
-      <div className="text-[13px] font-extrabold text-primary">Liaison recettes</div>
+      <div className="text-[13px] font-extrabold text-primary">{t("recipeLinking")}</div>
       <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
-        Chaque commande déduit automatiquement les ingrédients. Ex : 1 Taco Al Pastor = 120g porc, 2
-        tortillas, 30g oignon.
+        {t("recipeLinkingHint")}
       </p>
       <Link
         href="/dashboard/menu"
         className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-bold text-primary"
       >
-        Configurer <ChevronRight className="size-3.5" />
+        {t("configure")} <ChevronRight className="size-3.5" />
       </Link>
       <Link
         href="/dashboard/inventory/variances"
         className="mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
       >
-        Voir les écarts de stock <ChevronRight className="size-3" />
+        {t("viewVariances")} <ChevronRight className="size-3" />
       </Link>
     </div>
   );
@@ -555,6 +567,7 @@ function AddCategoryDialog({
   onCreated: () => void;
   compact?: boolean;
 }) {
+  const t = useTranslations("Inventory");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -565,7 +578,7 @@ function AddCategoryDialog({
     const res = await postJson("/api/dashboard/inventory/categories", { name: name.trim() });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Création impossible");
+      toast.error(t("createFailed"));
       return;
     }
     setName("");
@@ -578,38 +591,38 @@ function AddCategoryDialog({
       <DialogTrigger asChild>
         {compact ? (
           <Button variant="ghost" size="sm" className="gap-1.5 rounded-lg font-bold text-muted-foreground hover:bg-muted">
-            <Plus className="size-3.5" /> Catégorie
+            <Plus className="size-3.5" /> {t("category")}
           </Button>
         ) : (
           <Button className="w-full gap-2 rounded-xl border border-border bg-card font-bold text-foreground shadow-sm hover:bg-muted sm:w-auto">
-            <Plus className="size-4" /> Nouvelle catégorie
+            <Plus className="size-4" /> {t("newCategory")}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-md">
         <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
-          <DialogTitle className="font-display text-xl font-bold">Nouvelle catégorie</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("newCategory")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 p-6">
           <div className="space-y-2">
             <Label htmlFor="inv-cat-name" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-              Nom de la catégorie
+              {t("categoryName")}
             </Label>
             <Input
               id="inv-cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Boissons, Viandes & Protéines…"
+              placeholder={t("categoryPlaceholder")}
               className="h-12 rounded-xl border-border bg-background text-[14px] font-medium shadow-sm placeholder:text-muted-foreground/50"
             />
           </div>
         </div>
         <div className="flex justify-end gap-3 border-t border-border bg-muted/20 px-6 py-4">
           <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button className="rounded-xl px-6 font-bold" onClick={save} disabled={saving || !name.trim()}>
-            {saving ? "Création…" : "Créer la catégorie"}
+            {saving ? t("creating") : t("createCategory")}
           </Button>
         </div>
       </DialogContent>
@@ -618,6 +631,7 @@ function AddCategoryDialog({
 }
 
 function AddSupplierDialog({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("Inventory");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -632,7 +646,7 @@ function AddSupplierDialog({ onCreated }: { onCreated: () => void }) {
     });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Création impossible");
+      toast.error(t("createFailed"));
       return;
     }
     setName("");
@@ -645,49 +659,49 @@ function AddSupplierDialog({ onCreated }: { onCreated: () => void }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-1.5 rounded-lg font-bold text-muted-foreground hover:bg-muted">
-          <Plus className="size-3.5" /> Ajouter
+          <Plus className="size-3.5" /> {t("add")}
         </Button>
       </DialogTrigger>
       <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-md">
         <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
-          <DialogTitle className="font-display text-xl font-bold">Nouveau fournisseur</DialogTitle>
+          <DialogTitle className="font-display text-xl font-bold">{t("newSupplier")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 p-6">
           <div className="space-y-2">
             <Label htmlFor="sup-name" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-              Nom
+              {t("supplierName")}
             </Label>
             <Input
               id="sup-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Ferme Bellevue"
+              placeholder={t("supplierNamePlaceholder")}
               className="h-12 rounded-xl border-border bg-background text-[14px] font-medium shadow-sm"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sup-cat" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-              Catégorie fournie
+              {t("suppliedCategory")}
             </Label>
             <Input
               id="sup-cat"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="Ex: Légumes & frais"
+              placeholder={t("suppliedCategoryPlaceholder")}
               className="h-12 rounded-xl border-border bg-background text-[14px] font-medium shadow-sm"
             />
           </div>
         </div>
         <div className="flex justify-end gap-3 border-t border-border bg-muted/20 px-6 py-4">
           <Button variant="ghost" className="rounded-xl font-bold hover:bg-muted" onClick={() => setOpen(false)}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             className="rounded-xl px-6 font-bold"
             onClick={save}
             disabled={saving || !name.trim() || !category.trim()}
           >
-            {saving ? "Création…" : "Créer le fournisseur"}
+            {saving ? t("creating") : t("createSupplier")}
           </Button>
         </div>
       </DialogContent>
@@ -704,6 +718,7 @@ function ItemFormDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("Inventory");
   const sorted = useMemo(
     () => [...categories].sort((a, b) => a.sort_order - b.sort_order),
     [categories],

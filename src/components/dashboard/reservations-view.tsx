@@ -58,6 +58,7 @@ async function fetchReservations(): Promise<Reservation[]> {
 type DayFilter = "today" | "upcoming" | "past";
 
 export function ReservationsView() {
+  const locale = useLocale();
   const t = useTranslations("Reservations");
   const queryClient = useQueryClient();
   const [view, setView] = useState<"list" | "map">("list");
@@ -314,6 +315,7 @@ function ReservationCard({
   children?: React.ReactNode;
   onAssign?: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Reservations");
   const dateLabel = format(parseISO(r.date), "EEEE d MMMM", { locale: dateFnsLocale(locale) });
   // Manual confirmation via a wa.me tap is allowed in v1 (plan.md §3D).

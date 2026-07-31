@@ -32,6 +32,7 @@ async function fetchVariances(): Promise<Variance[]> {
 }
 
 export function VariancesView() {
+  const locale = useLocale();
   const { data, isPending } = useQuery({
     queryKey: ["inventory-variances"],
     queryFn: fetchVariances,

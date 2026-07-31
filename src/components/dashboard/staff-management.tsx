@@ -175,8 +175,8 @@ export function StaffManagement() {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 rounded-xl font-bold">
-                <UserPlus className="size-4" /> Inviter un membre
+              <Button className="w-full sm:w-auto gap-2.5 rounded-full bg-primary px-6 py-5 text-[14px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]">
+                <UserPlus className="size-4 stroke-[2.2]" /> Inviter un membre
               </Button>
             </DialogTrigger>
             <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-sm">
