@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Users, Download, ChevronLeft, ChevronRight, Phone, Clock, CalendarDays, ShoppingBag } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -37,12 +38,13 @@ async function fetchCustomerOrders(
   if (!res.ok) throw new Error("fetch failed");
   return res.json();
 }
-const columns: ColumnDef<Customer>[] = [
+function makeColumns(t: ReturnType<typeof useTranslations<"CustomersDashboard">>): ColumnDef<Customer>[] {
+  return [
   {
     accessorKey: "name",
-    header: "NOM",
+    header: t("colName"),
     cell: ({ row }) => {
-      const name = row.getValue("name") as string || "Inconnu";
+      const name = row.getValue("name") as string || t("unknown");
       const firstSeen = row.original.first_seen;
       const initials = name
         .split(" ")
@@ -60,7 +62,7 @@ const columns: ColumnDef<Customer>[] = [
               {name}
             </span>
             <span className="text-[11.5px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
-              <CalendarDays className="size-3" /> Client depuis {formatDateTime(firstSeen).split(' ')[0]}
+              <CalendarDays className="size-3" /> {t("customerSince", { date: formatDateTime(firstSeen).split(' ')[0] })}
             </span>
           </div>
         </div>
@@ -69,7 +71,7 @@ const columns: ColumnDef<Customer>[] = [
   },
   {
     accessorKey: "phone",
-    header: "TÉLÉPHONE",
+    header: t("colPhone"),
     cell: ({ row }) => {
       const phone = row.getValue("phone") as string;
       return (
@@ -86,7 +88,7 @@ const columns: ColumnDef<Customer>[] = [
   },
   {
     accessorKey: "order_count",
-    header: () => <div className="text-center">COMMANDES</div>,
+    header: () => <div className="text-center">{t("colOrders")}</div>,
     cell: ({ row }) => {
       const count = row.getValue("order_count") as number;
       return (
@@ -101,7 +103,7 @@ const columns: ColumnDef<Customer>[] = [
   },
   {
     accessorKey: "last_order",
-    header: () => <div className="text-right">DERNIÈRE COMMANDE</div>,
+    header: () => <div className="text-right">{t("colLastOrder")}</div>,
     cell: ({ row }) => {
       const last = row.getValue("last_order") as string | null;
       if (!last) return <div className="text-right text-[13px] text-muted-foreground">—</div>;
@@ -114,15 +116,18 @@ const columns: ColumnDef<Customer>[] = [
         <div className="flex flex-col items-end justify-center">
           <div className="text-[13px] font-bold text-foreground">{date}</div>
           <div className="text-[11.5px] text-muted-foreground mt-0.5 flex items-center gap-1">
-            <Clock className="size-3" /> à {time}
+            <Clock className="size-3" /> {t("at", { time })}
           </div>
         </div>
       );
     },
   },
-];
+  ];
+}
 
 export function CustomersView({ customers }: { customers: Customer[] }) {
+  const t = useTranslations("CustomersDashboard");
+  const columns = useMemo(() => makeColumns(t), [t]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
 
@@ -154,11 +159,11 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
     const newThisMonth = customers.filter(c => new Date(c.first_seen) >= thirtyDaysAgo).length;
 
     return [
-      { label: "Total clients", value: String(total), textClass: "text-foreground" },
-      { label: "Nouveaux (30j)", value: String(newThisMonth), textClass: "text-primary" },
-      { label: "Clients fidèles", value: String(recurring), textClass: "text-emerald-600 dark:text-emerald-400" },
+      { label: t("totalCustomers"), value: String(total), textClass: "text-foreground" },
+      { label: t("newCustomers"), value: String(newThisMonth), textClass: "text-primary" },
+      { label: t("loyalCustomers"), value: String(recurring), textClass: "text-emerald-600 dark:text-emerald-400" },
     ];
-  }, [customers]);
+  }, [customers, t]);
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-4rem)] bg-background -mx-4 -my-6 md:-mx-8 md:-my-8 px-4 md:px-8 py-6 md:py-8">
@@ -167,9 +172,9 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
           <div>
-            <h1 className="m-0 text-[26px] font-extrabold tracking-tight text-foreground">Clients</h1>
+            <h1 className="m-0 text-[26px] font-extrabold tracking-tight text-foreground">{t("title")}</h1>
             <div className="text-[13.5px] text-muted-foreground mt-1">
-              Cette liste vous appartient.
+              {t("subtitle")}
             </div>
           </div>
           <a 
@@ -178,7 +183,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
             className="flex items-center justify-center gap-2 bg-card text-foreground border border-border px-[18px] py-[11px] rounded-xl text-[13.5px] font-bold hover:bg-muted transition-colors shadow-sm w-full sm:w-auto"
           >
             <Download className="size-4" />
-            Exporter CSV
+            {t("exportCsv")}
           </a>
         </div>
 
@@ -197,14 +202,14 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div className="text-[13.5px] text-muted-foreground font-semibold">
-            {table.getFilteredRowModel().rows.length} client{table.getFilteredRowModel().rows.length > 1 ? "s" : ""}
+{t("customerCount", { count: table.getFilteredRowModel().rows.length })}
           </div>
           <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-2 w-full sm:w-[320px] shadow-sm">
             <Search className="size-4 text-muted-foreground" />
             <input 
               value={globalFilter ?? ""}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder="Rechercher un client..."
+              placeholder={t("searchPlaceholder")}
               className="border-none outline-none text-[13px] w-full bg-transparent text-foreground placeholder:text-muted-foreground"
             />
           </div>
@@ -217,7 +222,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                 <Users className="size-10 mb-4 opacity-20" />
                 <p className="text-sm font-semibold">
-                  Vos clients apparaîtront ici dès la première commande.
+                  {t("emptyTitle")}
                 </p>
               </div>
             ) : (
@@ -227,7 +232,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => {
                     const c = row.original;
-                    const name = c.name || "Inconnu";
+                    const name = c.name || t("unknown");
                     const initials = name
                       .split(" ")
                       .map((w) => w[0])
@@ -248,7 +253,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-[14px] font-extrabold text-foreground">{name}</div>
                             <div className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-muted-foreground">
-                              <CalendarDays className="size-3" /> Client depuis {formatDateTime(c.first_seen).split(" ")[0]}
+                              <CalendarDays className="size-3" /> {t("customerSince", { date: formatDateTime(c.first_seen).split(" ")[0] })}
                             </div>
                           </div>
                           <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[13px] font-extrabold text-foreground">
@@ -266,7 +271,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                             {c.phone}
                           </a>
                           <div className="text-right">
-                            <div className="text-[10.5px] font-bold tracking-wide text-muted-foreground">DERNIÈRE COMMANDE</div>
+                            <div className="text-[10.5px] font-bold tracking-wide text-muted-foreground">{t("colLastOrder")}</div>
                             <div className="text-[12.5px] font-semibold text-foreground">
                               {c.last_order ? formatDateTime(c.last_order).split(" ")[0] : "—"}
                             </div>
@@ -277,7 +282,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                   })
                 ) : (
                   <div className="py-12 text-center text-[13.5px] text-muted-foreground">
-                    Aucun client ne correspond à votre recherche.
+                    {t("noMatch")}
                   </div>
                 )}
               </div>
@@ -322,7 +327,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={columns.length} className="h-32 text-center text-[13.5px] text-muted-foreground">
-                        Aucun client ne correspond à votre recherche.
+                        {t("noMatch")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -336,7 +341,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
           {/* Table Pagination */}
           {customers.length > 0 && (
             <div className="px-5 py-3.5 flex items-center justify-between text-[12.5px] text-muted-foreground border-t border-border bg-muted/20">
-              <span>Affichage de {table.getFilteredRowModel().rows.length} client(s)</span>
+              <span>{t("showingCount", { count: table.getFilteredRowModel().rows.length })}</span>
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => table.previousPage()}
@@ -373,6 +378,7 @@ function CustomerHistoryDialog({
   customer: Customer | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("CustomersDashboard");
   const { data, isPending } = useQuery({
     queryKey: ["customer-orders", customer?.id],
     queryFn: () => fetchCustomerOrders(customer!.id),
@@ -389,13 +395,13 @@ function CustomerHistoryDialog({
         {customer && (
           <div className="mt-2">
             <div className="flex items-center justify-between rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 text-sm mb-4">
-              <span className="text-primary font-bold">Total dépensé</span>
+              <span className="text-primary font-bold">{t("totalSpent")}</span>
               <span className="font-extrabold text-primary text-lg">
                 {isPending ? "…" : formatPrice(data?.total_spent ?? 0, "MAD")}
               </span>
             </div>
             <div className="space-y-3">
-              <h4 className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Historique des commandes</h4>
+              <h4 className="text-[13px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("orderHistory")}</h4>
               {isPending && (
                 <div className="py-12 flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -403,7 +409,7 @@ function CustomerHistoryDialog({
               )}
               {!isPending && (data?.orders.length ?? 0) === 0 && (
                 <p className="py-8 text-center text-sm text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-border">
-                  Aucune commande pour ce client.
+                  {t("noOrdersForCustomer")}
                 </p>
               )}
               {data?.orders.map((o) => (
@@ -415,7 +421,7 @@ function CustomerHistoryDialog({
                   <div className="text-[12px] text-muted-foreground mb-3 flex items-center gap-2">
                     <span>{formatDateTime(o.created_at)}</span>
                     <span>•</span>
-                    <span className="capitalize">{o.type === 'dine_in' ? 'Sur place' : 'Livraison'}</span>
+                    <span className="capitalize">{o.type === 'dine_in' ? t("dineIn") : t("delivery")}</span>
                   </div>
                   <div className="space-y-1.5">
                     {o.items.map((l, i) => (

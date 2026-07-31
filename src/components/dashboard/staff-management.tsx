@@ -104,6 +104,7 @@ function displayNameOf(email: string) {
 }
 
 export function StaffManagement() {
+  const t = useTranslations("Staff");
   const tl = useTranslations("Labels");
   const queryClient = useQueryClient();
   const { data: staff, isPending } = useQuery({ queryKey: ["staff"], queryFn: fetchStaff });
@@ -123,7 +124,7 @@ export function StaffManagement() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Mise à jour impossible");
+        throw new Error(body?.error ?? t("updateFailed"));
       }
     },
     onSuccess: refresh,
@@ -135,7 +136,7 @@ export function StaffManagement() {
       const res = await fetch(`/api/dashboard/staff/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error ?? "Suppression impossible");
+        throw new Error(body?.error ?? t("deleteFailed"));
       }
     },
     onSuccess: () => {
@@ -168,15 +169,15 @@ export function StaffManagement() {
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="text-[15px] font-extrabold text-foreground">Équipe</div>
+            <div className="text-[15px] font-extrabold text-foreground">{t("title")}</div>
             <div className="mt-1 text-[12.5px] text-muted-foreground">
-              Manager, Serveur, Cuisine — accès limité selon le rôle.
+              {t("subtitle")}
             </div>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="w-full sm:w-auto gap-2.5 rounded-full bg-primary px-6 py-5 text-[14px] font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]">
-                <UserPlus className="size-4 stroke-[2.2]" /> Inviter un membre
+                <UserPlus className="size-4 stroke-[2.2]" /> {t("invite")}
               </Button>
             </DialogTrigger>
             <DialogContent className="overflow-hidden rounded-2xl border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-sm">
@@ -193,7 +194,7 @@ export function StaffManagement() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un membre…"
+            placeholder={t("searchPlaceholder")}
             className="h-10 rounded-[11px] border-border bg-card pl-10 text-[13px]"
           />
         </div>
@@ -208,7 +209,7 @@ export function StaffManagement() {
                 : "border border-border bg-card text-muted-foreground hover:text-foreground",
             )}
           >
-            Tous
+            {t("all")}
           </button>
           {ASSIGNABLE_ROLES.map((r) => (
             <button
@@ -231,24 +232,24 @@ export function StaffManagement() {
       {/* Datatable */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="hidden grid-cols-[2.4fr_1.1fr_1fr_1.3fr_44px] gap-4 border-b border-border bg-muted/30 px-6 py-3.5 md:grid">
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">UTILISATEUR</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">RÔLE</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">STATUT</div>
-          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">AJOUTÉ LE</div>
-          <div className="text-right text-[11px] font-bold tracking-wider text-muted-foreground">ACTIONS</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colUser")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colRole")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colStatus")}</div>
+          <div className="text-[11px] font-bold tracking-wider text-muted-foreground">{t("colAddedOn")}</div>
+          <div className="text-right text-[11px] font-bold tracking-wider text-muted-foreground">{t("colActions")}</div>
         </div>
 
         {isPending && (
-          <p className="py-10 text-center text-[13px] text-muted-foreground">Chargement…</p>
+          <p className="py-10 text-center text-[13px] text-muted-foreground">{t("loading")}</p>
         )}
         {!isPending && (staff?.length ?? 0) === 0 && (
           <p className="py-12 text-center text-[13.5px] text-muted-foreground">
-            Aucun membre du personnel pour le moment.
+            {t("noStaff")}
           </p>
         )}
         {!isPending && (staff?.length ?? 0) > 0 && filtered.length === 0 && (
           <p className="py-12 text-center text-[13.5px] text-muted-foreground">
-            Aucun membre ne correspond à votre recherche.
+            {t("noMatch")}
           </p>
         )}
 
@@ -281,14 +282,14 @@ export function StaffManagement() {
               </div>
 
               <div className="flex items-center justify-between md:block">
-                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">RÔLE</span>
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">{t("colRole")}</span>
                 <Badge className={cn("rounded-full font-bold", colors.bg, colors.text)}>
                   {tl(ROLE_LABELS[s.role])}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between md:block">
-                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">STATUT</span>
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">{t("colStatus")}</span>
                 <div className="flex items-center gap-2">
                 <span
                   className={cn(
@@ -297,13 +298,13 @@ export function StaffManagement() {
                   )}
                 />
                 <span className={cn("text-[13px] font-semibold", s.active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
-                  {s.active ? "Actif" : "Inactif"}
+                  {s.active ? t("active") : t("inactive")}
                 </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between md:block">
-                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">AJOUTÉ LE</span>
+                <span className="text-[11px] font-bold tracking-wider text-muted-foreground md:hidden">{t("colAddedOn")}</span>
                 <span className="text-[13px] text-muted-foreground">{formatDateTime(s.created_at)}</span>
               </div>
 
@@ -312,7 +313,7 @@ export function StaffManagement() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      aria-label={`Actions pour ${s.email}`}
+                      aria-label={t("actionsFor", { email: s.email })}
                       className="flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       <MoreVertical className="size-4" />
@@ -320,7 +321,7 @@ export function StaffManagement() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuLabel className="text-[11px] font-bold tracking-wider text-muted-foreground">
-                      RÔLE
+                      {t("colRole")}
                     </DropdownMenuLabel>
                     {ASSIGNABLE_ROLES.map((r) => (
                       <DropdownMenuItem
@@ -331,7 +332,7 @@ export function StaffManagement() {
                       >
                         <span className={cn("size-2 rounded-full", ROLE_COLORS[r].dot)} />
                         {tl(ROLE_LABELS[r])}
-                        {s.role === r && <span className="ml-auto text-[11px] text-muted-foreground">Actuel</span>}
+                        {s.role === r && <span className="ml-auto text-[11px] text-muted-foreground">{t("current")}</span>}
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
@@ -340,7 +341,7 @@ export function StaffManagement() {
                       className="gap-2.5 text-[13px] font-semibold"
                     >
                       {s.active ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
-                      {s.active ? "Désactiver" : "Activer"}
+                      {s.active ? t("deactivate") : t("activate")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -349,7 +350,7 @@ export function StaffManagement() {
                       className="gap-2.5 text-[13px] font-semibold"
                     >
                       <Trash2 className="size-4" />
-                      Retirer
+                      {t("remove")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -361,13 +362,13 @@ export function StaffManagement() {
         {!isPending && (staff?.length ?? 0) > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5 text-[12.5px] text-muted-foreground">
             <div>
-              {staff!.length} membre{staff!.length > 1 ? "s" : ""} au total
+              {t("memberCount", { count: staff!.length })}
             </div>
             <div className="flex flex-wrap gap-4">
-              {roleTally.map((t) => (
-                <div key={t.role} className="flex items-center gap-1.5">
-                  <span className={cn("size-2 rounded-full", ROLE_COLORS[t.role].dot)} />
-                  {t.count} {tl(ROLE_LABELS[t.role])}
+              {roleTally.map((rt) => (
+                <div key={rt.role} className="flex items-center gap-1.5">
+                  <span className={cn("size-2 rounded-full", ROLE_COLORS[rt.role].dot)} />
+                  {rt.count} {tl(ROLE_LABELS[rt.role])}
                 </div>
               ))}
             </div>
@@ -381,21 +382,21 @@ export function StaffManagement() {
         <AlertDialogContent className="rounded-2xl border-border bg-card shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-xl">
-              Retirer {removing?.email} ?
+              {t("confirmRemove", { email: removing?.email ?? "" })}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] text-muted-foreground">
-              Cette personne perdra immédiatement l&apos;accès au tableau de bord.
+              {t("removeText")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
             <AlertDialogCancel className="rounded-xl font-bold hover:bg-muted">
-              Annuler
+              {t("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => removing && removeStaff.mutate(removing.id)}
               className="rounded-xl bg-destructive font-bold text-destructive-foreground hover:bg-destructive/90"
             >
-              Retirer
+              {t("remove")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -405,6 +406,7 @@ export function StaffManagement() {
 }
 
 function AddStaffForm({ onCreated }: { onCreated: () => void }) {
+  const t = useTranslations("Staff");
   const tl = useTranslations("Labels");
   const [saving, setSaving] = useState(false);
   const form = useForm<StaffInput>({
@@ -424,10 +426,10 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        toast.error(body?.error ?? "Création impossible");
+        toast.error(body?.error ?? t("createFailed"));
         return;
       }
-      toast.success("Membre du personnel ajouté");
+      toast.success(t("staffAdded"));
       onCreated();
     } finally {
       setSaving(false);
@@ -437,17 +439,17 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
   return (
     <>
       <DialogHeader className="border-b border-border bg-muted/20 px-6 py-5">
-        <DialogTitle className="font-display text-xl font-bold">Inviter un membre</DialogTitle>
+        <DialogTitle className="font-display text-xl font-bold">{t("invite")}</DialogTitle>
       </DialogHeader>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6" noValidate>
         <div className="space-y-2">
           <Label htmlFor="staff-email" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-            Email
+            {t("email")}
           </Label>
           <Input
             id="staff-email"
             type="email"
-            placeholder="prenom@votre-restaurant.ma"
+            placeholder={t("emailPlaceholder")}
             className="h-11 rounded-[11px] border-border bg-background text-[13.5px]"
             {...form.register("email")}
           />
@@ -457,7 +459,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
         </div>
         <div className="space-y-2">
           <Label className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-            Rôle
+            {t("role")}
           </Label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {ASSIGNABLE_ROLES.map((r) => {
@@ -484,7 +486,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="staff-password" className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-            Mot de passe temporaire
+            {t("tempPassword")}
           </Label>
           <Input
             id="staff-password"
@@ -493,7 +495,7 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
             {...form.register("password")}
           />
           <p className="text-xs text-muted-foreground">
-            La personne devra le changer à sa première connexion.
+            {t("tempPasswordHint")}
           </p>
           {errors.password && (
             <p className="text-sm text-destructive">{errors.password.message}</p>
@@ -506,14 +508,14 @@ function AddStaffForm({ onCreated }: { onCreated: () => void }) {
             className="mt-0.5"
           />
           <span>
-            Ce membre du personnel a consenti à la création de ce compte.
+            {t("consentText")}
           </span>
         </label>
         {errors.consent && (
           <p className="-mt-2 text-sm text-destructive">{errors.consent.message}</p>
         )}
         <Button type="submit" className="w-full rounded-xl font-bold" disabled={saving}>
-          <Plus className="size-4" /> {saving ? "Création…" : "Envoyer l'invitation"}
+          <Plus className="size-4" /> {saving ? t("creating") : t("sendInvite")}
         </Button>
       </form>
     </>
