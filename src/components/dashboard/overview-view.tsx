@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import {
   CalendarClock,
   CalendarDays,
@@ -59,6 +60,7 @@ export function OverviewView({
   lastOrders: Order[];
   todaysReservations: Pick<Reservation, "id" | "customer_name" | "party_size" | "time" | "status">[];
 }) {
+  const t = useTranslations("Overview");
   const panierMoyen = ordersToday > 0 ? revenueToday / ordersToday : 0;
   const [timeRange, setTimeRange] = useState<"today" | "week">("today");
   const [hoveredSegment, setHoveredSegment] = useState<"sur_place" | "livraison" | "a_emporter" | null>(null);
@@ -105,7 +107,7 @@ export function OverviewView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <FadeUp delay={0}>
           <StatCard
-            label="Commandes aujourd'hui"
+            label={t("ordersToday")}
             value={ordersToday}
             deltaPct={ordersDeltaPct}
             iconUrl="/images/Group (5).svg"
@@ -114,7 +116,7 @@ export function OverviewView({
         </FadeUp>
         <FadeUp delay={0.04}>
           <StatCard
-            label="Revenu aujourd'hui"
+            label={t("revenueToday")}
             value={revenueToday}
             unit={currency}
             deltaPct={revenueDeltaPct}
@@ -124,7 +126,7 @@ export function OverviewView({
         </FadeUp>
         <FadeUp delay={0.08}>
           <StatCard
-            label="Réservations en attente"
+            label={t("pendingReservations")}
             value={pendingReservations}
             deltaPct={reservationsDeltaPct}
             iconUrl="/images/Group (6).svg"
@@ -133,7 +135,7 @@ export function OverviewView({
         </FadeUp>
         <FadeUp delay={0.12}>
           <StatCard
-            label="Nouveaux clients"
+            label={t("newCustomers")}
             value={newCustomers}
             deltaPct={customersDeltaPct}
             iconUrl="/images/Group (1).svg"
@@ -149,8 +151,8 @@ export function OverviewView({
             {/* Header */}
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">Rythme de la journée</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Commandes par créneau</p>
+                <h2 className="font-display text-lg sm:text-xl font-bold text-foreground">{t("dailyRhythm")}</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{t("ordersPerSlot")}</p>
               </div>
               <div className="flex items-center rounded-xl border border-border/50 bg-background/80 dark:bg-neutral-900/60 p-1 shadow-sm w-fit">
                 <button
@@ -162,7 +164,7 @@ export function OverviewView({
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Aujourd'hui
+                  {t("today")}
                 </button>
                 <button
                   onClick={() => { setTimeRange("week"); setActiveBarIndex(null); }}
@@ -173,7 +175,7 @@ export function OverviewView({
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Semaine
+                  {t("week")}
                 </button>
               </div>
             </div>
@@ -195,7 +197,7 @@ export function OverviewView({
                       {/* Floating Tooltip Badge */}
                       {isSelected && (
                         <div className="absolute -top-10 z-20 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-[11px] sm:text-xs font-extrabold px-2.5 py-1 rounded-full shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150 border border-white/10 dark:border-black/10">
-                          {item.orders} cmd
+                          {t("ordersAbbrev", { count: item.orders })}
                         </div>
                       )}
 
@@ -234,7 +236,7 @@ export function OverviewView({
 
         <FadeUp delay={0.2} className="lg:col-span-1">
           <div className="flex h-full flex-col rounded-[24px] border bg-card p-6 shadow-sm">
-            <h2 className="font-display text-xl font-bold text-foreground mb-8">Répartition par type</h2>
+            <h2 className="font-display text-xl font-bold text-foreground mb-8">{t("typeBreakdown")}</h2>
             <div className="flex-1 flex flex-col items-center justify-center gap-10">
               <div className="relative size-[200px]">
                 <svg className="size-full -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
@@ -279,7 +281,7 @@ export function OverviewView({
                     {hoveredSegment === "a_emporter" ? "10%" : hoveredSegment === "livraison" ? "15%" : "75%"}
                   </span>
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mt-2">
-                    {hoveredSegment === "a_emporter" ? "À emporter" : hoveredSegment === "livraison" ? "Livraison" : "Sur place"}
+                    {hoveredSegment === "a_emporter" ? t("takeaway") : hoveredSegment === "livraison" ? t("delivery") : t("dineIn")}
                   </span>
                 </div>
               </div>
@@ -289,21 +291,21 @@ export function OverviewView({
                   onMouseEnter={() => setHoveredSegment("sur_place")}
                   onMouseLeave={() => setHoveredSegment(null)}
                 >
-                  <div className="size-3 rounded-full bg-[#e36329]" /> Sur place
+                  <div className="size-3 rounded-full bg-[#e36329]" /> {t("dineIn")}
                 </div>
                 <div
                   className={cn("flex items-center gap-2 cursor-pointer transition-opacity duration-300", hoveredSegment && hoveredSegment !== "livraison" ? "opacity-40" : "opacity-100")}
                   onMouseEnter={() => setHoveredSegment("livraison")}
                   onMouseLeave={() => setHoveredSegment(null)}
                 >
-                  <div className="size-3 rounded-full bg-slate-900 dark:bg-slate-200" /> Livraison
+                  <div className="size-3 rounded-full bg-slate-900 dark:bg-slate-200" /> {t("delivery")}
                 </div>
                 <div
                   className={cn("flex items-center gap-2 cursor-pointer transition-opacity duration-300", hoveredSegment && hoveredSegment !== "a_emporter" ? "opacity-40" : "opacity-100")}
                   onMouseEnter={() => setHoveredSegment("a_emporter")}
                   onMouseLeave={() => setHoveredSegment(null)}
                 >
-                  <div className="size-3 rounded-full bg-slate-800 dark:bg-slate-400" /> À emporter
+                  <div className="size-3 rounded-full bg-slate-800 dark:bg-slate-400" /> {t("takeaway")}
                 </div>
               </div>
             </div>
@@ -316,9 +318,9 @@ export function OverviewView({
         <FadeUp delay={0.24} className="lg:col-span-2">
           <div className="flex h-full flex-col rounded-2xl border bg-card p-5 shadow-sm md:p-6">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold">Dernières commandes</h2>
+              <h2 className="font-display text-lg font-semibold">{t("recentOrders")}</h2>
               <Link href="/dashboard/orders" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Voir tout
+                {t("viewAll")}
               </Link>
             </div>
 
@@ -326,8 +328,8 @@ export function OverviewView({
               <div className="mt-3 flex-1">
                 <EmptyState
                   icon={ShoppingBag}
-                  title="Aucune commande aujourd'hui"
-                  hint="La première apparaîtra ici automatiquement."
+                  title={t("noOrdersToday")}
+                  hint={t("noOrdersTodayHint")}
                 />
               </div>
             ) : (
@@ -335,11 +337,11 @@ export function OverviewView({
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-muted-foreground border-b border-border/50">
                     <tr>
-                      <th className="pb-3 font-medium">ID</th>
-                      <th className="pb-3 font-medium">Client</th>
-                      <th className="pb-3 font-medium">Total</th>
-                      <th className="pb-3 font-medium">Statut</th>
-                      <th className="pb-3 font-medium text-right">Heure</th>
+                      <th className="pb-3 font-medium">{t("colId")}</th>
+                      <th className="pb-3 font-medium">{t("colClient")}</th>
+                      <th className="pb-3 font-medium">{t("colTotal")}</th>
+                      <th className="pb-3 font-medium">{t("colStatus")}</th>
+                      <th className="pb-3 font-medium text-right">{t("colTime")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -350,7 +352,7 @@ export function OverviewView({
                         </td>
                         <td className="py-4 pr-4">
                           <p className="font-medium text-foreground">
-                            {o.type === "dine_in" ? `Table ${o.table_number}` : o.customer_name || "Client"}
+                            {o.type === "dine_in" ? t("table", { number: o.table_number ?? "" }) : o.customer_name || t("client")}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-muted-foreground max-w-[150px] sm:max-w-[200px]">
                             {o.items.map((l) => `${l.quantity}× ${l.name}`).join(", ")}
@@ -366,7 +368,7 @@ export function OverviewView({
                             o.status === "preparing" && "text-amber-600 dark:text-amber-500",
                             o.status === "new" && "text-blue-600 dark:text-blue-500",
                           )}>
-                            {o.status === "done" ? "Servi" : o.status === "preparing" ? "En cours" : "Nouveau"}
+                            {o.status === "done" ? t("served") : o.status === "preparing" ? t("inProgress") : t("newStatus")}
                           </Badge>
                         </td>
                         <td className="py-4 text-right text-xs text-muted-foreground">
@@ -384,9 +386,9 @@ export function OverviewView({
         <FadeUp delay={0.28}>
           <div className="flex h-full flex-col rounded-2xl border bg-card p-5 shadow-sm md:p-6">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold">Réservations</h2>
+              <h2 className="font-display text-lg font-semibold">{t("reservations")}</h2>
               <Link href="/dashboard/reservations" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Voir tout
+                {t("viewAll")}
               </Link>
             </div>
 
@@ -394,8 +396,8 @@ export function OverviewView({
               <div className="mt-3 flex-1">
                 <EmptyState
                   icon={CalendarDays}
-                  title="Aucune réservation aujourd'hui"
-                  hint="Les nouvelles demandes apparaîtront ici."
+                  title={t("noReservationsToday")}
+                  hint={t("noReservationsTodayHint")}
                 />
               </div>
             ) : (
@@ -409,7 +411,7 @@ export function OverviewView({
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">{r.customer_name}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {r.party_size} personnes • {r.status === "confirmed" ? "Confirmé" : "En attente"}
+                          {t("peopleCount", { count: r.party_size })} • {r.status === "confirmed" ? t("confirmed") : t("pending")}
                         </p>
                       </div>
                     </div>

@@ -42,6 +42,9 @@ const staffOrderSchema = z.object({
   table_number: z.string().max(10).optional(),
   customer_name: z.string().trim().max(100).optional(),
   note: z.string().trim().max(500).optional(),
+  // POS orders are settled at the counter by default — staff can uncheck
+  // this for a tab that gets marked paid later via the payment PATCH route.
+  paid_now: z.boolean().default(true),
   lines: z.array(staffOrderLineSchema).min(1).max(50),
 });
 
@@ -119,6 +122,7 @@ export async function POST(request: Request) {
 
   // Map POS "takeaway" → DB "delivery" type (no delivery fee for takeaway)
   const dbType = input.type === "dine_in" ? "dine_in" : "delivery";
+  const now = new Date().toISOString();
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -132,6 +136,10 @@ export async function POST(request: Request) {
       subtotal,
       delivery_fee: 0,
       total: subtotal,
+      payment_method: "cash",
+      payment_status: input.paid_now ? "paid" : "unpaid",
+      paid_at: input.paid_now ? now : null,
+      paid_by: input.paid_now ? guard.ctx.profile.id : null,
     })
     .select("id")
     .single();

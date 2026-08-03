@@ -40,6 +40,7 @@ async function placeStaffOrder(body: {
   table_number?: string;
   customer_name?: string;
   note?: string;
+  paid_now: boolean;
   lines: { item_id: string; quantity: number; options: string[] }[];
 }): Promise<{ id: string; total: number }> {
   const res = await fetch("/api/dashboard/orders", {
@@ -66,6 +67,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
   const [table, setTable] = useState("");
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [orderType, setOrderType] = useState<OrderType>("dine_in");
+  const [paidNow, setPaidNow] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
 
@@ -83,6 +85,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
       setCustomerName("");
       setTable("");
       setOrderType("dine_in");
+      setPaidNow(true);
       setMobileSummaryOpen(false);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       onClose?.();
@@ -121,6 +124,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
       type: apiType,
       table_number: apiType === "dine_in" ? table : undefined,
       customer_name: customerName || undefined,
+      paid_now: paidNow,
       lines: cartLines.map((l) => ({
         item_id: l.item_id,
         quantity: l.quantity,
@@ -205,22 +209,22 @@ export function PosView({ onClose }: { onClose?: () => void }) {
                     key={item.id}
                     onClick={() => setSelectedItem(item)}
                     className={cn(
-                      "relative flex items-center gap-3.5 bg-gradient-to-br from-[#221a14] to-[#120e0b] border border-[#2c2119] rounded-[20px] p-3.5 shadow-sm transition-all hover:-translate-y-0.5 cursor-pointer min-h-[96px]",
+                      "relative flex items-center gap-3.5 bg-gradient-to-br from-white via-[#fdf9f5] to-[#faf4ec] dark:bg-none dark:bg-[#18181b] border border-[#ece6dc] dark:border-stone-800 rounded-[20px] p-3.5 shadow-sm dark:shadow-none transition-all hover:-translate-y-0.5 cursor-pointer min-h-[96px]",
                       !item.in_stock && "opacity-50 cursor-not-allowed",
                     )}
                   >
                     {/* Item Thumbnail */}
-                    <div className="relative size-14 sm:size-16 rounded-full bg-[#2a1f16] flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-white/10 ring-2 ring-white/10">
+                    <div className="relative size-14 sm:size-16 rounded-full bg-[#f4ece1] dark:bg-[#2a1f16] flex items-center justify-center shrink-0 overflow-hidden shadow-sm border border-[#ece6dc] dark:border-white/10 ring-2 ring-[#ec5b1a]/20 dark:ring-white/10">
                       <Image src={getDishImage(item)} alt={item.name_fr} fill sizes="256px" className="object-cover rounded-full scale-[1.30] transition-transform duration-300 group-hover:scale-[1.40]" />
                     </div>
 
                     {/* Item Details */}
                     <div className="flex-1 min-w-0 pr-7">
-                      <div className="text-xs sm:text-sm font-extrabold text-white leading-tight truncate">{item.name_fr}</div>
+                      <div className="text-xs sm:text-sm font-extrabold text-[#1c1712] dark:text-white leading-tight truncate">{item.name_fr}</div>
                       {item.description_fr && (
-                        <div className="text-[10.5px] sm:text-[11.5px] text-[#a09a92] mt-0.5 leading-snug line-clamp-2">{item.description_fr}</div>
+                        <div className="text-[10.5px] sm:text-[11.5px] text-[#787063] dark:text-[#a09a92] mt-0.5 leading-snug line-clamp-2">{item.description_fr}</div>
                       )}
-                      <div className="text-xs sm:text-sm font-extrabold text-[#ff8a4d] mt-1.5">{item.base_price} MAD</div>
+                      <div className="text-xs sm:text-sm font-extrabold text-[#ec5b1a] dark:text-[#ff8a4d] mt-1.5">{item.base_price} MAD</div>
                     </div>
 
                     {!item.in_stock && (
@@ -384,7 +388,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
               <div className="flex flex-col gap-1">
                 {cartLines.map((line) => (
                   <div key={line.key} className="flex gap-2.5 py-2 border-b border-[#f2eee6] dark:border-white/10 last:border-0">
-                    <div className="size-10 rounded-full shrink-0 flex items-center justify-center text-lg bg-[#2a1f16] text-white shadow-xs relative overflow-hidden ring-1 ring-white/10">
+                    <div className="size-10 rounded-full shrink-0 flex items-center justify-center text-lg bg-[#f4ece1] dark:bg-[#2a1f16] text-white shadow-xs relative overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
                       <Image src={getDishImage({ id: line.item_id, image_url: line.image_url })} alt={line.name} fill sizes="160px" className="object-cover rounded-full scale-125" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -416,6 +420,21 @@ export function PosView({ onClose }: { onClose?: () => void }) {
               </div>
             )}
           </div>
+
+          {/* Payment — cash settled at the counter by default; unchecking
+              leaves the order unpaid so it shows up on the reconciliation
+              view for later settlement (a tab). */}
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={paidNow}
+              onChange={(e) => setPaidNow(e.target.checked)}
+              className="size-4 rounded border-[#ece6dc] dark:border-white/20 accent-[#ec5b1a]"
+            />
+            <span className="text-[12.5px] font-bold text-[#5a544c] dark:text-gray-400">
+              {t("paidNow")}
+            </span>
+          </label>
 
           {/* Totals + submit */}
           <div className="border-t border-[#ece6dc] dark:border-white/10 pt-4 mt-auto">

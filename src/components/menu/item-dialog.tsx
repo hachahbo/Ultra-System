@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   Check,
@@ -206,9 +207,28 @@ export function ItemDialog({
     onClose();
   }
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when dialog is open
+  useEffect(() => {
+    if (item) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [item]);
+
   const isOpen = item !== null;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -218,12 +238,11 @@ export function ItemDialog({
           animate="show"
           exit="exit"
           onClick={onClose}
-          className={`fixed inset-0 z-50 flex bg-black/50 border backdrop-blur-[2px] ${isDesktop ? "items-center  justify-center p-4 sm:p-6" : "items-end"
-            }`}
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm"
         >
           {/* ── Panel: bottom sheet (mobile) / centered modal (desktop) ── */}
           <motion.div
-            key="panel"
+            key={isDesktop ? "desktop-panel" : "mobile-panel"}
             role="dialog"
             aria-modal="true"
             aria-label={item.name_fr}
@@ -232,10 +251,7 @@ export function ItemDialog({
             animate="show"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`relative flex w-full flex-col overflow-visible p-4 bg-card shadow-2xl ${isDesktop
-                ? "max-h-[88vh] max-w-md rounded-3xl ring-1 ring-border/60"
-                : "max-h-[92dvh] rounded-t-3xl"
-              }`}
+            className="relative flex w-full flex-col overflow-visible p-4 bg-[#FAF7F2] dark:bg-[#1C1917] text-foreground border border-[#ECE6DC] dark:border-stone-800 shadow-2xl max-h-[92dvh] sm:max-h-[88vh] max-w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl ring-1 ring-black/5 dark:ring-white/10"
           >
             {/* ── Drag handle (mobile only) ── */}
             {!isDesktop && (
@@ -322,15 +338,15 @@ export function ItemDialog({
                             <label
                               key={opt.name}
                               className={`group flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3.5 text-sm transition-all duration-200 active:scale-[0.98] ${checked
-                                  ? "border-primary bg-primary/5 text-foreground shadow-sm ring-1 ring-primary/20"
-                                  : "border-border/60 bg-background hover:border-border hover:bg-muted/30 hover:shadow-sm"
+                                ? "border-primary bg-primary/5 text-foreground shadow-sm ring-1 ring-primary/20"
+                                : "border-border/60 bg-background hover:border-border hover:bg-muted/30 hover:shadow-sm"
                                 }`}
                             >
                               <span className="flex items-center gap-3.5">
                                 <span
                                   className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${checked
-                                      ? "scale-110 border-primary bg-primary text-primary-foreground"
-                                      : "border-border/80 bg-background group-hover:border-border"
+                                    ? "scale-110 border-primary bg-primary text-primary-foreground"
+                                    : "border-border/80 bg-background group-hover:border-border"
                                     }`}
                                 >
                                   {checked && <Check className="size-3" />}
@@ -397,8 +413,8 @@ export function ItemDialog({
                           type="button"
                           onClick={() => toggleIngredient(opt.name)}
                           className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${isRemoved
-                              ? "border-destructive/60 bg-destructive/8 text-destructive line-through opacity-80"
-                              : "border-border bg-background text-foreground hover:border-border/60 hover:bg-muted/50"
+                            ? "border-destructive/60 bg-destructive/8 text-destructive line-through opacity-80"
+                            : "border-border bg-background text-foreground hover:border-border/60 hover:bg-muted/50"
                             }`}
                         >
                           {isRemoved ? (
@@ -454,7 +470,7 @@ export function ItemDialog({
             </div>
 
             {/* ── Sticky footer ── */}
-            <div className="shrink-0 border-t border-border/40 bg-card/95 px-6 pb-safe pt-4 backdrop-blur-md">
+            <div className="shrink-0 border-t border-[#ECE6DC] dark:border-stone-800 bg-[#FAF7F2]/95 dark:bg-[#1C1917]/95 px-6 pb-safe pt-4 backdrop-blur-md">
               <div className="flex items-center gap-3">
                 {/* Quantity stepper */}
                 <div className="flex items-center rounded-full border border-border/80 bg-background shadow-sm">
@@ -492,6 +508,7 @@ export function ItemDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

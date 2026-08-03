@@ -165,6 +165,8 @@ export async function POST(request: Request) {
       subtotal,
       delivery_fee: deliveryFee,
       total,
+      payment_method: input.payment_method,
+      payment_status: "unpaid",
     })
     .select("id")
     .single();

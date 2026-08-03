@@ -21,6 +21,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/format";
 import { FadeUp } from "@/components/dashboard/motion";
 import { cn } from "@/lib/utils";
@@ -42,15 +43,8 @@ async function fetchAnalytics(range: Range): Promise<AnalyticsData> {
   return res.json();
 }
 
-const revenueConfig: ChartConfig = {
-  revenue: { label: "Revenu", color: "#4ec27f" },
-};
-const ordersConfig: ChartConfig = {
-  orders: { label: "Commandes", color: "#ec5b1a" },
-};
-const hourConfig: ChartConfig = {
-  orders: { label: "Commandes", color: "#7c8cff" },
-};
+// Chart series labels come from the component below (need a translator);
+// these configs are placeholders swapped in AnalyticsView.
 
 function KpiCard({
   label,
@@ -67,6 +61,7 @@ function KpiCard({
   color?: string;
   deltaType?: "up" | "down";
 }) {
+  const t = useTranslations("Analytics");
   return (
     <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[16px] p-[17px_19px] shadow-sm flex flex-col">
       <div className="text-[12px] font-bold text-muted-foreground dark:text-[#8b8b93]">{label}</div>
@@ -82,18 +77,29 @@ function KpiCard({
         >
           {arrow} {delta}
         </span>
-        <span className="text-[11.5px] text-muted-foreground dark:text-[#6a6a72]">vs période préc.</span>
+        <span className="text-[11.5px] text-muted-foreground dark:text-[#6a6a72]">{t("vsPrevPeriod")}</span>
       </div>
     </div>
   );
 }
 
 export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
+  const t = useTranslations("Analytics");
   const [range, setRange] = useState<Range>("30d");
   const { data, isPending } = useQuery({
     queryKey: ["analytics", range],
     queryFn: () => fetchAnalytics(range),
   });
+
+  const revenueConfig: ChartConfig = {
+    revenue: { label: t("revenueLabel"), color: "#4ec27f" },
+  };
+  const ordersConfig: ChartConfig = {
+    orders: { label: t("ordersLabel"), color: "#ec5b1a" },
+  };
+  const hourConfig: ChartConfig = {
+    orders: { label: t("ordersLabel"), color: "#7c8cff" },
+  };
 
   const totalRevenue = data?.revenueSeries.reduce((s, d) => s + d.revenue, 0) ?? 0;
   const totalOrders = data?.revenueSeries.reduce((s, d) => s + d.orders, 0) ?? 0;
@@ -124,9 +130,9 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-[22px]">
         <div>
-          <h1 className="text-[26px] font-extrabold tracking-[-0.5px] m-0">Statistiques</h1>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.5px] m-0">{t("title")}</h1>
           <div className="text-[13.5px] text-muted-foreground dark:text-[#8b8b93] mt-1">
-            Performance de votre restaurant · {range === "7d" ? "7" : range === "30d" ? "30" : "90"} derniers jours
+            {t("subtitlePerf", { days: range === "7d" ? "7" : range === "30d" ? "30" : "90" })}
           </div>
         </div>
         <div className="flex gap-2 bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[12px] p-1 shadow-sm">
@@ -141,7 +147,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                   : "text-muted-foreground dark:text-[#8b8b93] hover:bg-neutral-100 dark:hover:bg-neutral-800"
               )}
             >
-              {r.replace("d", "j")}
+              {t(`range${r.replace("d", "")}`)}
             </button>
           ))}
         </div>
@@ -158,7 +164,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
             <FadeUp delay={0}>
               <KpiCard 
-                label="Revenu total" 
+                label={t("totalRevenue")} 
                 value={formatPrice(totalRevenue, currency)} 
                 delta={deltaRevenue} 
                 arrow="▲" 
@@ -166,7 +172,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
             </FadeUp>
             <FadeUp delay={0.04}>
               <KpiCard 
-                label="Commandes" 
+                label={t("totalOrders")} 
                 value={totalOrders.toString()} 
                 delta={deltaOrders} 
                 arrow="▲" 
@@ -174,7 +180,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
             </FadeUp>
             <FadeUp delay={0.08}>
               <KpiCard 
-                label="Panier moyen" 
+                label={t("avgBasket")} 
                 value={formatPrice(avgBasket, currency)} 
                 delta={deltaBasket} 
                 arrow="▲" 
@@ -182,7 +188,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
             </FadeUp>
             <FadeUp delay={0.12}>
               <KpiCard 
-                label="Taux d'annulation" 
+                label={t("cancelRate")} 
                 value="2,3%" 
                 delta={deltaCancel} 
                 arrow="▼" 
@@ -196,13 +202,13 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
             <FadeUp delay={0.16}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
                 <div className="flex items-baseline justify-between mb-[6px]">
-                  <div className="text-[14px] font-extrabold">Revenu</div>
+                  <div className="text-[14px] font-extrabold">{t("revenue")}</div>
                   <div className="text-[13px] font-bold text-emerald-500 dark:text-[#4ec27f]">
-                    {formatPrice(totalRevenue, currency)} <span className="text-muted-foreground dark:text-[#6a6a72] font-semibold">total</span>
+                    {formatPrice(totalRevenue, currency)} <span className="text-muted-foreground dark:text-[#6a6a72] font-semibold">{t("total")}</span>
                   </div>
                 </div>
                 <div className="text-[11.5px] text-muted-foreground dark:text-[#8b8b93] mb-[14px]">
-                  Chiffre d'affaires quotidien
+                  {t("dailyRevenue")}
                 </div>
                 <div className="flex-1 min-h-[150px]">
                   <ChartContainer config={revenueConfig} className="w-full h-full">
@@ -233,13 +239,13 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
             <FadeUp delay={0.20}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
                 <div className="flex items-baseline justify-between mb-[6px]">
-                  <div className="text-[14px] font-extrabold">Commandes par jour</div>
+                  <div className="text-[14px] font-extrabold">{t("ordersPerDay")}</div>
                   <div className="text-[13px] font-bold text-[#ec5b1a]">
-                    {totalOrders} <span className="text-muted-foreground dark:text-[#6a6a72] font-semibold">total</span>
+                    {totalOrders} <span className="text-muted-foreground dark:text-[#6a6a72] font-semibold">{t("total")}</span>
                   </div>
                 </div>
                 <div className="text-[11.5px] text-muted-foreground dark:text-[#8b8b93] mb-[14px]">
-                  Volume de commandes
+                  {t("orderVolume")}
                 </div>
                 <div className="flex-1 min-h-[150px]">
                   <ChartContainer config={ordersConfig} className="w-full h-full">
@@ -260,7 +266,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[16px]">
             <FadeUp delay={0.24}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
-                <div className="text-[14px] font-extrabold mb-[16px]">Sur place vs Livraison</div>
+                <div className="text-[14px] font-extrabold mb-[16px]">{t("dineInVsDelivery")}</div>
                 <div className="flex items-center gap-[18px] flex-1">
                   <div className="relative w-[118px] h-[118px]">
                     <ChartContainer config={{}} className="w-full h-full">
@@ -268,8 +274,8 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                         <Pie
                           data={[
-                            { name: "Sur place", value: data.typeSplit.dine_in, fill: "#ec5b1a" },
-                            { name: "Livraison", value: data.typeSplit.delivery, fill: "#7c8cff" },
+                            { name: t("dineIn"), value: data.typeSplit.dine_in, fill: "#ec5b1a" },
+                            { name: t("delivery"), value: data.typeSplit.delivery, fill: "#7c8cff" },
                           ]}
                           dataKey="value"
                           nameKey="name"
@@ -282,21 +288,21 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                     </ChartContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                       <span className="text-[18px] font-extrabold">{channelTotal > 0 ? "100" : "0"}%</span>
-                      <span className="text-[9px] font-semibold text-muted-foreground dark:text-[#8b8b93] uppercase mt-0.5 tracking-[1.2px]">TOTAL</span>
+                      <span className="text-[9px] font-semibold text-muted-foreground dark:text-[#8b8b93] uppercase mt-0.5 tracking-[1.2px]">{t("totalLabel")}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-[12px]">
                     <div>
                       <div className="flex items-center gap-[7px]">
                         <span className="w-[9px] h-[9px] rounded-[2px] bg-[#ec5b1a]"></span>
-                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">Sur place</span>
+                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">{t("dineIn")}</span>
                       </div>
                       <div className="text-[16px] font-extrabold mt-[2px] ml-[16px]">{dineInPct}%</div>
                     </div>
                     <div>
                       <div className="flex items-center gap-[7px]">
                         <span className="w-[9px] h-[9px] rounded-[2px] bg-[#7c8cff]"></span>
-                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">Livraison</span>
+                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">{t("delivery")}</span>
                       </div>
                       <div className="text-[16px] font-extrabold mt-[2px] ml-[16px]">{deliveryPct}%</div>
                     </div>
@@ -307,7 +313,7 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
 
             <FadeUp delay={0.28}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
-                <div className="text-[14px] font-extrabold mb-[16px]">Nouveaux vs Récurrents</div>
+                <div className="text-[14px] font-extrabold mb-[16px]">{t("newVsReturning")}</div>
                 <div className="flex items-center gap-[18px] flex-1">
                   <div className="relative w-[118px] h-[118px]">
                     <ChartContainer config={{}} className="w-full h-full">
@@ -315,8 +321,8 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                         <Pie
                           data={[
-                            { name: "Nouveaux", value: data.newVsReturning.new, fill: "#4ec27f" },
-                            { name: "Récurrents", value: data.newVsReturning.returning, fill: "#e6a92f" },
+                            { name: t("new"), value: data.newVsReturning.new, fill: "#4ec27f" },
+                            { name: t("returning"), value: data.newVsReturning.returning, fill: "#e6a92f" },
                           ]}
                           dataKey="value"
                           nameKey="name"
@@ -329,21 +335,21 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
                     </ChartContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                       <span className="text-[18px] font-extrabold">{customerTotal > 0 ? "100" : "0"}%</span>
-                      <span className="text-[9px] font-semibold text-muted-foreground dark:text-[#8b8b93] uppercase mt-0.5 tracking-[1.2px]">TOTAL</span>
+                      <span className="text-[9px] font-semibold text-muted-foreground dark:text-[#8b8b93] uppercase mt-0.5 tracking-[1.2px]">{t("totalLabel")}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-[12px]">
                     <div>
                       <div className="flex items-center gap-[7px]">
                         <span className="w-[9px] h-[9px] rounded-[2px] bg-[#4ec27f]"></span>
-                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">Nouveaux</span>
+                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">{t("new")}</span>
                       </div>
                       <div className="text-[16px] font-extrabold mt-[2px] ml-[16px]">{newPct}%</div>
                     </div>
                     <div>
                       <div className="flex items-center gap-[7px]">
                         <span className="w-[9px] h-[9px] rounded-[2px] bg-[#e6a92f]"></span>
-                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">Récurrents</span>
+                        <span className="text-[12px] font-bold text-muted-foreground dark:text-[#c9c9d1]">{t("returning")}</span>
                       </div>
                       <div className="text-[16px] font-extrabold mt-[2px] ml-[16px]">{returningPct}%</div>
                     </div>
@@ -354,9 +360,9 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
 
             <FadeUp delay={0.32}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
-                <div className="text-[14px] font-extrabold mb-[4px]">Commandes par heure</div>
+                <div className="text-[14px] font-extrabold mb-[4px]">{t("ordersPerHour")}</div>
                 <div className="text-[11.5px] text-muted-foreground dark:text-[#8b8b93] mb-[14px]">
-                  Pic : 12h–14h & 19h–21h
+                  {t("peakHours")}
                 </div>
                 <div className="flex-1 min-h-[120px]">
                   <ChartContainer config={hourConfig} className="w-full h-full">
@@ -374,12 +380,12 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
 
             <FadeUp delay={0.34}>
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full flex flex-col">
-                <div className="text-[14px] font-extrabold mb-[4px]">Rotation des tables</div>
+                <div className="text-[14px] font-extrabold mb-[4px]">{t("tableTurnover")}</div>
                 <div className="text-[11.5px] text-muted-foreground dark:text-[#8b8b93] mb-[14px]">
-                  Durée moyenne par table (minutes)
+                  {t("avgDurationMinutes")}
                 </div>
                 <div className="flex-1 min-h-[120px]">
-                  <ChartContainer config={{ duration: { label: "Minutes", color: "#ec5b1a" } }} className="w-full h-full">
+                  <ChartContainer config={{ duration: { label: t("minutes"), color: "#ec5b1a" } }} className="w-full h-full">
                     <BarChart data={data.tableTurnover} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
                       <CartesianGrid vertical={false} strokeOpacity={0.15} />
                       <XAxis dataKey="hour" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => `${v}h`} />
@@ -399,19 +405,19 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full">
                 <div className="flex items-center gap-[8px] mb-[16px]">
                   <span className="w-[8px] h-[8px] rounded-full bg-emerald-500 dark:bg-[#4ec27f]"></span>
-                  <div className="text-[14px] font-extrabold">Meilleures ventes</div>
+                  <div className="text-[14px] font-extrabold">{t("bestSellers")}</div>
                 </div>
                 <div className="grid grid-cols-[22px_1fr_auto_auto] gap-y-[12px] gap-x-[14px] items-center">
                   {bestSellers.map((item, i) => (
                     <div key={i} className="contents">
                       <div className="text-[12px] font-extrabold text-emerald-500 dark:text-[#4ec27f]">#{i + 1}</div>
                       <div className="text-[13px] font-semibold text-foreground dark:text-[#e6e6ea] truncate">{item.name}</div>
-                      <div className="text-[12.5px] text-muted-foreground dark:text-[#8b8b93] text-right">{item.quantity} vendus</div>
+                      <div className="text-[12.5px] text-muted-foreground dark:text-[#8b8b93] text-right">{t("sold", { count: item.quantity })}</div>
                       <div className="text-[13px] font-bold text-right min-w-[64px]">{formatPrice(item.revenue, currency)}</div>
                     </div>
                   ))}
                   {bestSellers.length === 0 && (
-                    <div className="col-span-4 text-center text-sm text-muted-foreground py-4">Aucune donnée</div>
+                    <div className="col-span-4 text-center text-sm text-muted-foreground py-4">{t("noData")}</div>
                   )}
                 </div>
               </div>
@@ -421,19 +427,19 @@ export function AnalyticsView({ currency = "MAD" }: { currency?: string }) {
               <div className="bg-white dark:bg-[#111111] border border-border/50 dark:border-[#232323] rounded-[18px] p-[20px] shadow-sm h-full">
                 <div className="flex items-center gap-[8px] mb-[16px]">
                   <span className="w-[8px] h-[8px] rounded-full bg-red-500 dark:bg-[#e0574a]"></span>
-                  <div className="text-[14px] font-extrabold">Pires ventes</div>
-                  <span className="text-[11px] text-muted-foreground dark:text-[#8b8b93] ml-auto">À reconsidérer</span>
+                  <div className="text-[14px] font-extrabold">{t("worstSellers")}</div>
+                  <span className="text-[11px] text-muted-foreground dark:text-[#8b8b93] ml-auto">{t("toReconsider")}</span>
                 </div>
                 <div className="grid grid-cols-[1fr_auto_auto] gap-y-[12px] gap-x-[14px] items-center">
                   {worstSellers.map((item, i) => (
                     <div key={i} className="contents">
                       <div className="text-[13px] font-semibold text-foreground dark:text-[#e6e6ea] truncate">{item.name}</div>
-                      <div className="text-[12.5px] text-muted-foreground dark:text-[#8b8b93] text-right">{item.quantity} vendus</div>
+                      <div className="text-[12.5px] text-muted-foreground dark:text-[#8b8b93] text-right">{t("sold", { count: item.quantity })}</div>
                       <div className="text-[13px] font-bold text-right min-w-[64px] text-muted-foreground dark:text-[#9a9aa2]">{formatPrice(item.revenue, currency)}</div>
                     </div>
                   ))}
                   {worstSellers.length === 0 && (
-                    <div className="col-span-3 text-center text-sm text-muted-foreground py-4">Aucune donnée</div>
+                    <div className="col-span-3 text-center text-sm text-muted-foreground py-4">{t("noData")}</div>
                   )}
                 </div>
               </div>

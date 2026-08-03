@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
+import { getSessionContext } from "@/lib/dashboard";
 import { OrdersView } from "@/components/dashboard/orders-view";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -7,6 +9,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("navOrders") };
 }
 
-export default function OrdersPage() {
-  return <OrdersView />;
+export default async function OrdersPage() {
+  const ctx = await getSessionContext();
+  if (!ctx) redirect("/");
+
+  // Settling payment (marking paid/refunded) is narrower than editing an
+  // order — serveur/cuisine can see and update orders but not money.
+  const canSettlePayment = ctx.profile.role === "owner" || ctx.profile.role === "manager";
+
+  return <OrdersView canSettlePayment={canSettlePayment} />;
 }

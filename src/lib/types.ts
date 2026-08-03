@@ -295,6 +295,9 @@ export type OrderLine = {
   options: string[]; // selected option names, e.g. ["Algérienne", "Fromagère"]
 };
 
+export type PaymentMethod = "cash" | "card_on_delivery" | "online";
+export type PaymentStatus = "unpaid" | "paid" | "refunded";
+
 export type Order = {
   id: string;
   restaurant_id: string;
@@ -309,6 +312,10 @@ export type Order = {
   delivery_fee: number;
   total: number;
   status: "new" | "preparing" | "done";
+  payment_method: PaymentMethod;
+  payment_status: PaymentStatus;
+  paid_at: string | null;
+  paid_by: string | null;
   created_at: string;
   updated_at: string;
 };

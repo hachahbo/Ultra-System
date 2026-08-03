@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Search,
@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,29 @@ const STATUS_MAP: Record<string, { label: string; bg: string; color: string; dar
 
 const getStatusBadge = (status: string) => STATUS_MAP[status] || STATUS_MAP.new;
 
-export function OrdersView() {
+// Phase 8.1 — payment_status is orthogonal to fulfilment status (a 'done'
+// order can still be 'unpaid'). Same badge shape as STATUS_MAP above.
+const PAYMENT_STATUS_MAP: Record<string, { label: string; bg: string; color: string; darkBg: string; darkColor: string }> = {
+  paid: { label: "paymentPaid", bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
+  unpaid: { label: "paymentUnpaid", bg: "rgba(217, 119, 6, 0.14)", color: "#b45309", darkBg: "rgba(217, 119, 6, 0.22)", darkColor: "#f0a94e" },
+  refunded: { label: "paymentRefunded", bg: "rgba(120, 113, 108, 0.14)", color: "#57534e", darkBg: "rgba(168, 162, 158, 0.2)", darkColor: "#d6d3d1" },
+};
+
+const getPaymentBadge = (status: string) => PAYMENT_STATUS_MAP[status] || PAYMENT_STATUS_MAP.unpaid;
+
+async function markOrderPaid(orderId: string): Promise<void> {
+  const res = await fetch(`/api/dashboard/orders/${orderId}/payment`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ payment_status: "paid" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? "payment update failed");
+  }
+}
+
+export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: boolean }) {
   const t = useTranslations("Orders");
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Filter>("all");
@@ -169,6 +192,15 @@ export function OrdersView() {
       toast.error(t("bulkUpdateFailed"));
     }
   };
+
+  const markPaidMutation = useMutation({
+    mutationFn: markOrderPaid,
+    onSuccess: () => {
+      toast.success(t("paymentMarked"));
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: () => toast.error(t("paymentMarkFailed")),
+  });
 
   const handleBulkDelete = async () => {
     if (selectedOrderIds.length === 0) return;
@@ -340,6 +372,42 @@ export function OrdersView() {
         },
       },
       {
+        id: "payment",
+        header: "PAIEMENT",
+        cell: ({ row }) => {
+          const order = row.original;
+          const badge = getPaymentBadge(order.payment_status);
+          return (
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-colors dark:hidden"
+                style={{ background: badge.bg, color: badge.color }}
+              >
+                {t(badge.label)}
+              </span>
+              <span
+                className="hidden items-center justify-center px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-colors dark:inline-flex"
+                style={{ background: badge.darkBg, color: badge.darkColor }}
+              >
+                {t(badge.label)}
+              </span>
+              {canSettlePayment && order.payment_status === "unpaid" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markPaidMutation.mutate(order.id);
+                  }}
+                  disabled={markPaidMutation.isPending}
+                  className="text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
+                >
+                  {t("markPaid")}
+                </button>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         id: "actions",
         header: () => <div className="text-right tracking-wider">ACTIONS</div>,
         cell: ({ row }) => {
@@ -419,13 +487,23 @@ export function OrdersView() {
               {orders.length} commandes aujourd&apos;hui · mise à jour en direct
             </div>
           </div>
-          <button 
-            onClick={() => setPosModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-[18px] py-[11px] rounded-xl text-[13.5px] font-bold hover:bg-primary/90 transition-colors shadow-sm w-full sm:w-auto"
-          >
-            <Plus className="size-4 stroke-[2.5px]" />
-            {t("newOrder")}
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {canSettlePayment && (
+              <Link
+                href="/dashboard/orders/reconciliation"
+                className="flex items-center justify-center gap-1.5 border border-border bg-card px-4 py-[11px] rounded-xl text-[13.5px] font-bold text-foreground hover:bg-muted transition-colors shadow-sm"
+              >
+                {t("reconciliation")}
+              </Link>
+            )}
+            <button
+              onClick={() => setPosModalOpen(true)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-primary text-primary-foreground px-[18px] py-[11px] rounded-xl text-[13.5px] font-bold hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <Plus className="size-4 stroke-[2.5px]" />
+              {t("newOrder")}
+            </button>
+          </div>
         </div>
 
         {/* Stat strip */}
@@ -590,6 +668,28 @@ export function OrdersView() {
                         <div className="text-[15px] font-extrabold text-primary shrink-0">
                           {formatPrice(Number(order.total), "MAD")}
                         </div>
+                      </div>
+                      <div className="mt-2.5 flex items-center gap-2">
+                        {(() => {
+                          const paymentBadge = getPaymentBadge(order.payment_status);
+                          return (
+                            <span
+                              className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11px] font-bold dark:hidden"
+                              style={{ background: paymentBadge.bg, color: paymentBadge.color }}
+                            >
+                              {t(paymentBadge.label)}
+                            </span>
+                          );
+                        })()}
+                        {canSettlePayment && order.payment_status === "unpaid" && (
+                          <button
+                            onClick={() => markPaidMutation.mutate(order.id)}
+                            disabled={markPaidMutation.isPending}
+                            className="text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
+                          >
+                            {t("markPaid")}
+                          </button>
+                        )}
                       </div>
                       <div className="mt-3 flex items-center justify-end gap-2">
                         <button
@@ -787,6 +887,35 @@ export function OrdersView() {
                       </span>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Payment status */}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {t("paymentStatus")}
+                </Label>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const badge = getPaymentBadge(selectedOrderForEdit.payment_status);
+                    return (
+                      <span
+                        className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11.5px] font-bold"
+                        style={{ background: badge.bg, color: badge.color }}
+                      >
+                        {t(badge.label)}
+                      </span>
+                    );
+                  })()}
+                  {canSettlePayment && selectedOrderForEdit.payment_status === "unpaid" && (
+                    <button
+                      onClick={() => markPaidMutation.mutate(selectedOrderForEdit.id)}
+                      disabled={markPaidMutation.isPending}
+                      className="text-xs font-bold text-primary hover:underline disabled:opacity-50"
+                    >
+                      {t("markPaid")}
+                    </button>
+                  )}
                 </div>
               </div>
 

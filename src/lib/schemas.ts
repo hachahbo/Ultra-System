@@ -25,6 +25,12 @@ export const orderLineSchema = z.object({
   options: z.array(z.string().max(100)).max(10).default([]),
 });
 
+// Phase 8.1 — Cash on Delivery only. Online (CMI) is a real column value
+// (see 0026_order_payments.sql) but the provider is a 501 stub
+// (src/lib/payments/provider.ts), so it's rejected here rather than at
+// checkout time — the client never gets far enough to hit the stub.
+export const orderPaymentMethodSchema = z.enum(["cash", "card_on_delivery"]);
+
 export const orderSchema = z
   .object({
     restaurant_slug: z.string().min(1),
@@ -34,6 +40,7 @@ export const orderSchema = z
     customer_phone: phoneSchema.optional(),
     address: z.string().trim().max(300).optional(),
     note: z.string().trim().max(500).optional(),
+    payment_method: orderPaymentMethodSchema.default("cash"),
     lines: z.array(orderLineSchema).min(1).max(50),
   })
   .superRefine((data, ctx) => {

@@ -30,6 +30,9 @@ export const ROUTE_ACCESS: { prefix: string; exact?: boolean; roles: Role[] }[] 
   { prefix: "/dashboard/events", roles: ["owner", "manager"] },
   { prefix: "/dashboard/reservations", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/kds", roles: ["owner", "manager", "serveur", "cuisine"] },
+  // Narrower than /dashboard/orders below — settling payment is money,
+  // not order fulfilment (Phase 8.1).
+  { prefix: "/dashboard/orders/reconciliation", roles: ["owner", "manager"] },
   { prefix: "/dashboard/orders", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard", exact: true, roles: ["owner", "manager"] },
 ];

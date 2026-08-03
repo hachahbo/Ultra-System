@@ -73,11 +73,11 @@ export function NavBar({
 
       if (scrollY <= 40) {
         setIsVisible(true);
-      } else if (delta > 6 && scrollY > 80) {
+      } else if (delta > 4 && scrollY > 60) {
         // Scrolling down past threshold -> hide navbar
         setIsVisible(false);
-      } else if (delta < -6) {
-        // Scrolling up past threshold -> show navbar
+      } else if (delta < -2) {
+        // Scrolling up anywhere -> reveal navbar
         setIsVisible(true);
       }
 

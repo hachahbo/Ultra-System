@@ -265,8 +265,17 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px] bg-card border border-border/10 dark:border-border/20 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 ${item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"
-                  }`}
+                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px]
+                  bg-gradient-to-br from-white via-[#fdf9f5] to-[#faf4ec]
+                  dark:bg-none dark:bg-[#18181b]
+                  border border-[#ece6dc]/80 dark:border-stone-800/80
+                  shadow-[0_2px_0_0_rgba(236,91,26,0.18)_inset,0_1px_2px_rgba(0,0,0,0.04)_inset,0_12px_40px_rgba(0,0,0,0.07),0_4px_12px_rgba(236,91,26,0.06)]
+                  dark:shadow-none
+                  p-6 transition-all duration-300
+                  hover:shadow-[0_2px_0_0_rgba(236,91,26,0.22)_inset,0_1px_2px_rgba(0,0,0,0.04)_inset,0_20px_56px_rgba(0,0,0,0.10),0_6px_18px_rgba(236,91,26,0.10)]
+                  dark:hover:shadow-none
+                  ${item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"}
+                `}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
               >
                 {/* ── Floating Image Top Right (Strictly Matching the 118px Oval Style) ── */}

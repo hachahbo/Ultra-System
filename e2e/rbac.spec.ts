@@ -29,6 +29,7 @@ const ROUTE_MATRIX: Record<string, ("manager" | "serveur" | "cuisine")[]> = {
   "/dashboard": ["manager"],
   "/dashboard/kds": ["manager", "serveur", "cuisine"],
   "/dashboard/orders": ["manager", "serveur", "cuisine"],
+  "/dashboard/orders/reconciliation": ["manager"],
   "/dashboard/reservations": ["manager", "serveur"],
   "/dashboard/menu": ["manager", "serveur", "cuisine"],
   "/dashboard/tables": ["manager", "serveur"],
