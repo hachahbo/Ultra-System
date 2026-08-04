@@ -263,7 +263,9 @@
     "order": "Order · {price}",
     "errorName": "Name required",
     "errorAddress": "Address required",
-    "errorPhone": "Invalid phone number"
+    "errorPhone": "Invalid phone number",
+    "nameOptional": "Name (optional)",
+    "phoneOptional": "Phone (optional)"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -336,7 +338,8 @@
     "invalidOption": "Invalid option",
     "invalidOrder": "Invalid order",
     "saveFailed": "Could not save",
-    "rateLimited": "Too many requests, please try again in a moment"
+    "rateLimited": "Too many requests, please try again in a moment",
+    "tableNotFound": "Table not found"
   },
   "Dashboard": {
     "groupOperations": "Operations",
@@ -596,7 +599,8 @@
     "eventCategoryTasting": "Tasting",
     "eventCategoryDjSet": "DJ set",
     "eventCategorySpecialMenu": "Special menu",
-    "roleOwnerHeader": "Manager"
+    "roleOwnerHeader": "Manager",
+    "viewNotification": "View"
   },
   "Inventory": {
     "etaToday": "Today {time}",

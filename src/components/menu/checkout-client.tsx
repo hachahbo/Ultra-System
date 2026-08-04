@@ -31,11 +31,31 @@ function buildDeliverySchema(m: { name: string; phone: string; address: string }
 
 type DeliveryForm = z.infer<ReturnType<typeof buildDeliverySchema>>;
 
+// Dine-in: the table number already identifies the order, so name and phone
+// are pure convenience — a fully blank submit is valid. A phone that *is*
+// typed still has to be dialable, otherwise capturing it is pointless.
+function buildDineInSchema(m: { phone: string }) {
+  return z.object({
+    customer_name: z.string().trim().max(100).optional(),
+    customer_phone: z
+      .string()
+      .optional()
+      .superRefine((v, ctx) => {
+        if (!v || !v.trim()) return; // blank is the whole point — allow it
+        if (!makePhoneSchema(m.phone).safeParse(v).success) {
+          ctx.addIssue({ code: "custom", message: m.phone });
+        }
+      }),
+    note: z.string().trim().max(500).optional(),
+  });
+}
+
+type DineInForm = z.infer<ReturnType<typeof buildDineInSchema>>;
+
 export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   const { lines, table, increment, decrement, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [note, setNote] = useState("");
   const t = useTranslations("Cart");
   const tErrors = useTranslations("Errors");
 
@@ -54,12 +74,22 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   const deliveryFee = isDineIn ? 0 : Number(restaurant.base_delivery_fee);
   const total = subtotal + deliveryFee;
 
+  const dineInFormSchema = useMemo(
+    () => buildDineInSchema({ phone: t("errorPhone") }),
+    [t],
+  );
+
   const form = useForm<DeliveryForm>({
     resolver: zodResolver(deliveryFormSchema),
     defaultValues: { customer_name: "", customer_phone: "", address: "", note: "" },
   });
 
-  async function submitOrder(delivery?: DeliveryForm) {
+  const dineInForm = useForm<DineInForm>({
+    resolver: zodResolver(dineInFormSchema),
+    defaultValues: { customer_name: "", customer_phone: "", note: "" },
+  });
+
+  async function submitOrder(values: Partial<DeliveryForm>) {
     setSubmitting(true);
     try {
       const res = await fetch("/api/orders", {
@@ -69,10 +99,12 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
           restaurant_slug: restaurant.slug,
           type: isDineIn ? "dine_in" : "delivery",
           table_number: table ?? undefined,
-          customer_name: delivery?.customer_name,
-          customer_phone: delivery?.customer_phone,
-          address: delivery?.address,
-          note: (delivery?.note || note) || undefined,
+          // Blank optional fields are dropped, not sent as "" — the server
+          // schema treats absent as "not given" and "" as an invalid phone.
+          customer_name: values.customer_name || undefined,
+          customer_phone: values.customer_phone || undefined,
+          address: values.address || undefined,
+          note: values.note || undefined,
           lines: lines.map((l) => ({
             item_id: l.item_id,
             quantity: l.quantity,
@@ -215,26 +247,54 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       </div>
 
       {isDineIn ? (
-        <div className="space-y-6">
+        <form
+          onSubmit={dineInForm.handleSubmit((values) => submitOrder(values))}
+          className="space-y-6"
+          noValidate
+        >
+          <div className="space-y-3">
+            <Label htmlFor="dine-name" className="text-sm font-semibold text-muted-foreground ml-1">{t("nameOptional")}</Label>
+            <Input
+              id="dine-name"
+              autoComplete="name"
+              {...dineInForm.register("customer_name")}
+              className="h-14 rounded-2xl bg-white dark:bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
+            />
+          </div>
+          <div className="space-y-3">
+            <Label htmlFor="dine-phone" className="text-sm font-semibold text-muted-foreground ml-1">{t("phoneOptional")}</Label>
+            <Input
+              id="dine-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder={t("phonePlaceholder")}
+              aria-invalid={!!dineInForm.formState.errors.customer_phone}
+              {...dineInForm.register("customer_phone")}
+              className="h-14 rounded-2xl bg-white dark:bg-muted/30 px-4 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
+            />
+            <FieldError
+              message={dineInForm.formState.errors.customer_phone?.message}
+            />
+          </div>
           <div className="space-y-3">
             <Label htmlFor="dine-note" className="text-base font-semibold">{t("kitchenNote")}</Label>
             <Textarea
               id="dine-note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
               placeholder={t("kitchenNotePlaceholder")}
+              {...dineInForm.register("note")}
               className="min-h-[120px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
             />
           </div>
           <Button
             size="lg"
+            type="submit"
             className="w-full rounded-full h-14 text-lg font-bold shadow-xl"
             disabled={submitting}
-            onClick={() => submitOrder()}
           >
             {submitting ? t("sending") : t("sendToKitchen")}
           </Button>
-        </div>
+        </form>
       ) : (
         <form
           onSubmit={form.handleSubmit((values) => submitOrder(values))}

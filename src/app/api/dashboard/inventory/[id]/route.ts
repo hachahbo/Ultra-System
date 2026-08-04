@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { assertFeature, requireRole } from "@/lib/dashboard";
 import { inventoryItemSchema, stockAdjustSchema } from "@/lib/schemas";
 
-const patchSchema = z.union([inventoryItemSchema.partial(), stockAdjustSchema]);
+// Order matters. `inventoryItemSchema.partial()` has no required key and zod
+// strips unknown ones, so it happily matches a `{ delta }` body and parses it
+// to `{}` — which then falls through to the "empty patch" 400 below. The
+// stricter branch (delta is required) has to be tried first; a real field
+// edit carries no `delta`, so it falls through to the partial as intended.
+const patchSchema = z.union([stockAdjustSchema, inventoryItemSchema.partial()]);
 
 export async function PATCH(
   request: Request,

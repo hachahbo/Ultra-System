@@ -16,7 +16,7 @@ import type { ItemInput } from "@/lib/schemas";
  */
 export function CustomizationEditor() {
   const t = useTranslations("Customization");
-  const { control, register } = useFormContext<ItemInput>();
+  const { control, register } = useFormContext<any>();
   const groups = useFieldArray({ control, name: "customization_groups" });
 
   return (
@@ -99,7 +99,7 @@ export function CustomizationEditor() {
 
 function OptionsEditor({ groupIndex }: { groupIndex: number }) {
   const t = useTranslations("Customization");
-  const { control, register } = useFormContext<ItemInput>();
+  const { control, register } = useFormContext<any>();
   const options = useFieldArray({
     control,
     name: `customization_groups.${groupIndex}.options`,

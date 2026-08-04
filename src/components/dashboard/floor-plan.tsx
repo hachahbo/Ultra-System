@@ -143,22 +143,52 @@ export function FloorPlanMap({
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800d_1px,transparent_1px),linear-gradient(to_bottom,#8080800d_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
 
           {tables.map((table, i) => {
-            const rawPos = dragPos[table.id] ?? { x: table.pos_x, y: table.pos_y };
+            let pos = dragPos[table.id];
+
+            if (!pos) {
+              // Calculate clean auto-grid coordinates for table i
+              const cols = isMobile ? 2 : Math.min(4, Math.max(3, Math.ceil(Math.sqrt(tables.length))));
+              const totalRows = Math.ceil(tables.length / cols) || 1;
+              const col = i % cols;
+              const row = Math.floor(i / cols);
+
+              const autoX = (col + 0.5) / cols;
+              const autoY = (row + 0.5) / totalRows;
+
+              // Detect if position is unassigned, default 0.1, or collides with an earlier table (< 0.08 dist)
+              const isDefaultPos =
+                !table.pos_x ||
+                !table.pos_y ||
+                (Math.abs(table.pos_x - 0.1) < 0.03 && Math.abs(table.pos_y - 0.1) < 0.03);
+
+              const isColliding = tables.slice(0, i).some((prev) => {
+                const dx = Math.abs((prev.pos_x ?? 0) - table.pos_x);
+                const dy = Math.abs((prev.pos_y ?? 0) - table.pos_y);
+                return dx < 0.08 && dy < 0.08;
+              });
+
+              if (isDefaultPos || isColliding) {
+                pos = { x: autoX, y: autoY };
+              } else {
+                pos = { x: table.pos_x, y: table.pos_y };
+              }
+            }
+
             const status = getStatus?.(table) ?? "default";
             const isPulsing = pulse?.(table) ?? false;
             const isDragging = dragPos[table.id] !== undefined;
             const isRect = table.seats > 2;
 
-            // Spread functions to center columns and space rows evenly across the mobile vertical screen
-            const mobX = 0.28 + (rawPos.y - 0.20) * 1.46; // Centers Column 1 at 28% and Column 2 at 72%
-            const mobY = 0.14 + rawPos.x * 0.72; // Even vertical distribution down the portrait screen
+            // Spread functions to center columns and space rows evenly across mobile vertical screen
+            const mobX = 0.28 + (pos.y - 0.20) * 1.46;
+            const mobY = 0.14 + pos.x * 0.72;
 
-            const displayX = isVertical ? clamp(mobX) : rawPos.x;
-            const displayY = isVertical ? clamp(mobY) : rawPos.y;
+            const displayX = isVertical ? clamp(mobX) : clamp(pos.x);
+            const displayY = isVertical ? clamp(mobY) : clamp(pos.y);
 
-            // Sleek pill size to ensure clear spacing
-            const width = isMobile ? 74 : 136;
-            const height = isMobile ? 44 : 72;
+            // Sleek pill size to ensure clear spacing without overlaps
+            const width = isMobile ? 64 : 96;
+            const height = isMobile ? 40 : 54;
             const styles = statusStyles[status];
 
             const zoneName = table.number.toString().toUpperCase().includes("T") ? "Terrasse" : "Salle";

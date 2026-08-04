@@ -225,23 +225,23 @@ export function ReservationsView() {
                   reservation={r}
                   onAssign={() => setAssigning(r)}
                 >
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      className="flex-1"
-                      onClick={() => setStatus.mutate({ id: r.id, status: "confirmed" })}
-                      disabled={setStatus.isPending}
-                    >
-                      <Check className="size-4" /> Confirmer
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setStatus.mutate({ id: r.id, status: "declined" })}
-                      disabled={setStatus.isPending}
-                    >
-                      <X className="size-4" /> Refuser
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full py-4 sm:w-36 justify-center rounded-full font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => setStatus.mutate({ id: r.id, status: "confirmed" })}
+                    disabled={setStatus.isPending}
+                  >
+                    Confirmer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full py-4 sm:w-36 justify-center rounded-full font-bold border-border hover:bg-muted"
+                    onClick={() => setStatus.mutate({ id: r.id, status: "declined" })}
+                    disabled={setStatus.isPending}
+                  >
+                    Refuser
+                  </Button>
                 </ReservationCard>
               ))}
             </div>
@@ -265,7 +265,7 @@ export function ReservationsView() {
       )}
 
       <Dialog open={assigning !== null} onOpenChange={(open) => !open && setAssigning(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-3xl w-[92vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {assigning ? `Assigner une table — ${assigning.customer_name}` : ""}
@@ -323,13 +323,21 @@ function ReservationCard({
 
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-medium capitalize">
-              {dateLabel} · {r.time.slice(0, 5)}
-            </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* ── Left side: Reservation details ── */}
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium capitalize text-base">
+                {dateLabel} · {r.time.slice(0, 5)}
+              </p>
+              <Badge variant="outline" className="shrink-0">
+                <Users className="size-3.5 mr-1" /> {r.party_size}
+              </Badge>
+              <StatusBadge status={r.status} />
+            </div>
+
+            <p className="text-sm text-muted-foreground">
               {r.customer_name} ·{" "}
               <a
                 href={`tel:${r.customer_phone}`}
@@ -338,42 +346,44 @@ function ReservationCard({
                 {r.customer_phone}
               </a>
             </p>
+
+            {r.note && (
+              <p className="text-sm italic text-muted-foreground">
+                « {r.note} »
+              </p>
+            )}
+
+            <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
+              >
+                <MessageCircle className="size-4" /> {t("whatsapp")}
+              </a>
+              {onAssign && (
+                <button
+                  type="button"
+                  onClick={onAssign}
+                  className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
+                >
+                  <MapPin className="size-4" />
+                  {r.assigned_table_number
+                    ? `Table ${r.assigned_table_number}`
+                    : t("assignTable")}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              <Users className="size-3.5" /> {r.party_size}
-            </Badge>
-            <StatusBadge status={r.status} />
-          </div>
-        </div>
-        {r.note && (
-          <p className="mt-2 text-sm italic text-muted-foreground">
-            « {r.note} »
-          </p>
-        )}
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
-          >
-            <MessageCircle className="size-4" /> {t("whatsapp")}
-          </a>
-          {onAssign && (
-            <button
-              type="button"
-              onClick={onAssign}
-              className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
-            >
-              <MapPin className="size-4" />
-              {r.assigned_table_number
-                ? `Table ${r.assigned_table_number}`
-                : t("assignTable")}
-            </button>
+
+          {/* ── Right side: Action buttons stacked vertically ── */}
+          {children && (
+            <div className="flex flex-col gap-2 shrink-0 sm:min-w-[140px] items-stretch sm:items-end justify-center">
+              {children}
+            </div>
           )}
         </div>
-        {children}
       </CardContent>
     </Card>
   );

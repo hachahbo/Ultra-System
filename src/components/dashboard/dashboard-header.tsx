@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,7 +33,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { notifKey, selectNotificationsToToast } from "@/lib/notifications";
 import type { NotificationItem } from "@/app/api/dashboard/notifications/route";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,10 @@ async function fetchNotifications(): Promise<NotificationItem[]> {
   if (!res.ok) throw new Error("fetch failed");
   return (await res.json()).items as NotificationItem[];
 }
+
+// Only the newest few pop; the bell carries any overflow. See
+// selectNotificationsToToast for why.
+const MAX_TOASTS = 3;
 
 const NOTIF_STYLE: Record<NotificationItem["kind"], { icon: LucideIcon; className: string }> = {
   order: { icon: ShoppingBag, className: "bg-primary/10 text-primary" },
@@ -94,7 +100,7 @@ export function DashboardHeader({
     return Number.isFinite(stored) ? stored : 0;
   });
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isSuccess } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
     refetchInterval: 30_000,
@@ -136,6 +142,45 @@ export function DashboardHeader({
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
+
+  // ── Toasts ───────────────────────────────────────────────────────────────
+  // The bell badge is easy to miss when staff are heads-down on another view,
+  // so anything arriving while the dashboard is open also pops a toast.
+  // `null` means the first feed hasn't landed yet: that load only seeds the
+  // set, otherwise opening the dashboard would fire a toast per history item.
+  const toastedRef = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!isSuccess) return;
+
+    if (toastedRef.current === null) {
+      // Seeds from the first successful feed — including an empty one, so the
+      // very first order at a brand-new restaurant still toasts.
+      toastedRef.current = new Set(notifications.map(notifKey));
+      return;
+    }
+
+    selectNotificationsToToast(toastedRef.current, notifications, MAX_TOASTS).forEach(
+      (n) => {
+        const { icon: Icon, className } = NOTIF_STYLE[n.kind];
+        toast(n.title, {
+          // Keyed so a re-delivery of the same item replaces its toast
+          // instead of stacking a duplicate.
+          id: notifKey(n),
+          description: n.subtitle,
+          icon: (
+            <span className={cn("flex size-6 items-center justify-center rounded-full", className)}>
+              <Icon className="size-3.5" />
+            </span>
+          ),
+          action: {
+            label: tl("viewNotification"),
+            onClick: () => router.push(n.href),
+          },
+        });
+      },
+    );
+  }, [notifications, isSuccess, router, tl]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => new Date(n.created_at).getTime() > lastSeen).length,
@@ -212,7 +257,7 @@ export function DashboardHeader({
                   const Icon = style.icon;
                   return (
                     <DropdownMenuItem
-                      key={`${n.kind}-${n.id}`}
+                      key={notifKey(n)}
                       asChild
                       className="p-0 rounded-xl cursor-pointer"
                     >

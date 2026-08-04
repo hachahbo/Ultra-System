@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { assertFeature, requireRole } from "@/lib/dashboard";
 import { z } from "zod";
+import { idSchema } from "@/lib/schemas";
 
 const recipeSchema = z.object({
-  menu_item_id: z.string().uuid(),
-  inventory_item_id: z.string().uuid(),
+  menu_item_id: idSchema(),
+  inventory_item_id: idSchema(),
   quantity: z.number().positive(),
   unit: z.string().trim().min(1).max(30),
   notes: z.string().trim().max(300).optional(),

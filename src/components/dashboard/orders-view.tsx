@@ -323,14 +323,27 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
             .slice(0, 2)
             .join("")
             .toUpperCase();
+          // Dine-in QR orders may carry a phone with no name — it's the only
+          // callback the kitchen has, so show it under the name either way.
+          const phone = row.original.customer_phone;
           return (
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-[30px] h-[30px] rounded-full bg-emerald-700 text-white text-xs font-bold flex items-center justify-center shrink-0">
                 {initials}
               </div>
-              <span className="text-[13px] font-semibold truncate text-foreground">
-                {name}
-              </span>
+              <div className="min-w-0">
+                <span className="block text-[13px] font-semibold truncate text-foreground">
+                  {name}
+                </span>
+                {phone && (
+                  <a
+                    href={`tel:${phone}`}
+                    className="block text-[11.5px] text-muted-foreground truncate tabular-nums hover:text-foreground hover:underline"
+                  >
+                    {phone}
+                  </a>
+                )}
+              </div>
             </div>
           );
         },
@@ -456,9 +469,10 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, columnId, filterValue) => {
       const customer = String(row.original.customer_name || "").toLowerCase();
+      const phone = String(row.original.customer_phone || "").toLowerCase();
       const id = String(row.original.id || "").toLowerCase();
       const val = String(filterValue).toLowerCase();
-      return customer.includes(val) || id.includes(val);
+      return customer.includes(val) || phone.includes(val) || id.includes(val);
     }
   });
 

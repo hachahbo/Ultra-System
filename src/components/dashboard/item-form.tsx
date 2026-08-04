@@ -49,7 +49,7 @@ export function ItemFormDialog({
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(item?.image_url ?? null);
 
-  const form = useForm<ItemInput>({
+  const form = useForm({
     resolver: zodResolver(itemSchema),
     defaultValues: {
       category_id: item?.category_id ?? categories[0]?.id ?? "",
@@ -91,10 +91,34 @@ export function ItemFormDialog({
     }
   }
 
+  function onError(formErrors: Record<string, any>) {
+    console.error("Form validation errors:", formErrors);
+    const firstKey = Object.keys(formErrors)[0];
+    if (firstKey === "name_fr") {
+      toast.error("Le nom du plat est requis");
+    } else if (firstKey === "category_id") {
+      toast.error("Veuillez sélectionner une catégorie");
+    } else if (firstKey === "base_price") {
+      toast.error("Le prix est invalide");
+    } else if (firstKey === "customization_groups") {
+      toast.error("Veuillez remplir le titre du groupe et le nom des options");
+    } else if (firstKey && formErrors[firstKey]?.message) {
+      toast.error(formErrors[firstKey].message);
+    } else {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+    }
+  }
+
   async function onSubmit(values: ItemInput) {
     setSaving(true);
     try {
-      const payload = { ...values, image_url: imageUrl };
+      const payload = {
+        ...values,
+        image_url: imageUrl || null,
+        name_ar: values.name_ar?.trim() || null,
+        name_es: values.name_es?.trim() || null,
+        description_fr: values.description_fr?.trim() || null,
+      };
       const res = await fetch(
         item ? `/api/dashboard/items/${item.id}` : "/api/dashboard/items",
         {
@@ -104,10 +128,14 @@ export function ItemFormDialog({
         },
       );
       if (!res.ok) {
-        toast.error(t("saveFailed"));
+        const errData = await res.json().catch(() => ({}));
+        toast.error(errData.error || t("saveFailed"));
         return;
       }
+      toast.success(item ? "Article mis à jour !" : "Article créé avec succès !");
       onSaved();
+    } catch (err: any) {
+      toast.error(err?.message || t("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -124,7 +152,7 @@ export function ItemFormDialog({
           </DialogTitle>
         </DialogHeader>
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden" noValidate>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)} className="flex flex-col flex-1 overflow-hidden" noValidate>
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
               <div className="space-y-2">
               <Label>{t("category")}</Label>

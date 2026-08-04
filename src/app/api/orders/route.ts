@@ -68,6 +68,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: t("deliveryUnavailable") }, { status: 400 });
   }
 
+  // The ?table= param is customer-editable, so the number is only trusted
+  // once it matches a real table on this restaurant's floor plan. Without
+  // this, `?table=999` reaches the kitchen as a ticket nobody can deliver —
+  // and the session trigger (0015) silently skips it, so it wouldn't even
+  // show up in turnover analytics.
+  if (input.type === "dine_in") {
+    const { data: diningTable } = await supabase
+      .from("tables")
+      .select("id")
+      .eq("restaurant_id", restaurant.id)
+      .eq("number", input.table_number!)
+      .maybeSingle();
+    if (!diningTable) {
+      return NextResponse.json({ error: t("tableNotFound") }, { status: 400 });
+    }
+  }
+
   // Recompute every line from the DB.
   const itemIds = [...new Set(input.lines.map((l) => l.item_id))];
   const { data: items } = await supabase
@@ -159,6 +176,10 @@ export async function POST(request: Request) {
       table_number: input.type === "dine_in" ? input.table_number : null,
       customer_id: customerId,
       customer_name: input.customer_name ?? null,
+      // Snapshot of what was typed at checkout (0028). On dine-in this is the
+      // only place the phone lands — no `customers` row is created, since an
+      // anonymous table order shouldn't mint a CRM record.
+      customer_phone: input.customer_phone ?? null,
       address: input.type === "delivery" ? input.address : null,
       note: input.note ?? null,
       items: orderLines,

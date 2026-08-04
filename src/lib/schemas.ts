@@ -19,8 +19,20 @@ export function makePhoneSchema(message: string) {
 
 export const phoneSchema = makePhoneSchema("Numéro de téléphone invalide");
 
+// Every id column in this project is a Postgres `uuid`, which accepts any
+// 8-4-4-4-12 hex string. Zod v4's `.uuid()` is stricter: it also enforces the
+// RFC 9562 version and variant nibbles. Our seed data uses hand-written ids
+// like 51111111-1111-1111-1111-111111111111, whose variant nibble is `1`
+// rather than 8/9/a/b — valid to Postgres, rejected by `.uuid()`. That
+// mismatch silently broke every menu/inventory form that validates a foreign
+// key. `z.guid()` is the format the database actually enforces, so ids
+// validate with this and never with `.uuid()`.
+export function idSchema(message = "Identifiant invalide") {
+  return z.guid(message);
+}
+
 export const orderLineSchema = z.object({
-  item_id: z.string().uuid(),
+  item_id: idSchema(),
   quantity: z.number().int().min(1).max(50),
   options: z.array(z.string().max(100)).max(10).default([]),
 });
@@ -171,34 +183,45 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const imageUrlSchema = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .refine(
+    (v) => !v || v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://") || v.startsWith("data:"),
+    { message: "URL d'image invalide" }
+  );
+
 export const customizationOptionSchema = z.object({
-  name: z.string().trim().min(1, "Nom requis").max(100),
-  price_modifier: z.number({ message: "Prix invalide" }).min(-1000).max(1000),
+  name: z.string().trim().min(1, "Nom de l'option requis").max(100),
+  price_modifier: z.coerce.number({ message: "Prix invalide" }).min(-1000).max(1000).default(0),
 });
 
 export const customizationGroupSchema = z.object({
   title: z.object({
-    fr: z.string().trim().min(1, "Titre requis").max(120),
+    fr: z.string().trim().min(1, "Titre du groupe requis").max(120),
     ar: z.string().trim().max(120).nullable().optional(),
     es: z.string().trim().max(120).nullable().optional(),
   }),
-  required: z.boolean(),
-  max_selections: z.number().int().min(1).max(10),
-  options: z.array(customizationOptionSchema).min(1).max(20),
+  required: z.boolean().default(false),
+  max_selections: z.coerce.number().int().min(1).max(10).default(1),
+  options: z.array(customizationOptionSchema).min(1, "Au moins une option requise").max(20),
 });
 
 export const itemSchema = z.object({
-  category_id: z.string().uuid("Catégorie requise"),
+  category_id: idSchema("Catégorie requise"),
   i18n: itemI18nBagSchema.optional(),
   name_fr: z.string().trim().min(1, "Nom requis").max(120),
-  name_ar: z.string().trim().max(120).optional(),
-  name_es: z.string().trim().max(120).optional(),
-  description_fr: z.string().trim().max(300).optional(),
-  base_price: z.number({ message: "Prix invalide" }).min(0, "Prix invalide").max(10000),
-  in_stock: z.boolean(),
+  name_ar: z.string().trim().max(120).nullable().optional().or(z.literal("")),
+  name_es: z.string().trim().max(120).nullable().optional().or(z.literal("")),
+  description_fr: z.string().trim().max(300).nullable().optional().or(z.literal("")),
+  base_price: z.coerce.number({ message: "Prix invalide" }).min(0, "Prix invalide").max(10000),
+  in_stock: z.boolean().default(true),
   is_smart_menu_eligible: z.boolean().optional(),
   sort_order: z.number().int().min(0).optional(),
-  customization_groups: z.array(customizationGroupSchema).max(10).optional(),
+  customization_groups: z.array(customizationGroupSchema).max(10).optional().default([]),
+  image_url: imageUrlSchema,
 });
 
 export type ItemInput = z.infer<typeof itemSchema>;
@@ -214,7 +237,7 @@ export const categorySchema = z.object({
 export type CategoryInput = z.infer<typeof categorySchema>;
 
 export const promotionRuleSchema = z.object({
-  category_id: z.string().uuid("Catégorie requise"),
+  category_id: idSchema("Catégorie requise"),
   count: z.number().int().min(1, "Au moins 1 article").max(20),
 });
 
@@ -246,7 +269,7 @@ export const inventoryCategorySchema = z.object({
 export type InventoryCategoryInput = z.infer<typeof inventoryCategorySchema>;
 
 export const inventoryItemSchema = z.object({
-  category_id: z.string().uuid(),
+  category_id: idSchema("Catégorie requise"),
   name: z.string().trim().min(1, "Nom requis").max(120),
   unit: z.string().trim().min(1, "Unité requise").max(30),
   stock: z.number().min(0).max(1_000_000),
@@ -269,7 +292,7 @@ export const supplierSchema = z.object({
 export type SupplierInput = z.infer<typeof supplierSchema>;
 
 export const deliverySchema = z.object({
-  supplier_id: z.string().uuid().nullable().optional(),
+  supplier_id: idSchema().nullable().optional(),
   label: z.string().trim().min(1, "Libellé requis").max(160),
   eta_at: z.string().datetime({ offset: true }).or(z.string().min(1)),
   urgent: z.boolean().optional(),
@@ -329,7 +352,7 @@ export const adminRestaurantPatchSchema = z.object({
   city: z.string().trim().max(120).nullable().optional(),
   plan: planSchema.optional(),
   status: restaurantStatusSchema.optional(),
-  parent_restaurant_id: z.string().uuid().nullable().optional(),
+  parent_restaurant_id: idSchema().nullable().optional(),
 });
 export type AdminRestaurantPatchInput = z.infer<typeof adminRestaurantPatchSchema>;
 
@@ -358,7 +381,7 @@ export const permissionToggleSchema = z.object({
 export type PermissionToggleInput = z.infer<typeof permissionToggleSchema>;
 
 export const bulkPermissionsSchema = z.object({
-  restaurantIds: z.array(z.string().uuid()).min(1).max(100),
+  restaurantIds: z.array(idSchema()).min(1).max(100),
   changes: z
     .array(z.object({ featureKey: featureKeySchema, enabled: z.boolean() }))
     .min(1)

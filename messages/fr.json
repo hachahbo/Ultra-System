@@ -263,7 +263,9 @@
     "order": "Commander · {price}",
     "errorName": "Nom requis",
     "errorAddress": "Adresse requise",
-    "errorPhone": "Numéro de téléphone invalide"
+    "errorPhone": "Numéro de téléphone invalide",
+    "nameOptional": "Nom (optionnel)",
+    "phoneOptional": "Téléphone (optionnel)"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -336,7 +338,8 @@
     "invalidOption": "Option invalide",
     "invalidOrder": "Commande invalide",
     "saveFailed": "Erreur d'enregistrement",
-    "rateLimited": "Trop de requêtes, réessayez dans un instant"
+    "rateLimited": "Trop de requêtes, réessayez dans un instant",
+    "tableNotFound": "Table introuvable"
   },
   "Dashboard": {
     "groupOperations": "Opération",
@@ -596,7 +599,8 @@
     "eventCategoryTasting": "Dégustation",
     "eventCategoryDjSet": "DJ set",
     "eventCategorySpecialMenu": "Menu spécial",
-    "roleOwnerHeader": "Gérant"
+    "roleOwnerHeader": "Gérant",
+    "viewNotification": "Voir"
   },
   "Inventory": {
     "etaToday": "Auj. {time}",

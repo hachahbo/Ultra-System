@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/dashboard";
+import { idSchema } from "@/lib/schemas";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 import { z } from "zod";
 
@@ -32,7 +33,7 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 
 const staffOrderLineSchema = z.object({
-  item_id: z.string().uuid(),
+  item_id: idSchema(),
   quantity: z.number().int().min(1).max(50),
   options: z.array(z.string().max(100)).max(10).default([]),
 });

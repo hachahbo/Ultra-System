@@ -212,23 +212,34 @@ export function ItemDialog({
     setMounted(true);
   }, []);
 
-  // Lock body scroll when dialog is open
+  // Reset form states when target item changes
+  useEffect(() => {
+    if (item) {
+      setSelected({});
+      setRemoved(new Set());
+      setQuantity(1);
+      setNote("");
+    }
+  }, [item?.id]);
+
+  // Lock body scroll and listen for Escape key when dialog is open
   useEffect(() => {
     if (item) {
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [item]);
+  }, [item, onClose]);
 
   const isOpen = item !== null;
 
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -238,7 +249,7 @@ export function ItemDialog({
           animate="show"
           exit="exit"
           onClick={onClose}
-          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm pointer-events-auto"
         >
           {/* ── Panel: bottom sheet (mobile) / centered modal (desktop) ── */}
           <motion.div
@@ -251,7 +262,7 @@ export function ItemDialog({
             animate="show"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className="relative flex w-full flex-col overflow-visible p-4 bg-[#FAF7F2] dark:bg-[#1C1917] text-foreground border border-[#ECE6DC] dark:border-stone-800 shadow-2xl max-h-[92dvh] sm:max-h-[88vh] max-w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl ring-1 ring-black/5 dark:ring-white/10"
+            className="relative z-50 flex w-full flex-col overflow-visible p-4 bg-[#FAF7F2] dark:bg-[#1C1917] text-foreground border border-[#ECE6DC] dark:border-stone-800 shadow-2xl max-h-[92dvh] sm:max-h-[88vh] max-w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl ring-1 ring-black/5 dark:ring-white/10 pointer-events-auto"
           >
             {/* ── Drag handle (mobile only) ── */}
             {!isDesktop && (
@@ -265,21 +276,21 @@ export function ItemDialog({
               type="button"
               onClick={onClose}
               aria-label={t("dialogClose")}
-              className="absolute left-4 top-4 z-20 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/80 border border-border/50 text-foreground backdrop-blur-sm transition-colors hover:bg-muted"
+              className="absolute left-4 top-4 z-50 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/80 border border-border/50 text-foreground backdrop-blur-sm transition-colors hover:bg-muted"
             >
               <X className="size-4" />
             </button>
 
             {/* ── Floating Image Top Right ── */}
             {item.image_url && (
-              <div className="absolute -right-2 -top-12 z-[100] flex size-[150px] pointer-events-none items-center justify-center sm:-right-8 sm:-top-16 sm:size-[200px]">
-                <div className="relative size-full drop-shadow-2xl transition-transform duration-500 hover:scale-105">
+              <div className="absolute -right-2 -top-12 z-10 flex size-[150px] pointer-events-none items-center justify-center sm:-right-8 sm:-top-16 sm:size-[200px]">
+                <div className="relative size-full drop-shadow-2xl transition-transform duration-500 hover:scale-105 pointer-events-none">
                   <Image
                     src={item.image_url}
                     alt={item.name_fr}
                     fill
                     sizes="200px"
-                    className="object-contain"
+                    className="object-contain pointer-events-none"
                     priority
                   />
                 </div>
@@ -287,7 +298,7 @@ export function ItemDialog({
             )}
 
             {/* ── Scrollable body ── */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 pt-12">
+            <div className="relative z-20 flex-1 overflow-y-auto px-6 py-6 pt-12 pointer-events-auto">
               {/* Item title + description */}
               <div className="mb-5 pr-24 sm:pr-32">
                 <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
@@ -453,14 +464,10 @@ export function ItemDialog({
                   id="item-note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  onFocus={(e) => {
-                    // Give the virtual keyboard time to animate up, then scroll into view
-                    setTimeout(() => {
-                      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 300);
-                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
                   placeholder={t("specialInstructionsPlaceholder")}
-                  className="mt-2 resize-none rounded-xl text-base sm:text-sm"
+                  className="mt-2 resize-none rounded-xl text-base sm:text-sm bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 border border-stone-300 dark:border-stone-700 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all cursor-text select-text pointer-events-auto relative z-30"
                   rows={2}
                 />
               </div>
@@ -470,7 +477,7 @@ export function ItemDialog({
             </div>
 
             {/* ── Sticky footer ── */}
-            <div className="shrink-0 border-t border-[#ECE6DC] dark:border-stone-800 bg-[#FAF7F2]/95 dark:bg-[#1C1917]/95 px-6 pb-safe pt-4 backdrop-blur-md">
+            <div className="relative z-30 shrink-0 border-t border-[#ECE6DC] dark:border-stone-800 bg-[#FAF7F2]/95 dark:bg-[#1C1917]/95 px-6 pb-safe pt-4 backdrop-blur-md pointer-events-auto">
               <div className="flex items-center gap-3">
                 {/* Quantity stepper */}
                 <div className="flex items-center rounded-full border border-border/80 bg-background shadow-sm">
@@ -508,7 +515,6 @@ export function ItemDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 }

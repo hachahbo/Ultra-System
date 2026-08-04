@@ -2,24 +2,24 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { customizationGroupSchema, itemI18nBagSchema } from "@/lib/schemas";
+import { customizationGroupSchema, itemI18nBagSchema, imageUrlSchema } from "@/lib/schemas";
 import { assertFeature, requireRole } from "@/lib/dashboard";
 
-// This route keeps its own schema rather than reusing itemSchema.partial(),
-// so every new column has to be added here too — `i18n` (0023) included,
-// otherwise zod silently strips it and the English fields never save.
 const patchSchema = z
   .object({
     i18n: itemI18nBagSchema,
-    category_id: z.string().uuid(),
+    category_id: z.string().min(1),
     name_fr: z.string().trim().min(1).max(120),
-    name_ar: z.string().trim().max(120).nullable(),
-    name_es: z.string().trim().max(120).nullable(),
-    description_fr: z.string().trim().max(300).nullable(),
-    base_price: z.number().min(0).max(10000),
+    name_ar: z.string().trim().max(120).nullable().optional().or(z.literal("")),
+    name_es: z.string().trim().max(120).nullable().optional().or(z.literal("")),
+    description_fr: z.string().trim().max(300).nullable().optional().or(z.literal("")),
+    base_price: z.preprocess(
+      (val) => (val === "" || val === null || val === undefined || Number.isNaN(Number(val)) ? 0 : Number(val)),
+      z.number().min(0).max(10000)
+    ),
     in_stock: z.boolean(),
     is_smart_menu_eligible: z.boolean(),
-    image_url: z.string().url().nullable(),
+    image_url: imageUrlSchema,
     sort_order: z.number().int().min(0),
     customization_groups: z.array(customizationGroupSchema).max(10),
   })
@@ -35,9 +35,12 @@ export async function PATCH(
   const featureError = assertFeature(guard.ctx, "menu_editor");
   if (featureError) return featureError;
 
-  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+  const body = await request.json().catch(() => null);
+  const parsed = patchSchema.safeParse(body);
   if (!parsed.success || Object.keys(parsed.data).length === 0) {
-    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+    const details = parsed.error ? parsed.error.issues.map((i) => i.message).join(", ") : "Corps vide";
+    console.error(`PATCH /api/dashboard/items/${id} validation error:`, parsed.error?.format());
+    return NextResponse.json({ error: `Données invalides: ${details}` }, { status: 400 });
   }
 
   // RLS: owner-only, scoped to the tenant.
@@ -50,7 +53,8 @@ export async function PATCH(
     .maybeSingle();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
+    console.error(`PATCH /api/dashboard/items/${id} db update error:`, error);
+    return NextResponse.json({ error: error?.message || "Article introuvable" }, { status: 500 });
   }
   revalidateTag("menu", "max");
   return NextResponse.json({ ok: true });
