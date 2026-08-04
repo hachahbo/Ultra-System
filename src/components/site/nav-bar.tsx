@@ -218,7 +218,7 @@ export function NavBar({
           {/* Mobile Logo */}
           <div className="md:hidden pointer-events-auto">
             <Link href={base} className="flex items-center min-w-0">
-              <LogoIcon className="w-28 sm:w-36 h-auto" />
+              <LogoIcon className="w-24 sm:w-32 h-auto" />
             </Link>
           </div>
 
@@ -237,7 +237,7 @@ export function NavBar({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4">
+        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4 shrink-0 z-10">
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>
@@ -251,7 +251,7 @@ export function NavBar({
           </Button>
 
           {/* Mobile CTA */}
-          <Button asChild className="md:hidden rounded-xl px-6 py-5 font-bold text-base bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_8px_16px_rgba(255,107,53,0.25)] transition-all">
+          <Button asChild className="md:hidden rounded-full px-3.5 py-1.5 sm:px-4 sm:py-2 h-9 text-xs sm:text-sm font-bold bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white shadow-[0_4px_12px_rgba(255,107,53,0.25)] transition-all whitespace-nowrap">
             <Link href={`${base}/reservation`}>{t("reserve")}</Link>
           </Button>
         </div>

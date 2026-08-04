@@ -239,7 +239,9 @@ export function ItemDialog({
 
   const isOpen = item !== null;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -515,6 +517,7 @@ export function ItemDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

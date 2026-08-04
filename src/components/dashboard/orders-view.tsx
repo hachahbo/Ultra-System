@@ -14,6 +14,7 @@ import {
   Check,
   X,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -426,7 +427,17 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
         cell: ({ row }) => {
           const order = row.original;
           return (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditModal(order);
+                }}
+                title="Détails de la commande"
+                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Eye className="size-4" />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -648,7 +659,8 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                   return (
                     <div
                       key={row.id}
-                      className="rounded-xl border border-border bg-card p-4 shadow-sm"
+                      onClick={() => openEditModal(order)}
+                      className="rounded-xl border border-border bg-card p-4 shadow-sm hover:border-primary/50 transition-colors cursor-pointer"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -697,7 +709,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                         })()}
                         {canSettlePayment && order.payment_status === "unpaid" && (
                           <button
-                            onClick={() => markPaidMutation.mutate(order.id)}
+                            onClick={(e) => { e.stopPropagation(); markPaidMutation.mutate(order.id); }}
                             disabled={markPaidMutation.isPending}
                             className="text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
                           >
@@ -705,15 +717,15 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                           </button>
                         )}
                       </div>
-                      <div className="mt-3 flex items-center justify-end gap-2">
+                      <div className="mt-3 flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => openEditModal(order)}
+                          onClick={(e) => { e.stopPropagation(); openEditModal(order); }}
                           className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-muted transition-colors"
                         >
-                          <Pencil className="size-3.5" /> Modifier
+                          <Eye className="size-3.5" /> Voir
                         </button>
                         <button
-                          onClick={() => setSelectedOrderForDelete(order)}
+                          onClick={(e) => { e.stopPropagation(); setSelectedOrderForDelete(order); }}
                           aria-label="Supprimer la commande"
                           className="flex size-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
                         >
@@ -757,7 +769,8 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className="border-border hover:bg-muted/50 transition-colors"
+                      onClick={() => openEditModal(row.original)}
+                      className="border-border hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} className="py-3.5 px-4 align-middle">
@@ -882,23 +895,58 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                 </div>
               </div>
 
+              {/* Order-Level Special Instructions / Note */}
+              {selectedOrderForEdit.note && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    <FileText className="size-3.5" />
+                    Instructions spéciales de la commande
+                  </div>
+                  <p className="text-sm font-medium text-foreground italic">
+                    « {selectedOrderForEdit.note} »
+                  </p>
+                </div>
+              )}
+
               {/* Articles Breakdown */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Détail des articles ({selectedOrderForEdit.items?.length || 0})
                 </Label>
-                <div className="bg-muted/30 border border-border rounded-2xl p-3.5 space-y-2.5 max-h-48 overflow-y-auto">
+                <div className="bg-muted/30 border border-border rounded-2xl p-3.5 space-y-2.5 max-h-56 overflow-y-auto">
                   {selectedOrderForEdit.items?.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm py-1 border-b border-border/50 last:border-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md">
-                          x{item.quantity}
+                    <div key={idx} className="flex flex-col gap-1 py-1.5 border-b border-border/50 last:border-0">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md">
+                            x{item.quantity}
+                          </span>
+                          <span className="font-semibold truncate text-foreground">{item.name}</span>
+                        </div>
+                        <span className="font-bold text-foreground shrink-0">
+                          {formatPrice(item.unit_price * item.quantity, "MAD")}
                         </span>
-                        <span className="font-semibold truncate text-foreground">{item.name}</span>
                       </div>
-                      <span className="font-bold text-foreground shrink-0">
-                        {formatPrice(item.unit_price * item.quantity, "MAD")}
-                      </span>
+                      {item.options && item.options.length > 0 && (
+                        <div className="text-xs font-medium text-muted-foreground pl-7 flex flex-wrap gap-1.5 pt-0.5">
+                          {item.options.map((opt, optIdx) => {
+                            const isNote = opt.toLowerCase().includes("note:") || opt.toLowerCase().includes("instruction");
+                            return (
+                              <span
+                                key={optIdx}
+                                className={cn(
+                                  "px-2 py-0.5 rounded-md text-[11px] font-semibold border",
+                                  isNote
+                                    ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold"
+                                    : "bg-background border-border text-foreground/90"
+                                )}
+                              >
+                                {opt}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

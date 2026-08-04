@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/dashboard";
 import { idSchema } from "@/lib/schemas";
+import { resolveLineOptions } from "@/lib/order-options";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 import { z } from "zod";
 
@@ -94,19 +95,16 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-    let unitPrice = Number(item.base_price);
-    const validOptions: string[] = [];
     const groups = (item.customization_groups ?? []) as CustomizationGroup[];
-    for (const optName of line.options) {
-      const opt = groups
-        .flatMap((g) => g.options)
-        .find((o) => o.name === optName);
-      if (!opt) {
-        return NextResponse.json({ error: "Option invalide" }, { status: 400 });
-      }
-      unitPrice += Number(opt.price_modifier);
-      validOptions.push(optName);
+    const resolved = resolveLineOptions(groups, line.options);
+    if (!resolved.ok) {
+      return NextResponse.json(
+        { error: `Option invalide : ${resolved.invalid}` },
+        { status: 400 },
+      );
     }
+    const unitPrice = Number(item.base_price) + resolved.priceModifier;
+    const validOptions = resolved.options;
     orderLines.push({
       item_id: item.id,
       name: item.name_fr,

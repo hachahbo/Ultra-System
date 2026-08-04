@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { Check, Plus, ShoppingBag, Sparkles, UtensilsCrossed, ChevronDown } from "lucide-react";
@@ -265,15 +266,15 @@ export function MenuBrowser({
                 whileTap={animate ? { scale: 0.985 } : undefined}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 suppressHydrationWarning
-                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[22px]
-                  bg-gradient-to-br from-white via-[#fdf9f5] to-[#faf4ec]
-                  dark:bg-none dark:bg-[#18181b]
-                  border border-[#ece6dc]/80 dark:border-stone-800/80
-                  shadow-[0_2px_0_0_rgba(236,91,26,0.18)_inset,0_1px_2px_rgba(0,0,0,0.04)_inset,0_12px_40px_rgba(0,0,0,0.07),0_4px_12px_rgba(236,91,26,0.06)]
-                  dark:shadow-none
+                className={`group relative mt-10 flex min-h-[220px] w-full flex-col justify-between overflow-visible rounded-[24px]
+                  bg-white/60 dark:bg-[#18181b]/50 backdrop-blur-xl
+                  border border-white/40 dark:border-white/10
+                  shadow-[0_8px_32px_0_rgba(0,0,0,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.6)]
+                  dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3),inset_0_1px_1px_0_rgba(255,255,255,0.08)]
                   p-6 transition-all duration-300
-                  hover:shadow-[0_2px_0_0_rgba(236,91,26,0.22)_inset,0_1px_2px_rgba(0,0,0,0.04)_inset,0_20px_56px_rgba(0,0,0,0.10),0_6px_18px_rgba(236,91,26,0.10)]
-                  dark:hover:shadow-none
+                  hover:bg-white/75 dark:hover:bg-[#18181b]/65
+                  hover:shadow-[0_12px_40px_0_rgba(236,91,26,0.12),inset_0_1px_1px_0_rgba(255,255,255,0.8)]
+                  dark:hover:shadow-[0_12px_40px_0_rgba(0,0,0,0.4),inset_0_1px_1px_0_rgba(255,255,255,0.12)]
                   ${item.in_stock ? "cursor-pointer" : "opacity-60 grayscale"}
                 `}
                 onClick={() => item.in_stock && orderingEnabled && setSelectedItem(item)}
@@ -388,7 +389,7 @@ export function MenuBrowser({
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden bg-gradient-to-br from-[#fdf1e7] to-[#fadfc3] dark:from-[#191614] dark:to-[#241a14] text-[#1b2437] dark:text-stone-200 rounded-b-[21px] rounded-t-2xl -mx-6 -mb-6 mt-4 border-t border-border/10 dark:border-stone-800/50"
+                      className="overflow-hidden bg-white/50 dark:bg-stone-900/50 backdrop-blur-md text-[#1b2437] dark:text-stone-200 rounded-b-[23px] rounded-t-2xl -mx-6 -mb-6 mt-4 border-t border-white/20 dark:border-white/10"
                       onClick={(e) => e.stopPropagation()} // Prevent modal trigger inside details
                     >
                       <div className="px-6 py-5">
@@ -459,40 +460,44 @@ export function MenuBrowser({
         onClose={() => setSelectedItem(null)}
       />
 
-      {/* ── Floating cart bar ──────────────────────────────── */}
-      <AnimatePresence>
-        {orderingEnabled && count > 0 && (
-          <motion.div
-            variants={prefersReducedMotion ? undefined : cartBarVariants}
-            initial="hidden"
-            animate="show"
-            exit="exit"
-            className="fixed inset-x-4 bottom-5 z-40 mx-auto max-w-lg"
-          >
-            <Link
-              href={`/${restaurant.slug}/checkout`}
-              className="group flex w-full items-center justify-between rounded-full bg-[#FF6B35]/30 backdrop-blur-md px-6 py-4 text-base font-semibold text-white shadow-[0_8px_32px_rgba(255,107,53,0.1)] ring-1 ring-white/10 transition-all duration-300 hover:bg-[#FF6B35] hover:shadow-[0_16px_44px_rgba(255,107,53,0.4)] hover:scale-[1.01]"
-            >
-              <span className="flex items-center gap-2.5">
-                <motion.span
-                  key={count}
-                  initial={animate ? { scale: 0.5, opacity: 0 } : false}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex size-7 items-center justify-center rounded-full bg-white/20 text-xs font-bold tabular-nums"
+      {/* ── Floating cart bar (Portaled to document.body for true screen overlay) ── */}
+      {isHydrated &&
+        createPortal(
+          <AnimatePresence>
+            {orderingEnabled && count > 0 && !selectedItem && (
+              <motion.div
+                variants={prefersReducedMotion ? undefined : cartBarVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="fixed inset-x-4 bottom-5 z-[99999] mx-auto max-w-lg pointer-events-auto"
+              >
+                <Link
+                  href={`/${restaurant.slug}/checkout`}
+                  className="group flex w-full items-center justify-between rounded-full bg-[#FF6B35]/85 backdrop-blur-xl px-6 py-4 text-base font-semibold text-white shadow-[0_12px_36px_rgba(255,107,53,0.35)] transition-all duration-300 hover:bg-[#FF6B35]/95 hover:shadow-[0_16px_44px_rgba(255,107,53,0.45)] hover:scale-[1.01] active:scale-[0.99]"
                 >
-                  {count}
-                </motion.span>
-                <ShoppingBag className="size-4 transition-transform group-hover:-translate-y-0.5" />
-                <span>{t("viewCart")}</span>
-              </span>
-              <span className="font-bold tabular-nums">
-                {formatPrice(subtotal, restaurant.currency)}
-              </span>
-            </Link>
-          </motion.div>
+                  <span className="flex items-center gap-2.5">
+                    <motion.span
+                      key={count}
+                      initial={animate ? { scale: 0.5, opacity: 0 } : false}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                      className="flex size-7 items-center justify-center rounded-full bg-white/20 text-xs font-bold tabular-nums"
+                    >
+                      {count}
+                    </motion.span>
+                    <ShoppingBag className="size-4 transition-transform group-hover:-translate-y-0.5" />
+                    <span>{t("viewCart")}</span>
+                  </span>
+                  <span className="font-bold tabular-nums">
+                    {formatPrice(subtotal, restaurant.currency)}
+                  </span>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </>
   );
 }

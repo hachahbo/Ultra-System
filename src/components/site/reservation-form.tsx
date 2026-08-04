@@ -38,6 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { makePhoneSchema } from "@/lib/schemas";
@@ -612,9 +613,9 @@ function TableSelector({
   // ── Desktop → Dialog / Modal ──────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <button type="button" className="w-full" onClick={() => setOpen(true)}>
+      <DialogTrigger asChild>
         {triggerButton}
-      </button>
+      </DialogTrigger>
       <DialogContent
         showCloseButton={false}
         className={cn(

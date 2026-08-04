@@ -5,6 +5,7 @@ import { getPublicFeatures } from "@/lib/menu";
 import { applyStatusGate } from "@/lib/features";
 import { orderSchema } from "@/lib/schemas";
 import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { resolveLineOptions } from "@/lib/order-options";
 import type { CustomizationGroup, OrderLine } from "@/lib/types";
 
 // Public order intake (dine-in QR + delivery). Uses the service role — every
@@ -107,19 +108,13 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-    let unitPrice = Number(item.base_price);
-    const validOptions: string[] = [];
     const groups = (item.customization_groups ?? []) as CustomizationGroup[];
-    for (const optName of line.options) {
-      const opt = groups
-        .flatMap((g) => g.options)
-        .find((o) => o.name === optName);
-      if (!opt) {
-        return NextResponse.json({ error: t("invalidOption") }, { status: 400 });
-      }
-      unitPrice += Number(opt.price_modifier);
-      validOptions.push(optName);
+    const resolved = resolveLineOptions(groups, line.options);
+    if (!resolved.ok) {
+      return NextResponse.json({ error: t("invalidOption") }, { status: 400 });
     }
+    const unitPrice = Number(item.base_price) + resolved.priceModifier;
+    const validOptions = resolved.options;
     orderLines.push({
       item_id: item.id,
       name: item.name_fr,

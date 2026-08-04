@@ -29,8 +29,8 @@ export default async function CheckoutPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
+    <div className="mx-auto max-w-2xl lg:max-w-6xl px-4 py-8">
+      <h1 className="font-display text-3xl font-semibold tracking-tight mb-2">
         {t("heading")}
       </h1>
       <CheckoutClient restaurant={restaurant} />
