@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { QrPreviewModal } from "@/components/dashboard/qr-preview-modal";
 import { FloorPlanMap } from "@/components/dashboard/floor-plan";
 import { QrCards } from "@/components/dashboard/qr-cards";
 import { TableTurnoverPanel } from "@/components/dashboard/table-turnover";
@@ -42,6 +43,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
   const { data: tables } = useQuery({ queryKey: tablesQueryKey, queryFn: fetchTables });
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<DiningTable | null>(null);
+  const [qrTarget, setQrTarget] = useState<DiningTable | null>(null);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: tablesQueryKey });
 
@@ -200,7 +202,12 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
           {list.map((table) => (
             <div
               key={table.id}
-              className="group flex flex-col justify-between rounded-[20px] border border-border/60 bg-card p-5 shadow-sm hover:border-border hover:shadow-md transition-all"
+              className="group relative flex flex-col justify-between rounded-[20px] border border-border/60 bg-card p-5 shadow-sm hover:border-primary/40 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => setQrTarget(table)}
+              role="button"
+              tabIndex={0}
+              aria-label={`Voir QR de la table ${table.number}`}
+              onKeyDown={(e) => e.key === "Enter" && setQrTarget(table)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary font-display font-bold text-2xl border border-primary/20 shadow-inner">
@@ -211,7 +218,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
                     variant="ghost"
                     size="icon-sm"
                     aria-label={t("editTable", { number: table.number })}
-                    onClick={() => setEditing(table)}
+                    onClick={(e) => { e.stopPropagation(); setEditing(table); }}
                     className="hover:bg-muted text-muted-foreground hover:text-foreground"
                   >
                     <Pencil className="size-4" />
@@ -223,6 +230,7 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
                         size="icon-sm"
                         aria-label={t("deleteTable", { number: table.number })}
                         className="hover:bg-destructive/10 text-destructive/70 hover:text-destructive"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -285,6 +293,13 @@ export function TablesEditor({ restaurantSlug }: { restaurantSlug: string }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* QR Preview Modal */}
+      <QrPreviewModal
+        table={qrTarget}
+        restaurantSlug={restaurantSlug}
+        onClose={() => setQrTarget(null)}
+      />
     </div>
   );
 }
