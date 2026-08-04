@@ -37,22 +37,9 @@ const backdropVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.2 } },
 };
 
-// Mobile: bottom-sheet drawer that slides up from the bottom edge.
-const sheetVariants: Variants = {
-  hidden: { y: "100%" },
-  show: {
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 340, damping: 40 },
-  },
-  exit: {
-    y: "100%",
-    transition: { duration: 0.24, ease: [0.4, 0, 0.6, 1] as const },
-  },
-};
-
-// Desktop (≥640px): centered modal that pops in with a scale/fade spring.
+// All screen sizes: centered modal that pops in with a scale/fade spring.
 const popVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  hidden: { opacity: 0, scale: 0.92, y: 16 },
   show: {
     opacity: 1,
     scale: 1,
@@ -62,7 +49,7 @@ const popVariants: Variants = {
   exit: {
     opacity: 0,
     scale: 0.95,
-    y: 12,
+    y: 10,
     transition: { duration: 0.18, ease: [0.4, 0, 0.6, 1] as const },
   },
 };
@@ -79,19 +66,6 @@ const sectionVariants: Variants = {
 /** When reduced-motion is preferred, return undefined so motion elements animate instantly. */
 function v(reduced: boolean | null, variants: Variants): Variants | undefined {
   return reduced ? undefined : variants;
-}
-
-/** True on ≥640px viewports. Drives sheet-vs-modal presentation. SSR-safe (starts false). */
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return isDesktop;
 }
 
 // ─── ItemDialog ─────────────────────────────────────────────────────────────
@@ -116,7 +90,6 @@ export function ItemDialog({
   const { add } = useCart();
   const t = useTranslations("Menu");
   const prefersReducedMotion = useReducedMotion();
-  const isDesktop = useIsDesktop();
 
   // Standard option selections: { groupTitle: optionName[] }
   const [selected, setSelected] = useState<Record<string, string[]>>({});
@@ -251,27 +224,21 @@ export function ItemDialog({
           animate="show"
           exit="exit"
           onClick={onClose}
-          className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm pointer-events-auto"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm pointer-events-auto"
         >
-          {/* ── Panel: bottom sheet (mobile) / centered modal (desktop) ── */}
+          {/* ── Centered modal (all screen sizes) ── */}
           <motion.div
-            key={isDesktop ? "desktop-panel" : "mobile-panel"}
+            key="panel"
             role="dialog"
             aria-modal="true"
             aria-label={item.name_fr}
-            variants={v(prefersReducedMotion, isDesktop ? popVariants : sheetVariants)}
+            variants={v(prefersReducedMotion, popVariants)}
             initial="hidden"
             animate="show"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className="relative z-50 flex w-full flex-col overflow-visible p-4 bg-[#FAF7F2] dark:bg-[#1C1917] text-foreground border border-[#ECE6DC] dark:border-stone-800 shadow-2xl max-h-[92dvh] sm:max-h-[88vh] max-w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl ring-1 ring-black/5 dark:ring-white/10 pointer-events-auto"
+            className="relative z-50 flex w-full flex-col overflow-hidden bg-[#FAF7F2] dark:bg-[#1C1917] text-foreground border border-[#ECE6DC] dark:border-stone-800 shadow-2xl max-h-[90dvh] w-full max-w-sm sm:max-w-md rounded-3xl ring-1 ring-black/5 dark:ring-white/10 pointer-events-auto"
           >
-            {/* ── Drag handle (mobile only) ── */}
-            {!isDesktop && (
-              <div className="flex shrink-0 justify-center pt-3 pb-1">
-                <div className="h-1 w-10 rounded-full bg-border" />
-              </div>
-            )}
 
             {/* ── Close button (Moved to left) ── */}
             <button
@@ -475,11 +442,11 @@ export function ItemDialog({
               </div>
 
               {/* spacer for footer */}
-              <div className="h-4" />
+              <div className="" />
             </div>
 
             {/* ── Sticky footer ── */}
-            <div className="relative z-30 shrink-0 border-t border-[#ECE6DC] dark:border-stone-800 bg-[#FAF7F2]/95 dark:bg-[#1C1917]/95 px-6 pb-safe pt-4 backdrop-blur-md pointer-events-auto">
+            <div className="relative z-30 shrink-0 border-t border-[#ECE6DC] dark:border-stone-800 bg-[#FAF7F2]/95 dark:bg-[#1C1917]/95 px-6 pt-4 pb-6 backdrop-blur-md pointer-events-auto">
               <div className="flex items-center gap-3">
                 {/* Quantity stepper */}
                 <div className="flex items-center rounded-full border border-border/80 bg-background shadow-sm">
