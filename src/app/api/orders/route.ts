@@ -151,6 +151,7 @@ export async function POST(request: Request) {
       .select("id, order_count")
       .single();
     if (customerError || !customer) {
+      console.error("POST /api/orders customer upsert error:", customerError);
       return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
     }
     customerId = customer.id;
@@ -188,6 +189,10 @@ export async function POST(request: Request) {
     .single();
 
   if (orderError || !order) {
+    // Public intake has no dashboard behind it — without this the customer
+    // just sees a generic toast and the real Postgres error (missing column,
+    // failed check constraint, trigger raise) is lost.
+    console.error("POST /api/orders db insert error:", orderError);
     return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
   }
 
