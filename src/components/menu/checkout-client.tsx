@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { cartSubtotal, useCart } from "@/store/cart";
+import { cartDiscount, cartSubtotal, useCart, useCartHydrated } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
 import { getDishImage } from "@/lib/image";
 import { makePhoneSchema } from "@/lib/schemas";
+import { PromoCodeForm } from "@/components/menu/promo-code-form";
 import { motion, type Variants } from "framer-motion";
 import type { Restaurant } from "@/lib/types";
 
@@ -78,25 +79,9 @@ function buildDineInSchema(m: { phone: string }) {
 
 type DineInForm = z.infer<ReturnType<typeof buildDineInSchema>>;
 
-/** Returns true only after Zustand has rehydrated from localStorage. */
-function useHydrated() {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    // useCart.persist.hasHydrated() is set synchronously during the first
-    // render if storage was already available, but in practice it fires
-    // in a microtask after mount. Listening to the onFinishHydration event
-    // is the safest cross-browser approach.
-    const unsub = useCart.persist.onFinishHydration(() => setHydrated(true));
-    // Already hydrated before this component mounted (common on fast devices).
-    if (useCart.persist.hasHydrated()) setHydrated(true);
-    return unsub;
-  }, []);
-  return hydrated;
-}
-
 export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
-  const hydrated = useHydrated();
-  const { lines, table, increment, decrement, clear } = useCart();
+  const hydrated = useCartHydrated();
+  const { lines, table, promo, increment, decrement, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const t = useTranslations("Cart");
@@ -115,7 +100,8 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   const isDineIn = Boolean(table);
   const subtotal = cartSubtotal(lines);
   const deliveryFee = isDineIn ? 0 : Number(restaurant.base_delivery_fee);
-  const total = subtotal + deliveryFee;
+  const discount = cartDiscount(subtotal, promo);
+  const total = subtotal + deliveryFee - discount;
 
   const dineInFormSchema = useMemo(
     () => buildDineInSchema({ phone: t("errorPhone") }),
@@ -148,6 +134,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
           customer_phone: values.customer_phone || undefined,
           address: values.address || undefined,
           note: values.note || undefined,
+          promo_code: promo?.code || undefined,
           lines: lines.map((l) => ({
             item_id: l.item_id,
             quantity: l.quantity,
@@ -431,6 +418,11 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
           ))}
         </ul>
 
+        {/* Promo code */}
+        <motion.div variants={blurFadeUp}>
+          <PromoCodeForm slug={restaurant.slug} currency={restaurant.currency} />
+        </motion.div>
+
         {/* Totals Summary */}
         <motion.div
           variants={blurFadeUp}
@@ -440,6 +432,12 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             <span>{t("subtotal")}</span>
             <span className="tabular-nums">{formatPrice(subtotal, restaurant.currency)}</span>
           </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              <span>{t("discount", { code: promo?.code ?? "" })}</span>
+              <span className="tabular-nums">-{formatPrice(discount, restaurant.currency)}</span>
+            </div>
+          )}
           {!isDineIn && (
             <div className="flex justify-between text-sm text-muted-foreground font-medium">
               <span>{t("delivery")}</span>

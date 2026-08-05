@@ -6,15 +6,16 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
-import { 
-  Menu as MenuIcon, 
-  UtensilsCrossed, 
-  CalendarDays, 
-  Info, 
-  Phone, 
-  ChevronRight, 
-  Moon, 
-  Globe 
+import {
+  Menu as MenuIcon,
+  UtensilsCrossed,
+  CalendarDays,
+  Info,
+  Phone,
+  Gift,
+  ChevronRight,
+  Moon,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -32,6 +33,7 @@ import {
 // `key` indexes into the Nav.* messages; icons/href stay static.
 const links = [
   { href: "/menu", key: "menu", icon: UtensilsCrossed },
+  { href: "/gifts", key: "gifts", icon: Gift },
   { href: "/events", key: "events", icon: CalendarDays },
   { href: "/about", key: "about", icon: Info },
   { href: "/contact", key: "contact", icon: Phone },

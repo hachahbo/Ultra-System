@@ -53,6 +53,7 @@ export const orderSchema = z
     address: z.string().trim().max(300).optional(),
     note: z.string().trim().max(500).optional(),
     payment_method: orderPaymentMethodSchema.default("cash"),
+    promo_code: z.string().trim().min(1).max(30).optional(),
     lines: z.array(orderLineSchema).min(1).max(50),
   })
   .superRefine((data, ctx) => {
@@ -251,6 +252,50 @@ export const promotionSchema = z.object({
 });
 
 export type PromotionInput = z.infer<typeof promotionSchema>;
+
+// ── Promo codes ──────────────────────────────────────────────────────────
+// Codes are stored and compared uppercase — a customer typing "summer20" or
+// "SUMMER20" must hit the same row, and the dashboard uniqueness constraint
+// is on the raw column value.
+// Plain ZodObject (no .refine()) so PATCH can still call `.partial()` on it —
+// `.refine()` returns a ZodEffects wrapper, which has no `.partial()`.
+export const promoCodeObjectSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(3, "Code trop court (3 caractères minimum)")
+    .max(30, "Code trop long (30 caractères maximum)")
+    .regex(/^[A-Za-z0-9_-]+$/, "Lettres, chiffres, - et _ uniquement")
+    .transform((v) => v.toUpperCase()),
+  discount_type: z.enum(["percentage", "fixed"]),
+  discount_value: z.coerce.number({ message: "Valeur invalide" }).min(0.01, "Valeur invalide").max(100000),
+  min_order_amount: z.coerce.number().min(0).max(100000).default(0),
+  max_uses: z.coerce.number().int().min(1).max(1_000_000).nullable().optional(),
+  active: z.boolean().default(true),
+  expires_at: z.string().trim().min(1).nullable().optional(),
+});
+
+const percentageMax100 = (v: { discount_type?: "percentage" | "fixed"; discount_value?: number }) =>
+  v.discount_type !== "percentage" || v.discount_value === undefined || v.discount_value <= 100;
+
+export const promoCodeSchema = promoCodeObjectSchema.refine(percentageMax100, {
+  message: "Un pourcentage ne peut pas dépasser 100",
+  path: ["discount_value"],
+});
+
+export type PromoCodeInput = z.infer<typeof promoCodeSchema>;
+
+// Public POST /api/promo-codes/validate — `subtotal` is only used to check
+// min_order_amount client-side-ish; the real discount is always recomputed
+// server-side again at order submission from the DB row, never trusted from
+// this response.
+export const promoCodeValidateSchema = z.object({
+  restaurant_slug: z.string().min(1),
+  code: z.string().trim().min(1).max(30),
+  subtotal: z.coerce.number().min(0).max(1_000_000),
+});
+
+export type PromoCodeValidateInput = z.infer<typeof promoCodeValidateSchema>;
 
 export const tableSchema = z.object({
   number: z.string().trim().min(1, "Numéro requis").max(10),

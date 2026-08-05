@@ -51,9 +51,9 @@ async function fetchNotifications(): Promise<NotificationItem[]> {
 const MAX_TOASTS = 3;
 
 const NOTIF_STYLE: Record<NotificationItem["kind"], { icon: LucideIcon; className: string }> = {
-  order: { icon: ShoppingBag, className: "bg-primary/10 text-primary" },
-  reservation: { icon: CalendarDays, className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-  event_inquiry: { icon: PartyPopper, className: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400" },
+  order: { icon: ShoppingBag, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20" },
+  reservation: { icon: CalendarDays, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20" },
+  event_inquiry: { icon: PartyPopper, className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20" },
 };
 
 // The header calls the owner "Gérant" rather than ROLE_LABELS' "Admin".
@@ -169,8 +169,8 @@ export function DashboardHeader({
           id: notifKey(n),
           description: n.subtitle,
           icon: (
-            <span className={cn("flex size-6 items-center justify-center rounded-full", className)}>
-              <Icon className="size-3.5" />
+            <span className={cn("flex size-7 items-center justify-center rounded-xl shadow-xs shrink-0", className)}>
+              <Icon className="size-4" />
             </span>
           ),
           action: {
@@ -222,33 +222,53 @@ export function DashboardHeader({
             <button
               type="button"
               aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lues)` : "Notifications"}
-              className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition-colors hover:bg-muted shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className={cn(
+                "relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                unreadCount > 0
+                  ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 shadow-primary/10"
+                  : "border-border/70 bg-card text-foreground hover:bg-muted"
+              )}
             >
-              <Bell className="size-4 stroke-[2px]" />
+              <Bell className={cn("size-4 stroke-[2px] transition-transform group-hover:rotate-12", unreadCount > 0 && "text-primary")} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-[#e36329] px-1 text-[10px] font-extrabold text-white ring-2 ring-card shadow-sm">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
+                <>
+                  <span className="absolute -top-0.5 -right-0.5 size-3 animate-ping rounded-full bg-[#e36329] opacity-75" />
+                  <span className="absolute -top-1 -right-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-[#e36329] px-1 text-[10px] font-extrabold text-white ring-2 ring-card shadow-md shadow-orange-500/20">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                </>
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 rounded-2xl border-border bg-card p-2 shadow-2xl">
+          <DropdownMenuContent align="end" className="w-84 sm:w-96 rounded-2xl border-border/80 bg-card/98 backdrop-blur-xl p-2.5 shadow-2xl space-y-1.5">
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/60">
-              <span className="font-display text-sm font-extrabold text-foreground">Notifications</span>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm font-extrabold text-foreground">Notifications</span>
+                {unreadCount > 0 && (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-extrabold text-primary">
+                    {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
               {notifications.length > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-[11.5px] font-bold text-primary hover:underline flex items-center gap-1"
+                  className="text-[11.5px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 hover:underline"
                 >
                   <CheckCheck className="size-3.5" /> Tout marquer comme lu
                 </button>
               )}
             </div>
-            <div className="max-h-[380px] overflow-y-auto py-1 space-y-1">
+            <div className="max-h-[400px] overflow-y-auto py-1 space-y-1.5">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-                  <Bell className="size-7 text-muted-foreground/40" />
-                  <p className="text-[13px] font-semibold text-muted-foreground">Aucune notification</p>
+                  <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground/50">
+                    <Bell className="size-6 stroke-[1.75]" />
+                  </div>
+                  <p className="text-[13px] font-bold text-foreground mt-1">Aucune notification</p>
+                  <p className="text-[11.5px] text-muted-foreground max-w-[200px]">
+                    Vos dernières commandes et réservations apparaîtront ici en temps réel.
+                  </p>
                 </div>
               ) : (
                 notifications.map((n) => {
@@ -259,32 +279,34 @@ export function DashboardHeader({
                     <DropdownMenuItem
                       key={notifKey(n)}
                       asChild
-                      className="p-0 rounded-xl cursor-pointer"
+                      className="p-0 rounded-xl cursor-pointer focus:bg-transparent"
                     >
                       <Link
                         href={n.href}
                         className={cn(
-                          "flex items-start gap-3 p-2.5 w-full hover:bg-muted",
-                          isUnread && "bg-primary/[0.04]",
+                          "flex items-start gap-3 p-3 w-full rounded-xl border border-transparent transition-all hover:bg-muted/70 hover:border-border/50",
+                          isUnread && "bg-primary/[0.04] border-primary/15 shadow-2xs",
                         )}
                       >
                         <div
                           className={cn(
-                            "size-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                            "size-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs mt-0.5",
                             style.className,
                           )}
                         >
-                          <Icon className="size-4" />
+                          <Icon className="size-4.5 stroke-[2.25]" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-bold text-foreground leading-snug">{n.title}</p>
-                          <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{n.subtitle}</p>
-                          <span className="text-[10px] text-muted-foreground/80 mt-1 block">
-                            {formatDistanceToNowStrict(new Date(n.created_at), { locale: dateFnsLocale(locale), addSuffix: true })}
-                          </span>
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[13px] font-extrabold text-foreground leading-tight truncate">{n.title}</p>
+                            <span className="text-[10px] font-medium text-muted-foreground/80 shrink-0">
+                              {formatDistanceToNowStrict(new Date(n.created_at), { locale: dateFnsLocale(locale), addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-[12px] font-medium text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{n.subtitle}</p>
                         </div>
                         {isUnread && (
-                          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#e36329]" />
+                          <span className="mt-2 size-2 shrink-0 rounded-full bg-[#e36329] shadow-[0_0_8px_rgba(227,99,41,0.7)] animate-pulse" />
                         )}
                       </Link>
                     </DropdownMenuItem>

@@ -15,6 +15,12 @@ import {
   X,
   AlertTriangle,
   FileText,
+  Utensils,
+  ShoppingBag,
+  Clock,
+  CheckCircle2,
+  User,
+  Hash,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -24,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PosView } from "@/components/dashboard/pos-view";
 import { formatPrice } from "@/lib/format";
+import { getDishImage } from "@/lib/image";
 import type { Order } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -48,6 +55,12 @@ async function fetchOrders(): Promise<Order[]> {
   const res = await fetch("/api/dashboard/orders");
   if (!res.ok) throw new Error("fetch failed");
   return (await res.json()).orders;
+}
+
+async function fetchMenu(): Promise<{ items: Array<{ id: string; image_url: string | null }> }> {
+  const res = await fetch("/api/dashboard/menu");
+  if (!res.ok) throw new Error("fetch failed");
+  return res.json();
 }
 
 type Filter = "all" | "active" | "done";
@@ -108,6 +121,28 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
     queryFn: fetchOrders,
     refetchInterval: 10_000,
   });
+
+  const { data: menuData } = useQuery({
+    queryKey: ["menu"],
+    queryFn: fetchMenu,
+  });
+
+  const itemImagesMap = useMemo(() => {
+    const map = new Map<string, string | null>();
+    if (menuData?.items) {
+      for (const item of menuData.items) {
+        if (item.id && item.image_url) {
+          map.set(item.id, item.image_url);
+        }
+      }
+    }
+    return map;
+  }, [menuData]);
+
+  const getItemImageUrl = (item: { item_id?: string; name?: string; image_url?: string | null }) => {
+    const rawUrl = item.image_url || (item.item_id ? itemImagesMap.get(item.item_id) : null) || null;
+    return getDishImage({ id: item.item_id || item.name || "dish", image_url: rawUrl });
+  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -276,15 +311,22 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
           return (
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex shrink-0">
-                {order.items?.slice(0, 3).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-[19px] border-2 border-background shadow-sm"
-                    style={{ marginLeft: i === 0 ? '0' : '-12px', zIndex: 10 - i }}
-                  >
-                    🍔
-                  </div>
-                ))}
+                {order.items?.slice(0, 3).map((item, i) => {
+                  const imageUrl = getItemImageUrl(item);
+                  return (
+                    <div
+                      key={i}
+                      className="relative w-10 h-10 rounded-full overflow-hidden border-1 border-background shadow-sm bg-muted shrink-0"
+                      style={{ marginLeft: i === 0 ? '0' : '-12px', zIndex: 10 - i }}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="size-full object-cover scale-[1.2]"
+                      />
+                    </div>
+                  );
+                })}
               </div>
               <div className="min-w-0">
                 <div className="text-[13.5px] font-bold truncate text-foreground">{firstItemName}</div>
@@ -507,10 +549,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
           <div>
-            <h1 className="m-0 text-[26px] font-extrabold tracking-tight text-foreground">Commandes</h1>
-            <div className="text-[13.5px] text-muted-foreground mt-1">
-              {orders.length} commandes aujourd&apos;hui · mise à jour en direct
-            </div>
+            <h1 className="m-0 text-[26px] font-extrabold tracking-tight text-foreground">{t("title")}</h1>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {canSettlePayment && (
@@ -674,11 +713,33 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                           {t(badge.label)}
                         </span>
                       </div>
-                      <div className="mt-3 text-[13.5px] font-bold text-foreground truncate">{firstItemName}</div>
-                      <div className="text-[11.5px] text-muted-foreground mt-0.5">
-                        {extraItems > 0
-                          ? `+ ${extraItems} autre${extraItems > 1 ? "s" : ""} article${extraItems > 1 ? "s" : ""}`
-                          : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="flex shrink-0">
+                          {order.items?.slice(0, 3).map((item, i) => {
+                            const imageUrl = getItemImageUrl(item);
+                            return (
+                              <div
+                                key={i}
+                                className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-background shadow-xs bg-muted shrink-0"
+                                style={{ marginLeft: i === 0 ? "0" : "-10px", zIndex: 10 - i }}
+                              >
+                                <img
+                                  src={imageUrl}
+                                  alt={item.name}
+                                  className="size-full object-cover scale-[1.4]"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13.5px] font-bold text-foreground truncate">{firstItemName}</div>
+                          <div className="text-[11.5px] text-muted-foreground mt-0.5">
+                            {extraItems > 0
+                              ? `+ ${extraItems} autre${extraItems > 1 ? "s" : ""} article${extraItems > 1 ? "s" : ""}`
+                              : `${totalQty} article${totalQty > 1 ? "s" : ""}`}
+                          </div>
+                        </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
                         <div className="min-w-0">
@@ -829,182 +890,232 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
 
       {/* Edit / View Order Modal */}
       <Dialog open={!!selectedOrderForEdit} onOpenChange={(open) => !open && setSelectedOrderForEdit(null)}>
-        <DialogContent className="max-w-xl rounded-3xl p-6 sm:p-8">
+        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl font-bold flex items-center justify-between">
-              <span>
-                Commande CMD-{selectedOrderForEdit?.id.slice(0, 4).toUpperCase()}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground font-mono">
-                {selectedOrderForEdit && new Date(selectedOrderForEdit.created_at).toLocaleString("fr-FR")}
-              </span>
+            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+                  <ShoppingBag className="size-5 stroke-[2.25]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-foreground leading-none">
+                    Commande CMD-{selectedOrderForEdit?.id.slice(0, 4).toUpperCase()}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      <Clock className="size-3 text-primary/70" />
+                      {selectedOrderForEdit && new Date(selectedOrderForEdit.created_at).toLocaleString("fr-FR")}
+                    </span>
+                    {selectedOrderForEdit?.type && (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wide">
+                        {selectedOrderForEdit.type === "dine_in"
+                          ? `Sur place${selectedOrderForEdit.table_number ? ` · T${selectedOrderForEdit.table_number}` : ''}`
+                          : "Livraison"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedOrderForEdit && (() => {
+                  const badge = getPaymentBadge(selectedOrderForEdit.payment_status);
+                  return (
+                    <span
+                      className="inline-flex items-center justify-center px-3.5 py-1 rounded-full text-[11.5px] font-extrabold shadow-2xs"
+                      style={{ background: badge.bg, color: badge.color }}
+                    >
+                      {t(badge.label)}
+                    </span>
+                  );
+                })()}
+              </div>
             </DialogTitle>
           </DialogHeader>
 
           {selectedOrderForEdit && (
-            <div className="space-y-6 py-2">
-              {/* Status Pills */}
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("orderStatus")}
-                </Label>
-                <div className="flex gap-2">
-                  {(["new", "preparing", "done"] as const).map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => setEditStatus(st)}
-                      className={cn(
-                        "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold border transition-all",
-                        editStatus === st
-                          ? "border-primary bg-primary/15 text-primary shadow-sm"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      {t(STATUS_MAP[st]?.label ?? "inProgress")}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Customer & Table details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="edit-customer" className="text-xs font-bold text-muted-foreground">
-                    {t("customerName")}
-                  </Label>
-                  <Input
-                    id="edit-customer"
-                    value={editCustomerName}
-                    onChange={(e) => setEditCustomerName(e.target.value)}
-                    placeholder={t("colDineIn")}
-                    className="rounded-xl text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="edit-table" className="text-xs font-bold text-muted-foreground">
-                    {t("colTable")}
-                  </Label>
-                  <Input
-                    id="edit-table"
-                    value={editTableNumber}
-                    onChange={(e) => setEditTableNumber(e.target.value)}
-                    placeholder={t("tablePlaceholder")}
-                    className="rounded-xl text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Order-Level Special Instructions / Note */}
-              {selectedOrderForEdit.note && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    <FileText className="size-3.5" />
-                    Instructions spéciales de la commande
-                  </div>
-                  <p className="text-sm font-medium text-foreground italic">
-                    « {selectedOrderForEdit.note} »
-                  </p>
-                </div>
-              )}
-
-              {/* Articles Breakdown */}
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Détail des articles ({selectedOrderForEdit.items?.length || 0})
-                </Label>
-                <div className="bg-muted/30 border border-border rounded-2xl p-3.5 space-y-2.5 max-h-56 overflow-y-auto">
-                  {selectedOrderForEdit.items?.map((item, idx) => (
-                    <div key={idx} className="flex flex-col gap-1 py-1.5 border-b border-border/50 last:border-0">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md">
-                            x{item.quantity}
-                          </span>
-                          <span className="font-semibold truncate text-foreground">{item.name}</span>
-                        </div>
-                        <span className="font-bold text-foreground shrink-0">
-                          {formatPrice(item.unit_price * item.quantity, "MAD")}
-                        </span>
-                      </div>
-                      {item.options && item.options.length > 0 && (
-                        <div className="text-xs font-medium text-muted-foreground pl-7 flex flex-wrap gap-1.5 pt-0.5">
-                          {item.options.map((opt, optIdx) => {
-                            const isNote = opt.toLowerCase().includes("note:") || opt.toLowerCase().includes("instruction");
-                            return (
-                              <span
-                                key={optIdx}
-                                className={cn(
-                                  "px-2 py-0.5 rounded-md text-[11px] font-semibold border",
-                                  isNote
-                                    ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold"
-                                    : "bg-background border-border text-foreground/90"
-                                )}
-                              >
-                                {opt}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 py-1">
+              {/* Left Column: Order Settings, Customer Info, Notes & Financial Total */}
+              <div className="md:col-span-6 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3.5">
+                  {/* Status Pills */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                      {t("orderStatus")}
+                    </Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["new", "preparing", "done"] as const).map((st) => {
+                        const isSelected = editStatus === st;
+                        const styleConfig = {
+                          new: { active: "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400 ring-2 ring-orange-500/20", icon: Clock },
+                          preparing: { active: "border-blue-500/50 bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/20", icon: Utensils },
+                          done: { active: "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20", icon: CheckCircle2 },
+                        }[st];
+                        const Icon = styleConfig.icon;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setEditStatus(st)}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-2xl text-xs font-extrabold border transition-all duration-150 shadow-2xs cursor-pointer",
+                              isSelected
+                                ? styleConfig.active
+                                : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            <Icon className="size-3.5 stroke-[2.25]" />
+                            {t(STATUS_MAP[st]?.label ?? "inProgress")}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* Payment status */}
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("paymentStatus")}
-                </Label>
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const badge = getPaymentBadge(selectedOrderForEdit.payment_status);
-                    return (
-                      <span
-                        className="inline-flex items-center justify-center px-3 py-1 rounded-full text-[11.5px] font-bold"
-                        style={{ background: badge.bg, color: badge.color }}
-                      >
-                        {t(badge.label)}
-                      </span>
-                    );
-                  })()}
-                  {canSettlePayment && selectedOrderForEdit.payment_status === "unpaid" && (
-                    <button
-                      onClick={() => markPaidMutation.mutate(selectedOrderForEdit.id)}
-                      disabled={markPaidMutation.isPending}
-                      className="text-xs font-bold text-primary hover:underline disabled:opacity-50"
-                    >
-                      {t("markPaid")}
-                    </button>
+                  {/* Customer & Table details */}
+                  <div className="grid grid-cols-2 gap-3 bg-muted/30 border border-border/60 rounded-2xl p-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="edit-customer" className="text-[11px] font-extrabold text-muted-foreground flex items-center gap-1">
+                        <User className="size-3.5 text-primary" /> {t("customerName")}
+                      </Label>
+                      <Input
+                        id="edit-customer"
+                        value={editCustomerName}
+                        onChange={(e) => setEditCustomerName(e.target.value)}
+                        placeholder={t("colDineIn")}
+                        className="rounded-xl text-xs font-bold bg-card border-border/80 shadow-2xs h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="edit-table" className="text-[11px] font-extrabold text-muted-foreground flex items-center gap-1">
+                        <Hash className="size-3.5 text-primary" /> {t("colTable")}
+                      </Label>
+                      <Input
+                        id="edit-table"
+                        value={editTableNumber}
+                        onChange={(e) => setEditTableNumber(e.target.value)}
+                        placeholder={t("tablePlaceholder")}
+                        className="rounded-xl text-xs font-bold bg-card border-border/80 shadow-2xs h-9"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Order-Level Special Instructions / Note */}
+                  {selectedOrderForEdit.note && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                        <FileText className="size-3.5" />
+                        Instructions spéciales
+                      </div>
+                      <p className="text-xs font-medium text-foreground italic line-clamp-3">
+                        « {selectedOrderForEdit.note} »
+                      </p>
+                    </div>
                   )}
                 </div>
+
+                {/* Promo code discount, if any */}
+                {Number(selectedOrderForEdit.discount_amount) > 0 && (
+                  <div className="flex items-center justify-between px-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span>{t("promoApplied", { code: selectedOrderForEdit.promo_code ?? "" })}</span>
+                    <span>-{formatPrice(Number(selectedOrderForEdit.discount_amount), "MAD")}</span>
+                  </div>
+                )}
+
+                {/* Financial Total Box */}
+                <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 shadow-xs flex items-center justify-between mt-auto">
+                  <div>
+                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{t("orderTotal")}</span>
+                    {canSettlePayment && selectedOrderForEdit.payment_status === "unpaid" && (
+                      <button
+                        onClick={() => markPaidMutation.mutate(selectedOrderForEdit.id)}
+                        disabled={markPaidMutation.isPending}
+                        className="text-xs font-bold text-primary hover:underline disabled:opacity-50 mt-0.5 block"
+                      >
+                        {t("markPaid")}
+                      </button>
+                    )}
+                  </div>
+                  <span className="font-extrabold text-2xl text-primary tracking-tight">
+                    {formatPrice(Number(selectedOrderForEdit.total), "MAD")}
+                  </span>
+                </div>
               </div>
 
-              {/* Financial Total */}
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <span className="font-bold text-base text-foreground">{t("orderTotal")}</span>
-                <span className="font-extrabold text-xl text-primary">
-                  {formatPrice(Number(selectedOrderForEdit.total), "MAD")}
-                </span>
+              {/* Right Column: Articles Breakdown */}
+              <div className="md:col-span-6 space-y-2 flex flex-col min-h-0">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                    Détail des articles
+                  </Label>
+                  <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-extrabold text-primary">
+                    {selectedOrderForEdit.items?.length || 0} article{(selectedOrderForEdit.items?.length || 0) > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="bg-muted/30 border border-border/70 rounded-2xl p-2.5 space-y-2 flex-1 max-h-[320px] md:max-h-[340px] overflow-y-auto">
+                  {selectedOrderForEdit.items?.map((item, idx) => {
+                    const imageUrl = getItemImageUrl(item);
+                    return (
+                      <div key={idx} className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-card border border-border/50 shadow-2xs">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="relative size-9 rounded-full overflow-hidden bg-muted shrink-0 border-2 border-background shadow-xs">
+                              <img
+                                src={imageUrl}
+                                alt={item.name}
+                                className="size-full object-cover scale-[1.4]"
+                              />
+                            </div>
+                            <span className="font-extrabold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                              x{item.quantity}
+                            </span>
+                            <span className="font-bold text-[13px] truncate text-foreground">{item.name}</span>
+                          </div>
+                          <span className="font-extrabold text-foreground text-sm shrink-0 ml-2">
+                            {formatPrice(item.unit_price * item.quantity, "MAD")}
+                          </span>
+                        </div>
+                        {item.options && item.options.length > 0 && (
+                          <div className="text-xs font-medium text-muted-foreground pl-11 flex flex-wrap gap-1.5">
+                            {item.options.map((opt, optIdx) => {
+                              const isNote = opt.toLowerCase().includes("note:") || opt.toLowerCase().includes("instruction");
+                              return (
+                                <span
+                                  key={optIdx}
+                                  className={cn(
+                                    "px-2 py-0.5 rounded-md text-[11px] font-semibold border",
+                                    isNote
+                                      ? "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold"
+                                      : "bg-muted/60 border-border text-foreground/90"
+                                  )}
+                                >
+                                  {opt}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-2.5 pt-2">
             <Button
               variant="outline"
               onClick={() => setSelectedOrderForEdit(null)}
-              className="rounded-xl font-bold text-xs"
+              className="rounded-xl font-bold text-xs px-4 h-10 border-border/80 hover:bg-muted"
             >
               Annuler
             </Button>
             <Button
               onClick={handleSaveEdit}
               disabled={isSavingEdit}
-              className="rounded-xl font-bold text-xs gap-1.5"
+              className="rounded-xl font-extrabold text-xs px-5 h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
             >
-              <Check className="size-4" />
+              <Check className="size-4 stroke-[2.5]" />
               {isSavingEdit ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
@@ -1013,27 +1124,32 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
 
       {/* Delete Confirmation Modal (Single Order) */}
       <Dialog open={!!selectedOrderForDelete} onOpenChange={(open) => !open && setSelectedOrderForDelete(null)}>
-        <DialogContent className="max-w-md rounded-3xl p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl font-bold flex items-center gap-2 text-red-500">
-              <AlertTriangle className="size-5" />
-              {t("deleteOrder")}
+        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-red-500/20 shadow-2xl space-y-4 overflow-hidden relative">
+          <div className="absolute -top-12 -left-12 size-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+          <DialogHeader className="pt-1">
+            <DialogTitle className="flex items-center gap-3 font-display">
+              <div className="size-12 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center shrink-0 shadow-xs">
+                <AlertTriangle className="size-6 stroke-[2.25]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-foreground leading-tight">{t("deleteOrder")}</h3>
+                <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-mono text-xs font-bold">
+                  CMD-{selectedOrderForDelete?.id.slice(0, 4).toUpperCase()}
+                </span>
+              </div>
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-muted-foreground py-2">
-            Êtes-vous sûr de vouloir supprimer la commande{" "}
-            <span className="font-bold text-foreground">
-              CMD-{selectedOrderForDelete?.id.slice(0, 4).toUpperCase()}
-            </span>{" "}
-            ? Cette action est irréversible.
-          </p>
+          <div className="bg-muted/40 border border-border/70 rounded-2xl p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Êtes-vous sûr de vouloir supprimer définitivement cette commande ?{" "}
+            <span className="font-bold text-foreground block mt-1">Cette action est irréversible et supprimera l&apos;historique.</span>
+          </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 sm:gap-2.5 pt-1">
             <Button
               variant="outline"
               onClick={() => setSelectedOrderForDelete(null)}
-              className="rounded-xl font-bold text-xs"
+              className="rounded-xl font-bold text-xs px-4 h-10 border-border/80 hover:bg-muted"
             >
               Annuler
             </Button>
@@ -1041,9 +1157,9 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               variant="destructive"
               onClick={handleDeleteSingle}
               disabled={isDeleting}
-              className="rounded-xl font-bold text-xs gap-1.5"
+              className="rounded-xl font-extrabold text-xs px-5 h-10 gap-2 bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-4 stroke-[2.25]" />
               {isDeleting ? "Suppression..." : t("confirmDelete")}
             </Button>
           </DialogFooter>
@@ -1052,25 +1168,33 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
 
       {/* Bulk Delete Confirmation Modal */}
       <Dialog open={isBulkDeleteModalOpen} onOpenChange={setIsBulkDeleteModalOpen}>
-        <DialogContent className="max-w-md rounded-3xl p-6">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl font-bold flex items-center gap-2 text-red-500">
-              <AlertTriangle className="size-5" />
-              {t("bulkDelete")}
+        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-red-500/20 shadow-2xl space-y-4 overflow-hidden relative">
+          <div className="absolute -top-12 -left-12 size-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+          <DialogHeader className="pt-1">
+            <DialogTitle className="flex items-center gap-3 font-display">
+              <div className="size-12 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center shrink-0 shadow-xs">
+                <AlertTriangle className="size-6 stroke-[2.25]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-foreground leading-tight">{t("bulkDelete")}</h3>
+                <span className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-extrabold text-xs">
+                  {selectedOrderIds.length} commande{selectedOrderIds.length > 1 ? "s" : ""} sélectionnée{selectedOrderIds.length > 1 ? "s" : ""}
+                </span>
+              </div>
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-muted-foreground py-2">
-            Êtes-vous sûr de vouloir supprimer définitivement les{" "}
-            <span className="font-bold text-foreground">{selectedOrderIds.length}</span> commandes
-            sélectionnées ?
-          </p>
+          <div className="bg-muted/40 border border-border/70 rounded-2xl p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Êtes-vous sûr de vouloir supprimer définitivement ces{" "}
+            <span className="font-bold text-foreground">{selectedOrderIds.length} commandes</span> ?{" "}
+            <span className="font-bold text-foreground block mt-1">Cette action est irréversible.</span>
+          </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 sm:gap-2.5 pt-1">
             <Button
               variant="outline"
               onClick={() => setIsBulkDeleteModalOpen(false)}
-              className="rounded-xl font-bold text-xs"
+              className="rounded-xl font-bold text-xs px-4 h-10 border-border/80 hover:bg-muted"
             >
               Annuler
             </Button>
@@ -1078,9 +1202,9 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               variant="destructive"
               onClick={handleBulkDelete}
               disabled={isDeleting}
-              className="rounded-xl font-bold text-xs gap-1.5"
+              className="rounded-xl font-extrabold text-xs px-5 h-10 gap-2 bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-4 stroke-[2.25]" />
               {isDeleting ? "Suppression..." : t("deleteAll")}
             </Button>
           </DialogFooter>

@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   const itemIds = [...new Set(input.lines.map((l) => l.item_id))];
   const { data: items } = await supabase
     .from("items")
-    .select("id, name_fr, base_price, in_stock, customization_groups")
+    .select("id, name_fr, base_price, in_stock, customization_groups, image_url")
     .eq("restaurant_id", restaurantId)
     .in("id", itemIds);
 
@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       quantity: line.quantity,
       unit_price: unitPrice,
       options: validOptions,
+      image_url: item.image_url ?? null,
     });
   }
 

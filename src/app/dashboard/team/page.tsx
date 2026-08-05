@@ -20,18 +20,11 @@ export default async function TeamPage() {
 
   return (
     <div className="w-full">
-      <h1 className="font-display text-3xl font-bold text-foreground">Équipe</h1>
-      <p className="mt-1 text-[13.5px] font-medium text-muted-foreground">
-        Invitez des managers, serveurs et membres de cuisine, et gérez leur accès.
-      </p>
-
-      <div className="mt-6">
-        {ctx.features.staff_management ? (
-          <StaffManagement />
-        ) : (
-          <FeatureLocked feature="Gestion de l'équipe" />
-        )}
-      </div>
+      {ctx.features.staff_management ? (
+        <StaffManagement />
+      ) : (
+        <FeatureLocked feature="Gestion de l'équipe" />
+      )}
     </div>
   );
 }

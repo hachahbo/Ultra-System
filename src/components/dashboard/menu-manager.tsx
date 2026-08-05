@@ -49,6 +49,7 @@ import {
 import { ItemFormDialog } from "@/components/dashboard/item-form";
 import { RecipeEditorDialog } from "@/components/dashboard/recipe-editor";
 import { PromotionsManager } from "@/components/dashboard/promotions-manager";
+import { PromoCodesManager } from "@/components/dashboard/promo-codes-manager";
 import { MenuTranslationsDialog } from "@/components/dashboard/menu-translations";
 import { formatPrice } from "@/lib/format";
 import type { Category, FeatureKey, Item, MenuItemCost } from "@/lib/types";
@@ -562,6 +563,8 @@ export function MenuManager() {
       {data.role === "owner" && data.features.promotions && (
         <PromotionsManager categories={sortedCategories} items={data.items} />
       )}
+
+      {data.role === "owner" && <PromoCodesManager />}
 
       {(creating || editing) && (
         <ItemFormDialog

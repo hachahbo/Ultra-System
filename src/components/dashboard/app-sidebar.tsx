@@ -5,8 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   LayoutDashboard,
   LayoutGrid,
   LineChart,
@@ -199,18 +197,6 @@ export function AppSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {!isMobile && (
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? t("expandMenu") : t("collapseMenu")}
-            className="flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3.5 text-[13.5px] font-semibold text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden mt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:mx-auto"
-          >
-            {collapsed ? <ChevronRight className="size-4 shrink-0" /> : <ChevronLeft className="size-4 shrink-0" />}
-            {!collapsed && <span>Réduire le menu</span>}
-          </button>
-        )}
       </SidebarFooter>
     </Sidebar>
   );

@@ -18,13 +18,17 @@ export default async function VariancesPage() {
   if (!ctx.features.inventory) return <FeatureLocked feature="Inventaire" />;
   if (!ctx.features.recipes) return <FeatureLocked feature="Fiches techniques" />;
 
+  const t = await getTranslations("Dashboard");
+  const tVariances = await getTranslations("Variances");
+
   return (
-    <div>
-      <h1 className="font-display text-3xl font-bold text-foreground">Écarts de stock</h1>
-      <p className="mt-1 text-[13.5px] font-medium text-muted-foreground">
-        Commandes qui ont dépassé le stock disponible — le stock est toujours
-        clampé à zéro, jamais négatif.
-      </p>
+    <div className="space-y-4">
+      <div>
+        <h1 className="font-display text-2xl font-black text-foreground">{t("navVariances")}</h1>
+        <p className="mt-1 text-xs font-semibold text-muted-foreground">
+          {tVariances("emptyHint")}
+        </p>
+      </div>
       <VariancesView />
     </div>
   );

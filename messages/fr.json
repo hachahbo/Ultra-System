@@ -12,7 +12,8 @@
     "contact": "Contact",
     "reserve": "Réserver",
     "openMenu": "Ouvrir le menu",
-    "language": "Langue"
+    "language": "Langue",
+    "gifts": "Cadeaux"
   },
   "Footer": {
     "newsletterTitle": "Recevez notre code promo en vous inscrivant à notre newsletter",
@@ -265,7 +266,8 @@
     "errorAddress": "Adresse requise",
     "errorPhone": "Numéro de téléphone invalide",
     "nameOptional": "Nom (optionnel)",
-    "phoneOptional": "Téléphone (optionnel)"
+    "phoneOptional": "Téléphone (optionnel)",
+    "discount": "Réduction ({code})"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -339,7 +341,11 @@
     "invalidOrder": "Commande invalide",
     "saveFailed": "Erreur d'enregistrement",
     "rateLimited": "Trop de requêtes, réessayez dans un instant",
-    "tableNotFound": "Table introuvable"
+    "tableNotFound": "Table introuvable",
+    "promoCodeInvalid": "Code promo invalide",
+    "promoCodeExpired": "Ce code promo a expiré",
+    "promoCodeLimitReached": "Ce code promo a atteint sa limite d'utilisation",
+    "promoCodeMinOrder": "Commande minimum de {amount} pour ce code"
   },
   "Dashboard": {
     "groupOperations": "Opération",
@@ -442,7 +448,8 @@
     "paymentMarked": "Paiement enregistré",
     "paymentMarkFailed": "Échec de l'enregistrement du paiement",
     "paymentStatus": "Paiement",
-    "reconciliation": "Caisse"
+    "reconciliation": "Caisse",
+    "promoApplied": "Code promo {code}"
   },
   "Kitchen": {
     "soundOn": "Activer le son",
@@ -1038,5 +1045,61 @@
     "markPaid": "Marquer payé",
     "marked": "Paiement enregistré",
     "markFailed": "Échec de l'enregistrement du paiement"
+  },
+  "PromoForm": {
+    "placeholder": "Code promo",
+    "apply": "Appliquer",
+    "applying": "Vérification…",
+    "applied": "Code {code} appliqué !",
+    "remove": "Retirer le code",
+    "removed": "Code promo retiré",
+    "discountPercentage": "-{value}% sur la commande",
+    "discountFixed": "-{value} sur la commande"
+  },
+  "Gifts": {
+    "metaTitle": "Codes cadeaux",
+    "heading": "Un code cadeau ?",
+    "subtitle": "Entrez votre code pour profiter de votre réduction sur votre prochaine commande.",
+    "goToCheckout": "Aller à ma commande",
+    "seeMenu": "Voir le menu"
+  },
+  "PromoCodes": {
+    "title": "Codes promo",
+    "subtitle": "Créez des codes de réduction que vos clients peuvent utiliser au moment de commander.",
+    "newCode": "Nouveau code",
+    "updateFailed": "Mise à jour impossible",
+    "deleteFailed": "Suppression impossible",
+    "emptyTitle": "Aucun code promo",
+    "emptyHint": "Créez votre premier code pour offrir une réduction à vos clients.",
+    "usesCount": "{count} / {max} utilisations",
+    "minOrderTag": "Min. {amount}",
+    "expiresTag": "Expire le {date}",
+    "exhaustedTag": "Limite atteinte",
+    "activeLabel": "Activer le code {code}",
+    "active": "Visible",
+    "inactive": "Désactivé",
+    "editCode": "Modifier {code}",
+    "deleteCode": "Supprimer {code}",
+    "confirmDeleteCode": "Supprimer le code {code} ?",
+    "deleteCodeText": "Cette action est définitive. Les commandes déjà passées avec ce code ne sont pas affectées.",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "editCodeTitle": "Modifier {code}",
+    "newCodeTitle": "Nouveau code promo",
+    "code": "Code",
+    "codePlaceholder": "ex. BIENVENUE10",
+    "discountType": "Type de réduction",
+    "typePercentage": "Pourcentage",
+    "typeFixed": "Montant fixe",
+    "valuePercentage": "Pourcentage (%)",
+    "valueFixed": "Montant",
+    "minOrderAmount": "Commande minimum",
+    "maxUses": "Limite d'utilisations",
+    "maxUsesPlaceholder": "Illimité",
+    "expiresAt": "Date d'expiration",
+    "activeSwitch": "Code actif",
+    "saveFailed": "Enregistrement impossible",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer"
   }
 }

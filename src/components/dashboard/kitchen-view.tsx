@@ -178,7 +178,7 @@ export function KitchenView() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold">Commandes</h1>
+        <h1 className="font-display text-2xl font-semibold">{t("newOrder")}</h1>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"

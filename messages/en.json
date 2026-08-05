@@ -12,7 +12,8 @@
     "contact": "Contact",
     "reserve": "Book a table",
     "openMenu": "Open menu",
-    "language": "Language"
+    "language": "Language",
+    "gifts": "Gifts"
   },
   "Footer": {
     "newsletterTitle": "Get our promo code by subscribing to our newsletter",
@@ -265,7 +266,8 @@
     "errorAddress": "Address required",
     "errorPhone": "Invalid phone number",
     "nameOptional": "Name (optional)",
-    "phoneOptional": "Phone (optional)"
+    "phoneOptional": "Phone (optional)",
+    "discount": "Discount ({code})"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -339,7 +341,11 @@
     "invalidOrder": "Invalid order",
     "saveFailed": "Could not save",
     "rateLimited": "Too many requests, please try again in a moment",
-    "tableNotFound": "Table not found"
+    "tableNotFound": "Table not found",
+    "promoCodeInvalid": "Invalid promo code",
+    "promoCodeExpired": "This promo code has expired",
+    "promoCodeLimitReached": "This promo code has reached its usage limit",
+    "promoCodeMinOrder": "Minimum order of {amount} for this code"
   },
   "Dashboard": {
     "groupOperations": "Operations",
@@ -442,7 +448,8 @@
     "paymentMarked": "Payment recorded",
     "paymentMarkFailed": "Failed to record payment",
     "paymentStatus": "Payment",
-    "reconciliation": "Reconciliation"
+    "reconciliation": "Reconciliation",
+    "promoApplied": "Promo code {code}"
   },
   "Kitchen": {
     "soundOn": "Turn sound on",
@@ -1038,5 +1045,61 @@
     "markPaid": "Mark paid",
     "marked": "Payment recorded",
     "markFailed": "Failed to record payment"
+  },
+  "PromoForm": {
+    "placeholder": "Promo code",
+    "apply": "Apply",
+    "applying": "Checking…",
+    "applied": "Code {code} applied!",
+    "remove": "Remove code",
+    "removed": "Promo code removed",
+    "discountPercentage": "-{value}% off your order",
+    "discountFixed": "-{value} off your order"
+  },
+  "Gifts": {
+    "metaTitle": "Gift codes",
+    "heading": "Got a gift code?",
+    "subtitle": "Enter your code to unlock your discount on your next order.",
+    "goToCheckout": "Go to my order",
+    "seeMenu": "See the menu"
+  },
+  "PromoCodes": {
+    "title": "Promo codes",
+    "subtitle": "Create discount codes your customers can use at checkout.",
+    "newCode": "New code",
+    "updateFailed": "Update failed",
+    "deleteFailed": "Delete failed",
+    "emptyTitle": "No promo codes",
+    "emptyHint": "Create your first code to offer customers a discount.",
+    "usesCount": "{count} / {max} uses",
+    "minOrderTag": "Min. {amount}",
+    "expiresTag": "Expires {date}",
+    "exhaustedTag": "Limit reached",
+    "activeLabel": "Enable code {code}",
+    "active": "Visible",
+    "inactive": "Disabled",
+    "editCode": "Edit {code}",
+    "deleteCode": "Delete {code}",
+    "confirmDeleteCode": "Delete code {code}?",
+    "deleteCodeText": "This is permanent. Orders already placed with this code are not affected.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "editCodeTitle": "Edit {code}",
+    "newCodeTitle": "New promo code",
+    "code": "Code",
+    "codePlaceholder": "e.g. WELCOME10",
+    "discountType": "Discount type",
+    "typePercentage": "Percentage",
+    "typeFixed": "Fixed amount",
+    "valuePercentage": "Percentage (%)",
+    "valueFixed": "Amount",
+    "minOrderAmount": "Minimum order",
+    "maxUses": "Usage limit",
+    "maxUsesPlaceholder": "Unlimited",
+    "expiresAt": "Expiry date",
+    "activeSwitch": "Active code",
+    "saveFailed": "Save failed",
+    "saving": "Saving…",
+    "save": "Save"
   }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -11,6 +12,17 @@ export type CartLine = {
   quantity: number;
   options: string[];
   image_url?: string | null;
+};
+
+// What /api/promo-codes/validate confirmed is applicable. Only the type/value
+// are kept (not a frozen discount amount) — cartDiscount() below recomputes
+// against the live subtotal so the shown discount stays correct as the cart
+// changes. The server re-validates everything from the DB again at order
+// submission regardless — this is display-only.
+export type CartPromo = {
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
 };
 
 // A scanned table goes stale after this long. Comfortably longer than a meal,
@@ -29,10 +41,13 @@ type CartState = {
   table: string | null; // set from ?table= QR param (dine-in)
   table_set_at: number | null; // epoch ms of the scan that set `table`
   lines: CartLine[];
+  promo: CartPromo | null;
   setContext: (slug: string, table?: string | null) => void;
   add: (line: Omit<CartLine, "key" | "quantity">, quantity?: number) => void;
   increment: (key: string) => void;
   decrement: (key: string) => void;
+  applyPromo: (promo: CartPromo) => void;
+  clearPromo: () => void;
   clear: () => void;
 };
 
@@ -43,6 +58,7 @@ export const useCart = create<CartState>()(
       table: null,
       table_set_at: null,
       lines: [],
+      promo: null,
 
       setContext: (slug, table) => {
         set((s) => {
@@ -55,6 +71,10 @@ export const useCart = create<CartState>()(
             slug,
             // one cart per restaurant: switching slug drops the old cart
             lines: sameSlug ? s.lines : [],
+            // A code belongs to the restaurant that issued it — carrying it
+            // across a slug switch would silently apply restaurant A's promo
+            // to restaurant B's order.
+            promo: sameSlug ? s.promo : null,
             table: nextTable,
             // An explicit ?table= restamps the clock (they're still at the
             // table); an inherited one keeps the original scan time.
@@ -92,7 +112,10 @@ export const useCart = create<CartState>()(
             .filter((l) => l.quantity > 0),
         }),
 
-      clear: () => set({ lines: [], table: null, table_set_at: null }),
+      applyPromo: (promo) => set({ promo }),
+      clearPromo: () => set({ promo: null }),
+
+      clear: () => set({ lines: [], table: null, table_set_at: null, promo: null }),
     }),
     {
       name: "darna-cart",
@@ -113,6 +136,35 @@ export const useCart = create<CartState>()(
   ),
 );
 
+/** True only after Zustand has rehydrated the persisted cart from localStorage. */
+export function useCartHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    // useCart.persist.hasHydrated() is set synchronously during the first
+    // render if storage was already available, but in practice it fires
+    // in a microtask after mount. Listening to the onFinishHydration event
+    // is the safest cross-browser approach.
+    const unsub = useCart.persist.onFinishHydration(() => setHydrated(true));
+    // Already hydrated before this component mounted (common on fast devices).
+    if (useCart.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
+  return hydrated;
+}
+
 export function cartSubtotal(lines: CartLine[]) {
   return lines.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
+}
+
+// Display-only estimate of a promo's discount against the current subtotal
+// — clamped so it never exceeds it (a fixed discount larger than the cart
+// shouldn't show a negative total). The server is the actual authority; see
+// evaluatePromoCode in src/lib/promo.ts for the version it re-checks against.
+export function cartDiscount(subtotal: number, promo: CartPromo | null): number {
+  if (!promo) return 0;
+  const raw =
+    promo.discount_type === "percentage"
+      ? subtotal * (promo.discount_value / 100)
+      : promo.discount_value;
+  return Math.round(Math.min(Math.max(raw, 0), subtotal) * 100) / 100;
 }

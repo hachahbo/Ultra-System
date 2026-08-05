@@ -24,6 +24,8 @@ export default async function OverviewPage() {
   if (!ctx) redirect("/");
   if (!canAccessRoute(ctx.profile.role, "/dashboard")) redirect(defaultRouteFor(ctx.profile.role));
 
+  const t = await getTranslations("Dashboard");
+
   const supabase = await createClient();
   const now = new Date();
   const todayKey = dayBucket(now);
@@ -120,10 +122,7 @@ export default async function OverviewPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold md:text-3xl">Aperçu</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Un coup d&apos;œil rapide sur la journée.
-        </p>
+        <h1 className="font-display text-2xl font-black md:text-3xl text-foreground">{t("navOverview")}</h1>
       </div>
 
       {outOfStockItems.length > 0 && (

@@ -6,7 +6,9 @@ import { applyStatusGate } from "@/lib/features";
 import { orderSchema } from "@/lib/schemas";
 import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { resolveLineOptions } from "@/lib/order-options";
-import type { CustomizationGroup, OrderLine } from "@/lib/types";
+import { evaluatePromoCode } from "@/lib/promo";
+import { formatPrice } from "@/lib/format";
+import type { CustomizationGroup, OrderLine, PromoCode } from "@/lib/types";
 
 // Public order intake (dine-in QR + delivery). Uses the service role — every
 // row is scoped to the restaurant resolved server-side from the slug, and all
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
   const itemIds = [...new Set(input.lines.map((l) => l.item_id))];
   const { data: items } = await supabase
     .from("items")
-    .select("id, name_fr, base_price, in_stock, customization_groups")
+    .select("id, name_fr, base_price, in_stock, customization_groups, image_url")
     .eq("restaurant_id", restaurant.id)
     .in("id", itemIds);
 
@@ -121,19 +123,54 @@ export async function POST(request: Request) {
       quantity: line.quantity,
       unit_price: unitPrice,
       options: validOptions,
+      image_url: item.image_url ?? null,
     });
   }
 
   const subtotal = orderLines.reduce((s, l) => s + l.unit_price * l.quantity, 0);
   const deliveryFee =
     input.type === "delivery" ? Number(restaurant.base_delivery_fee) : 0;
-  const total = subtotal + deliveryFee;
 
   // Guard against a silent zero-revenue order (Overview/Analytics both sum
   // `orders.total` directly — a bug here would hide real revenue for weeks).
-  if (total <= 0) {
+  // Checked on the raw sum, not the post-discount total: a 100%-off promo
+  // code legitimately brings `total` to 0, and that's not a bug.
+  if (subtotal + deliveryFee <= 0) {
     return NextResponse.json({ error: t("invalidOrder") }, { status: 400 });
   }
+
+  // Re-resolve the promo code from the DB — never trust a discount amount
+  // computed client-side, and never trust the /validate response either:
+  // the code's state (expiry, uses left) can have changed since "Apply".
+  let promo: PromoCode | null = null;
+  let discountAmount = 0;
+  if (input.promo_code) {
+    const { data: promoRow } = await supabase
+      .from("promo_codes")
+      .select("*")
+      .eq("restaurant_id", restaurant.id)
+      .eq("code", input.promo_code.trim().toUpperCase())
+      .maybeSingle();
+
+    if (!promoRow || !promoRow.active) {
+      return NextResponse.json({ error: t("promoCodeInvalid") }, { status: 400 });
+    }
+    const result = evaluatePromoCode(promoRow, subtotal);
+    if (!result.ok) {
+      const messages: Record<typeof result.reason, string> = {
+        expired: t("promoCodeExpired"),
+        limit_reached: t("promoCodeLimitReached"),
+        min_order: t("promoCodeMinOrder", {
+          amount: formatPrice(promoRow.min_order_amount, restaurant.currency),
+        }),
+      };
+      return NextResponse.json({ error: messages[result.reason] }, { status: 400 });
+    }
+    promo = promoRow as PromoCode;
+    discountAmount = result.discountAmount;
+  }
+
+  const total = subtotal + deliveryFee - discountAmount;
 
   // The capture: upsert the customer so the phone lands in the DB (§2).
   let customerId: string | null = null;
@@ -181,6 +218,9 @@ export async function POST(request: Request) {
       items: orderLines,
       subtotal,
       delivery_fee: deliveryFee,
+      promo_code_id: promo?.id ?? null,
+      promo_code: promo?.code ?? null,
+      discount_amount: discountAmount,
       total,
       payment_method: input.payment_method,
       payment_status: "unpaid",
@@ -194,6 +234,16 @@ export async function POST(request: Request) {
     // failed check constraint, trigger raise) is lost.
     console.error("POST /api/orders db insert error:", orderError);
     return NextResponse.json({ error: t("saveFailed") }, { status: 500 });
+  }
+
+  // Best-effort — not atomic (same pattern as the customer order_count bump
+  // above). A lost increment under concurrent redemptions just means max_uses
+  // is enforced a little loosely, which is an acceptable tradeoff here.
+  if (promo) {
+    await supabase
+      .from("promo_codes")
+      .update({ uses_count: promo.uses_count + 1 })
+      .eq("id", promo.id);
   }
 
   return NextResponse.json({ id: order.id, total }, { status: 201 });

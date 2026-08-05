@@ -293,10 +293,27 @@ export type OrderLine = {
   quantity: number;
   unit_price: number; // base price + selected option modifiers
   options: string[]; // selected option names, e.g. ["Algérienne", "Fromagère"]
+  image_url?: string | null;
 };
 
 export type PaymentMethod = "cash" | "card_on_delivery" | "online";
 export type PaymentStatus = "unpaid" | "paid" | "refunded";
+
+export type PromoDiscountType = "percentage" | "fixed";
+
+export type PromoCode = {
+  id: string;
+  restaurant_id: string;
+  code: string;
+  discount_type: PromoDiscountType;
+  discount_value: number;
+  min_order_amount: number;
+  max_uses: number | null;
+  uses_count: number;
+  active: boolean;
+  expires_at: string | null;
+  created_at: string;
+};
 
 export type Order = {
   id: string;
@@ -311,6 +328,8 @@ export type Order = {
   items: OrderLine[];
   subtotal: number;
   delivery_fee: number;
+  promo_code: string | null;
+  discount_amount: number;
   total: number;
   status: "new" | "preparing" | "done";
   payment_method: PaymentMethod;
