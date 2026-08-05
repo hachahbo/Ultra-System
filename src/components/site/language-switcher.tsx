@@ -38,24 +38,74 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           aria-label={t("language")}
           disabled={isPending}
           className={cn(
-            "group inline-flex items-center gap-2 rounded-full border border-black/10 dark:border-white/15 bg-background/80 dark:bg-stone-900/80 px-3.5 py-2 text-xs font-bold text-foreground backdrop-blur-md transition-all duration-200 hover:border-[#FF6B35]/50 hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B35] disabled:opacity-60 cursor-pointer",
+            // Base pill
+            "group relative inline-flex items-center gap-2 rounded-full px-3.5 py-2",
+            // Glass + border
+            "border border-white/15 dark:border-white/10 bg-white/10 dark:bg-white/5 backdrop-blur-xl",
+            // Shadow
+            "shadow-[0_2px_10px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)]",
+            // Hover
+            "hover:border-[#FF6B35]/40 hover:bg-white/20 dark:hover:bg-white/8 hover:shadow-[0_4px_16px_rgba(255,107,53,0.15)]",
+            // Typography
+            "text-xs font-bold text-foreground",
+            // Transitions
+            "transition-all duration-300",
+            // Focus
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B35]/60",
+            // Pending
+            "disabled:opacity-50 cursor-pointer",
             className,
           )}
         >
-          <Globe className="size-3.5 text-[#FF6B35] transition-transform duration-300 group-hover:rotate-12" />
-          <span className="uppercase tracking-wider font-extrabold">{active}</span>
-          <ChevronDown className="size-3 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          {/* Spinning globe — spins while pending */}
+          <Globe
+            className={cn(
+              "size-3.5 text-[#FF6B35] transition-all duration-500",
+              isPending ? "animate-spin" : "group-hover:rotate-[20deg] group-data-[state=open]:rotate-[-10deg]",
+            )}
+          />
+          {/* Active locale code */}
+          <span className="uppercase tracking-[0.15em] font-black text-[11px]">
+            {active}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-3 text-muted-foreground/60 transition-transform duration-300",
+              "group-data-[state=open]:rotate-180",
+            )}
+          />
+
+          {/* Subtle inner highlight */}
+          <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent" />
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         align="end"
-        sideOffset={8}
-        className="w-48 rounded-2xl border border-black/10 dark:border-white/15 bg-background/95 dark:bg-[#181513]/95 p-1.5 text-foreground backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[200]"
+        sideOffset={10}
+        className={cn(
+          "w-52 rounded-[20px] p-2",
+          // Glass
+          "border border-white/15 dark:border-white/8",
+          "bg-white/80 dark:bg-[#111]/85 backdrop-blur-2xl",
+          // Shadows
+          "shadow-[0_20px_60px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.08)]",
+          "dark:shadow-[0_20px_60px_rgba(0,0,0,0.55),0_4px_16px_rgba(0,0,0,0.4)]",
+          "z-[200]",
+        )}
       >
-        <div className="px-2.5 py-1.5 text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground/70">
-          {t("language")}
+        {/* Section label */}
+        <div className="px-3 pt-1 pb-2 flex items-center gap-2">
+          <Globe className="size-3 text-[#FF6B35]/70" />
+          <span className="text-[9px] font-black tracking-[0.22em] uppercase text-muted-foreground/60">
+            {t("language")}
+          </span>
         </div>
-        <div className="h-px bg-border/40 my-1 -mx-1.5" />
+
+        {/* Gradient separator */}
+        <div className="h-px mx-2 mb-1.5 bg-gradient-to-r from-transparent via-[#FF6B35]/20 to-transparent" />
+
+        {/* Locale options */}
         {locales.map((locale) => {
           const isActive = locale === active;
           return (
@@ -64,26 +114,49 @@ export function LanguageSwitcher({ className }: { className?: string }) {
               onSelect={() => onSelect(locale)}
               onClick={() => onSelect(locale)}
               className={cn(
-                "flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 my-0.5",
+                "group/item relative flex cursor-pointer items-center justify-between gap-3",
+                "rounded-2xl px-3 py-2.5 my-0.5",
+                "text-sm font-semibold",
+                "transition-all duration-200",
+                "focus:outline-none",
                 isActive
-                  ? "bg-[#FF6B35]/15 text-[#FF6B35] dark:bg-[#FF6B35]/25 dark:text-[#FF6B35]"
-                  : "text-foreground/90 hover:bg-black/5 dark:hover:bg-white/10 hover:text-foreground"
+                  ? [
+                      "bg-gradient-to-r from-[#FF6B35]/12 to-[#FF6B35]/5",
+                      "text-[#FF6B35]",
+                      "ring-1 ring-[#FF6B35]/20",
+                    ]
+                  : [
+                      "text-foreground/80 hover:text-foreground",
+                      "hover:bg-black/5 dark:hover:bg-white/8",
+                    ],
               )}
             >
-              <span className="flex items-center gap-2.5">
+              <span className="flex items-center gap-3">
+                {/* Locale badge */}
                 <span
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-md text-[10px] font-extrabold uppercase tracking-wider transition-colors",
+                    "flex size-7 items-center justify-center rounded-xl",
+                    "text-[10px] font-black uppercase tracking-wider",
+                    "transition-all duration-200",
                     isActive
-                      ? "bg-[#FF6B35] text-white"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-[#FF6B35] text-white shadow-[0_3px_10px_rgba(255,107,53,0.4)]"
+                      : "bg-black/8 dark:bg-white/10 text-muted-foreground group-hover/item:bg-black/12 dark:group-hover/item:bg-white/15",
                   )}
                 >
                   {locale}
                 </span>
-                <span className="font-medium text-sm">{LOCALE_LABELS[locale]}</span>
+                <span className={cn("font-medium", isActive ? "font-semibold" : "")}>
+                  {LOCALE_LABELS[locale]}
+                </span>
               </span>
-              {isActive && <Check className="size-4 text-[#FF6B35] stroke-[2.5]" />}
+
+              {/* Animated checkmark */}
+              {isActive && (
+                <Check
+                  className="size-4 text-[#FF6B35] stroke-[2.5] shrink-0"
+                  style={{ filter: "drop-shadow(0 1px 4px rgba(255,107,53,0.4))" }}
+                />
+              )}
             </DropdownMenuItem>
           );
         })}
