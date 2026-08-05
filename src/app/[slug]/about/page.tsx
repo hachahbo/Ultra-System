@@ -12,11 +12,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-const DEFAULT_ABOUT_GALLERY = [
-  "/images/orendezvous/orendezvous.tanger_1782412303_3927481512476698742_73557593345.jpg",
-  "/images/orendezvous/orendezvous.tanger_1782412303_3927481511788834209_73557593345.jpg",
-  "/images/orendezvous/orendezvous.tanger_1782412303_3927481512191507130_73557593345.jpg",
-  "/images/orendezvous/orendezvous.tanger_1770820323_3830240942847468663_73557593345.jpg",
+const DEFAULT_WELCOME_IMAGES = [
+  "/images/about/about-5.webp",
+  "/images/about/about-2.webp",
+  "/images/about/about-3.webp",
+  "/images/about/about-4.webp",
 ];
 
 export default async function AboutPage({
@@ -30,12 +30,20 @@ export default async function AboutPage({
   const { theme } = await getSiteTheme(restaurant);
   const t = await getTranslations("About");
 
-  const hasCustomGallery =
-    theme.about_gallery_urls &&
-    theme.about_gallery_urls.length >= 4 &&
-    theme.about_gallery_urls.every((url) => url.startsWith("http"));
-
-  const galleryImages = hasCustomGallery ? theme.about_gallery_urls : DEFAULT_ABOUT_GALLERY;
+  const galleryImages =
+    theme.welcome_gallery_urls &&
+    theme.welcome_gallery_urls.length >= 4 &&
+    theme.welcome_gallery_urls.every(
+      (url) => url.startsWith("http") || url.startsWith("/images/about/"),
+    )
+      ? theme.welcome_gallery_urls
+      : theme.about_gallery_urls &&
+        theme.about_gallery_urls.length >= 4 &&
+        theme.about_gallery_urls.every(
+          (url) => url.startsWith("http") || url.startsWith("/images/about/"),
+        )
+      ? theme.about_gallery_urls
+      : DEFAULT_WELCOME_IMAGES;
   const bentoCardImage = "/images/about/about-3.webp";
 
   const ratingVal = theme.about_rating ?? 4.8;
@@ -155,17 +163,15 @@ export default async function AboutPage({
                 </p>
               </div>
 
-              {galleryImages[2] && (
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-md">
-                  <Image
-                    src={galleryImages[2]}
-                    alt={t("specialtiesAlt")}
-                    fill
-                    sizes="(min-width: 768px) 45vw, 90vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-md">
+                <Image
+                  src="/images/orendezvous/orendezvous.tanger_1783019424_3932574417688072480_73557593345.jpg"
+                  alt={t("specialtiesAlt")}
+                  fill
+                  sizes="(min-width: 768px) 45vw, 90vw"
+                  className="object-cover"
+                />
+              </div>
 
               <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90 uppercase tracking-wider text-xs font-bold px-8 py-6 w-fit">
                 <Link href={`/${restaurant.slug}/menu`}>{t("viewMenu")}</Link>
@@ -174,17 +180,15 @@ export default async function AboutPage({
 
             {/* Card 2: Promo & Private Events */}
             <div className="bg-[#cd6133] dark:bg-[#7c3a21] text-white rounded-[2.5rem] p-8 sm:p-12 flex flex-col justify-between shadow-lg space-y-8">
-              {galleryImages[1] && (
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/20 shadow-md">
-                  <Image
-                    src={galleryImages[1]}
-                    alt={theme.custom_copy.about_promo_heading ?? t("promoHeading")}
-                    fill
-                    sizes="(min-width: 768px) 45vw, 90vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/20 shadow-md">
+                <Image
+                  src="/images/orendezvous/orendezvous.tanger_1769104544_3815847940385593238_73557593345.jpg"
+                  alt={theme.custom_copy.about_promo_heading ?? t("promoHeading")}
+                  fill
+                  sizes="(min-width: 768px) 45vw, 90vw"
+                  className="object-cover"
+                />
+              </div>
 
               <div className="space-y-4">
                 <h3 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
