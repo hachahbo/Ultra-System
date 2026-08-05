@@ -15,7 +15,7 @@ export async function Footer({
   const bgImage = theme.hero_image_urls[0] ?? "/images/about/newsletter-bg.webp";
 
   return (
-    <div className="mt-auto pt-24 sm:pt-32 lg:pt-40">
+    <div data-site-footer className="mt-auto pt-24 sm:pt-32 lg:pt-40">
       <footer className="relative pt-24 pb-8 text-sm text-muted-foreground sm:pt-32">
         {/* Newsletter Box */}
         <div className="absolute left-4 right-4 top-0 -translate-y-1/2 mx-auto max-w-5xl z-10">
