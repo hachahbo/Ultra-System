@@ -216,7 +216,7 @@ export function NavBar({
         </div>
 
         {/* Center: Mobile Logo & Desktop Menu */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-20">
           {/* Mobile Logo */}
           <div className="md:hidden pointer-events-auto">
             <Link href={base} className="flex items-center min-w-0">
@@ -225,7 +225,7 @@ export function NavBar({
           </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-8 md:flex pointer-events-auto">
+          <nav className="hidden items-center gap-8 md:flex">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -239,7 +239,7 @@ export function NavBar({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4 shrink-0 z-10">
+        <div className="flex flex-1 items-center justify-end gap-2 md:gap-4 shrink-0 relative z-10">
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>

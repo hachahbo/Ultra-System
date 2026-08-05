@@ -6,7 +6,7 @@ const DEFAULT_WELCOME_IMAGES = [
   "/images/about/about-5.webp",
   "/images/about/about-2.webp",
   "/images/about/about-3.webp",
-  "/images/about/about-4.webp",
+  "/images/orendezvous/orendezvous.tanger_1770820323_3830240943602433036_73557593345.jpg",
 ];
 
 export async function WelcomeSection({

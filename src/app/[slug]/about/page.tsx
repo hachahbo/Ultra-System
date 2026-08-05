@@ -30,7 +30,7 @@ export default async function AboutPage({
   const { theme } = await getSiteTheme(restaurant);
   const t = await getTranslations("About");
 
-  const galleryImages =
+  const baseGallery =
     theme.welcome_gallery_urls &&
     theme.welcome_gallery_urls.length >= 4 &&
     theme.welcome_gallery_urls.every(
@@ -44,7 +44,12 @@ export default async function AboutPage({
         )
       ? theme.about_gallery_urls
       : DEFAULT_WELCOME_IMAGES;
-  const bentoCardImage = "/images/about/about-3.webp";
+
+  const galleryImages = [...baseGallery];
+  galleryImages[3] =
+    "/images/orendezvous/orendezvous.tanger_1770403575_3826745007047866471_73557593345.jpg";
+  const bentoCardImage =
+    "/images/orendezvous/orendezvous.tanger_1775070974_3865897632623512987_73557593345.jpg";
 
   const ratingVal = theme.about_rating ?? 4.8;
   const reviewCountVal = theme.about_review_count ?? 518;
@@ -182,7 +187,7 @@ export default async function AboutPage({
             <div className="bg-[#cd6133] dark:bg-[#7c3a21] text-white rounded-[2.5rem] p-8 sm:p-12 flex flex-col justify-between shadow-lg space-y-8">
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/20 shadow-md">
                 <Image
-                  src="/images/orendezvous/orendezvous.tanger_1769104544_3815847940385593238_73557593345.jpg"
+                  src="/images/orendezvous/orendezvous.tanger_1770308359_3825946276593598431_73557593345.jpg"
                   alt={theme.custom_copy.about_promo_heading ?? t("promoHeading")}
                   fill
                   sizes="(min-width: 768px) 45vw, 90vw"
