@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cartSubtotal, useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
+import { getDishImage } from "@/lib/image";
 import { makePhoneSchema } from "@/lib/schemas";
 import { motion, type Variants } from "framer-motion";
 import type { Restaurant } from "@/lib/types";
@@ -77,7 +78,24 @@ function buildDineInSchema(m: { phone: string }) {
 
 type DineInForm = z.infer<ReturnType<typeof buildDineInSchema>>;
 
+/** Returns true only after Zustand has rehydrated from localStorage. */
+function useHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    // useCart.persist.hasHydrated() is set synchronously during the first
+    // render if storage was already available, but in practice it fires
+    // in a microtask after mount. Listening to the onFinishHydration event
+    // is the safest cross-browser approach.
+    const unsub = useCart.persist.onFinishHydration(() => setHydrated(true));
+    // Already hydrated before this component mounted (common on fast devices).
+    if (useCart.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, []);
+  return hydrated;
+}
+
 export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
+  const hydrated = useHydrated();
   const { lines, table, increment, decrement, clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -150,6 +168,12 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       setSubmitting(false);
     }
   }
+
+  // Don't render anything until Zustand has rehydrated from localStorage.
+  // Without this guard a page-refresh briefly shows lines=[] (the Zustand
+  // initial state) before the real cart loads, which triggers the blur
+  // animation in its "hidden" state and leaves the UI visually blurred.
+  if (!hydrated) return null;
 
   if (orderId) {
     return (
@@ -296,13 +320,13 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
             </div>
             <div className="space-y-3">
               <Label htmlFor="note" className="text-sm font-semibold text-muted-foreground ml-1">{t("note")}</Label>
-              <Textarea 
-                id="note" 
-                {...form.register("note")} 
+              <Textarea
+                id="note"
+                {...form.register("note")}
                 className="min-h-[100px] rounded-2xl bg-white dark:bg-muted/30 px-4 py-3 text-base border-border/50 focus-visible:ring-primary focus-visible:bg-transparent shadow-sm transition-all"
               />
             </div>
-            
+
             <div className="pt-2">
               <Button size="lg" className="w-full rounded-full h-14 text-lg font-bold shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]" type="submit" disabled={submitting}>
                 {submitting
@@ -329,60 +353,78 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
         )}
 
         {/* Lines */}
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {lines.map((l) => (
             <motion.li
               key={l.key}
               variants={blurFadeUp}
-              className="flex items-center gap-4 rounded-[24px] bg-white dark:bg-card/50 p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md"
+              className="group relative flex items-center gap-4 rounded-[20px] bg-white/70 dark:bg-white/[0.04] backdrop-blur-sm p-3 pr-4 shadow-[0_2px_16px_0_rgba(0,0,0,0.06)] dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.25)] ring-1 ring-black/[0.06] dark:ring-white/[0.07] transition-all duration-300 hover:shadow-[0_4px_24px_0_rgba(255,107,53,0.10)] hover:ring-[#FF6B35]/20"
             >
-              <div className="relative size-20 shrink-0 rounded-2xl overflow-hidden bg-muted/50 border border-border/50">
-                {l.image_url ? (
-                  <Image
-                    src={l.image_url}
-                    alt={l.name}
-                    fill
-                    sizes="80px"
-                    className="object-contain drop-shadow-sm p-1"
-                  />
-                ) : (
-                  <div className="grid size-full place-items-center">
-                    <UtensilsCrossed className="size-6 text-muted-foreground/40" />
-                  </div>
-                )}
+              {/* Image medallion */}
+              <div className="relative shrink-0 size-[72px]">
+                {/* Outer glow ring */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#FF6B35]/30 to-transparent blur-[6px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Image frame */}
+                <div className="relative size-full rounded-full overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+                  {(() => {
+                    // Resolve image: prefer stored image_url, fall back to
+                    // getDishImage which derives a consistent hash-based placeholder
+                    // from item_id. This handles stale cart entries that predate
+                    // the image_url field, as well as items with no photo uploaded.
+                    const imgSrc = getDishImage({ id: l.item_id, image_url: l.image_url });
+                    return imgSrc ? (
+                      <Image
+                        src={imgSrc}
+                        alt={l.name}
+                        fill
+                        sizes="256px"
+                        quality={90}
+                        className="object-cover scale-[1.24]"
+                      />
+                    ) : (
+                      <div className="grid size-full place-items-center bg-muted/60">
+                        <UtensilsCrossed className="size-5 text-muted-foreground/40" />
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
+
+              {/* Text */}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-bold text-base">{l.name}</p>
+                <p className="truncate font-bold text-[15px] leading-snug text-foreground">{l.name}</p>
                 {l.options.length > 0 && (
-                  <p className="line-clamp-2 text-xs text-muted-foreground mt-1">
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground mt-0.5">
                     {l.options.join(" · ")}
                   </p>
                 )}
-                <p className="mt-2 text-sm font-black text-[#FF6B35]">
+                <p className="mt-1.5 text-sm font-black text-[#FF6B35]">
                   {formatPrice(l.unit_price * l.quantity, restaurant.currency)}
                 </p>
               </div>
-              <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1 ring-1 ring-border/50">
+
+              {/* Quantity stepper */}
+              <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-background/80 dark:bg-white/5 px-1 py-1 shadow-inner">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-8 rounded-full hover:bg-background hover:shadow-sm"
+                  className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                   aria-label={t("removeOne", { name: l.name })}
                   onClick={() => decrement(l.key)}
                 >
-                  <Minus className="size-4" />
+                  <Minus className="size-3" />
                 </Button>
-                <span className="w-6 text-center text-sm font-bold tabular-nums">
+                <span className="w-5 text-center text-sm font-bold tabular-nums">
                   {l.quantity}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-8 rounded-full hover:bg-background hover:shadow-sm"
+                  className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
                   aria-label={t("addOne", { name: l.name })}
                   onClick={() => increment(l.key)}
                 >
-                  <Plus className="size-4" />
+                  <Plus className="size-3" />
                 </Button>
               </div>
             </motion.li>
@@ -392,25 +434,29 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
         {/* Totals Summary */}
         <motion.div
           variants={blurFadeUp}
-          className="rounded-[24px] bg-white dark:bg-card p-6 ring-1 ring-border/50 space-y-3 shadow-sm"
+          className="rounded-[20px] bg-white/70 dark:bg-white/[0.04] backdrop-blur-sm p-6 ring-1 ring-black/[0.06] dark:ring-white/[0.07] shadow-[0_2px_16px_0_rgba(0,0,0,0.06)] dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.25)] space-y-3"
         >
-          <div className="flex justify-between text-muted-foreground font-medium">
+          <div className="flex justify-between text-sm text-muted-foreground font-medium">
             <span>{t("subtotal")}</span>
-            <span>{formatPrice(subtotal, restaurant.currency)}</span>
+            <span className="tabular-nums">{formatPrice(subtotal, restaurant.currency)}</span>
           </div>
           {!isDineIn && (
-            <div className="flex justify-between text-muted-foreground font-medium">
+            <div className="flex justify-between text-sm text-muted-foreground font-medium">
               <span>{t("delivery")}</span>
-              <span>{formatPrice(deliveryFee, restaurant.currency)}</span>
+              <span className="tabular-nums">{formatPrice(deliveryFee, restaurant.currency)}</span>
             </div>
           )}
-          <Separator className="my-3 opacity-50" />
-          <div className="flex justify-between text-xl font-black">
-            <span>{t("total")}</span>
-            <span className="text-[#FF6B35]">{formatPrice(total, restaurant.currency)}</span>
+          {/* Gradient separator */}
+          <div className="my-3 h-px bg-gradient-to-r from-transparent via-[#FF6B35]/30 to-transparent" />
+          {/* Total row — highlighted */}
+          <div className="flex justify-between items-center rounded-2xl bg-[#FF6B35]/8 dark:bg-[#FF6B35]/10 px-4 py-3 ring-1 ring-[#FF6B35]/20">
+            <span className="text-base font-extrabold tracking-tight">{t("total")}</span>
+            <span className="text-xl font-black tabular-nums text-[#FF6B35] drop-shadow-sm">
+              {formatPrice(total, restaurant.currency)}
+            </span>
           </div>
           {!isDineIn && (
-            <p className="pt-2 text-xs font-medium text-muted-foreground">
+            <p className="pt-1 text-[11px] font-medium text-muted-foreground text-center">
               {t("cashOnDelivery")}
             </p>
           )}

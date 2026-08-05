@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
+import { getDishImage } from "@/lib/image";
 import type { CustomizationGroup, Item } from "@/lib/types";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export function ItemDialog({
         name: item!.name_fr,
         unit_price: unitPrice,
         options: allOptions,
-        image_url: item!.image_url,
+        image_url: getDishImage(item!),
       },
       quantity,
     );

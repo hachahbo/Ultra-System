@@ -9,6 +9,7 @@ import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer
 import { useTranslations } from "next-intl";
 import { cartSubtotal, useCart } from "@/store/cart";
 import { formatPrice } from "@/lib/format";
+import { getDishImage } from "@/lib/image";
 import type { Item, PublicMenu } from "@/lib/types";
 import { ItemDialog } from "./item-dialog";
 
@@ -39,22 +40,6 @@ interface DetailLabels {
   detailsSeasonal: string;
   detailsHomemade: string;
   free: string;
-}
-
-// ─── Editorial fallback photography ─────────────────────────────────────────
-const FALLBACK_IMAGES = [
-  "/Gemini_Generated_Image_vli73mvli73mvli7.png",
-  "/Gemini_Generated_Image_skvgn6skvgn6skvg.png",
-  "/Gemini_Generated_Image_jx10yxjx10yxjx10.png",
-  "/Gemini_Generated_Image_eepocveepocveepo (1).png",
-  "/Gemini_Generated_Image_5954x25954x25954 (1).png",
-  "/hero-pop-default.webp",
-] as const;
-
-function fallbackImage(seed: string) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return FALLBACK_IMAGES[Math.abs(hash) % FALLBACK_IMAGES.length];
 }
 
 // What the accordion shows for a dish. This used to key off the French dish
@@ -200,7 +185,7 @@ export function MenuBrowser({
         name: item.name_fr,
         unit_price: Number(item.base_price),
         options: [],
-        image_url: item.image_url,
+        image_url: getDishImage(item),
       });
       flashAdded(item.id);
     }
@@ -248,7 +233,7 @@ export function MenuBrowser({
       >
         <AnimatePresence mode="popLayout">
           {visibleItems.map((item, index) => {
-            const src = (!item.image_url || item.image_url.includes("dish-")) ? fallbackImage(item.id) : item.image_url;
+            const src = getDishImage(item);
             const wasAdded = justAdded === item.id;
             const isSignature = index === 0 && activeCategory === null;
             const isExpanded = !!expandedItems[item.id];

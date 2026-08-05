@@ -50,7 +50,7 @@ export function DishCard({
         name: item.name_fr,
         unit_price: Number(item.base_price),
         options: [],
-        image_url: item.image_url,
+        image_url: getDishImage(item),
       });
       flashAdded();
     }
