@@ -290,7 +290,7 @@ export function MenuManager() {
             </div>
 
             {/* Items Datatable */}
-            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden min-w-0">
               {/* Mobile: card list */}
               <div className="flex flex-col gap-3 p-3.5 md:hidden">
                 {items.length === 0 ? (
@@ -390,7 +390,7 @@ export function MenuManager() {
               </div>
 
               {/* Desktop: table */}
-              <div className="hidden md:block">
+              <div className="hidden md:block w-full min-w-0 overflow-x-auto">
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent border-border">

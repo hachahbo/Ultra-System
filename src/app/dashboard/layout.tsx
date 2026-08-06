@@ -76,7 +76,7 @@ export default async function DashboardLayout({
             restaurantId={ctx.restaurant.id}
             restaurantSlug={ctx.restaurant.slug}
           />
-          <main className="mx-auto w-full flex-1 space-y-8 px-4 py-6 md:px-8 md:py-8">
+          <main className="mx-auto w-full flex-1 min-w-0 space-y-8 px-4 py-6 md:px-8 md:py-8">
             {children}
           </main>
         </SidebarInset>

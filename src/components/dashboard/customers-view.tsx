@@ -498,7 +498,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
         </div>
 
         {/* Datatable Card Container */}
-        <div className="flex-1 bg-card border border-border/80 rounded-2xl flex flex-col shadow-xs overflow-hidden min-h-[400px]">
+        <div className="flex-1 bg-card border border-border/80 rounded-2xl flex flex-col shadow-xs overflow-hidden min-h-[400px] min-w-0">
           <div className="flex-1 overflow-auto">
             {customers.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
@@ -601,7 +601,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                 </div>
 
                 {/* Desktop Datatable */}
-                <div className="hidden md:block">
+                <div className="hidden md:block w-full min-w-0 overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
                       {table.getHeaderGroups().map((headerGroup) => (

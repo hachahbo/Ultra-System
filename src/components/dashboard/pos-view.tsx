@@ -135,7 +135,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
 
   return (
     <>
-      <div className="relative flex flex-col lg:flex-row h-full w-full bg-[#f7f2ea] dark:bg-[#0c0c0e] rounded-none sm:rounded-[22px] overflow-hidden shadow-2xl border-0 sm:border border-[#ece6dc] dark:border-white/10 text-[#1c1712] dark:text-white">
+      <div className="relative flex flex-col lg:flex-row h-full w-full bg-[#f7f2ea] dark:bg-[#0c0c0e] rounded-[28px] sm:rounded-[22px] overflow-hidden shadow-2xl border border-[#ece6dc] dark:border-white/10 text-[#1c1712] dark:text-white">
 
         {/* ── Menu Column ────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto">
@@ -259,7 +259,7 @@ export function PosView({ onClose }: { onClose?: () => void }) {
 
         {/* ── Mobile Floating Sticky Cart Bar (lg:hidden) ────────────────────── */}
         {!cartEmpty && (
-          <div className="fixed sm:absolute bottom-0 left-0 right-0 p-3 bg-[#0c0c0e]/95 backdrop-blur-md border-t border-white/10 z-20 lg:hidden">
+          <div className="fixed sm:absolute bottom-0 left-0 right-0 p-3 bg-[#0c0c0e]/95 backdrop-blur-md border-t border-white/10 z-20 lg:hidden rounded-b-[28px]">
             <Button
               type="button"
               onClick={() => setMobileSummaryOpen(true)}

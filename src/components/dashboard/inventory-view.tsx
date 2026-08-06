@@ -276,7 +276,7 @@ function InventoryContent({
         />
       ) : (
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_320px]">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card min-w-0 w-full overflow-x-auto">
             <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
               <div className="text-[14px] font-extrabold text-foreground">{t("stockManagement")}</div>
               <div className="flex items-center gap-4">

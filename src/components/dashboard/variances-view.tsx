@@ -64,7 +64,7 @@ export function VariancesView() {
   }
 
   return (
-    <div className="mt-6 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+    <div className="mt-6 bg-card border border-border rounded-2xl shadow-sm overflow-hidden min-w-0 w-full overflow-x-auto">
       <Table>
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent border-border">

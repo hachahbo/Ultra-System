@@ -681,7 +681,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
         </div>
 
         {/* Datatable */}
-        <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col shadow-sm overflow-hidden">
+        <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col shadow-sm overflow-hidden min-w-0">
           <div className="flex-1 overflow-auto">
             {/* Mobile: card list */}
             <div className="flex flex-col gap-3 p-3.5 md:hidden">
@@ -804,7 +804,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
             </div>
 
             {/* Desktop: table */}
-            <div className="hidden md:block">
+            <div className="hidden md:block w-full min-w-0 overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -881,7 +881,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
       {/* POS Modal Overlay */}
       <Dialog open={isPosModalOpen} onOpenChange={setPosModalOpen}>
         {isPosModalOpen && (
-          <DialogContent showCloseButton={false} className="w-full max-w-full sm:max-w-[1440px] sm:w-[95vw] h-[100dvh] sm:h-[92vh] p-0 overflow-hidden bg-transparent border-none shadow-none rounded-none sm:rounded-[24px]">
+          <DialogContent showCloseButton={false} className="w-full max-w-full sm:max-w-[1440px] sm:w-[95vw] h-[98dvh] sm:h-[92vh] p-0 overflow-hidden bg-transparent border-none shadow-none rounded-[28px] sm:rounded-[24px]">
             <DialogTitle className="sr-only">{t("newOrder")}</DialogTitle>
             <PosView onClose={() => setPosModalOpen(false)} />
           </DialogContent>
@@ -890,18 +890,18 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
 
       {/* Edit / View Order Modal */}
       <Dialog open={!!selectedOrderForEdit} onOpenChange={(open) => !open && setSelectedOrderForEdit(null)}>
-        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+        <DialogContent className="w-[94vw] max-w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[92dvh] overflow-y-auto rounded-[28px] sm:rounded-3xl p-4 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4 my-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-3.5">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-display border-b border-border/60 pb-3.5">
+              <div className="flex items-start sm:items-center gap-3 min-w-0">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
                   <ShoppingBag className="size-5 stroke-[2.25]" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-extrabold text-foreground leading-none">
+                <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-snug truncate">
                     Commande CMD-{selectedOrderForEdit?.id.slice(0, 4).toUpperCase()}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                       <Clock className="size-3 text-primary/70" />
                       {selectedOrderForEdit && new Date(selectedOrderForEdit.created_at).toLocaleString("fr-FR")}
@@ -916,7 +916,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                 {selectedOrderForEdit && (() => {
                   const badge = getPaymentBadge(selectedOrderForEdit.payment_status);
                   return (
@@ -933,7 +933,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
           </DialogHeader>
 
           {selectedOrderForEdit && (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 py-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 py-1">
               {/* Left Column: Order Settings, Customer Info, Notes & Financial Total */}
               <div className="md:col-span-6 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3.5">
@@ -942,7 +942,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                     <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                       {t("orderStatus")}
                     </Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                       {(["new", "preparing", "done"] as const).map((st) => {
                         const isSelected = editStatus === st;
                         const styleConfig = {
@@ -957,14 +957,14 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                             type="button"
                             onClick={() => setEditStatus(st)}
                             className={cn(
-                              "flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-2xl text-xs font-extrabold border transition-all duration-150 shadow-2xs cursor-pointer",
+                              "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-2xl text-[11px] sm:text-xs font-extrabold border transition-all duration-150 shadow-2xs cursor-pointer truncate",
                               isSelected
                                 ? styleConfig.active
                                 : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                             )}
                           >
-                            <Icon className="size-3.5 stroke-[2.25]" />
-                            {t(STATUS_MAP[st]?.label ?? "inProgress")}
+                            <Icon className="size-3.5 stroke-[2.25] shrink-0" />
+                            <span className="truncate">{t(STATUS_MAP[st]?.label ?? "inProgress")}</span>
                           </button>
                         );
                       })}
@@ -972,7 +972,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                   </div>
 
                   {/* Customer & Table details */}
-                  <div className="grid grid-cols-2 gap-3 bg-muted/30 border border-border/60 rounded-2xl p-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 bg-muted/30 border border-border/60 rounded-2xl p-3">
                     <div className="space-y-1">
                       <Label htmlFor="edit-customer" className="text-[11px] font-extrabold text-muted-foreground flex items-center gap-1">
                         <User className="size-3.5 text-primary" /> {t("customerName")}
@@ -1022,7 +1022,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                 )}
 
                 {/* Financial Total Box */}
-                <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 shadow-xs flex items-center justify-between mt-auto">
+                <div className="p-3 sm:p-3.5 rounded-2xl bg-primary/10 border border-primary/20 shadow-xs flex items-center justify-between mt-auto">
                   <div>
                     <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">{t("orderTotal")}</span>
                     {canSettlePayment && selectedOrderForEdit.payment_status === "unpaid" && (
@@ -1035,7 +1035,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                       </button>
                     )}
                   </div>
-                  <span className="font-extrabold text-2xl text-primary tracking-tight">
+                  <span className="font-extrabold text-xl sm:text-2xl text-primary tracking-tight">
                     {formatPrice(Number(selectedOrderForEdit.total), "MAD")}
                   </span>
                 </div>
@@ -1051,13 +1051,13 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                     {selectedOrderForEdit.items?.length || 0} article{(selectedOrderForEdit.items?.length || 0) > 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="bg-muted/30 border border-border/70 rounded-2xl p-2.5 space-y-2 flex-1 max-h-[320px] md:max-h-[340px] overflow-y-auto">
+                <div className="bg-muted/30 border border-border/70 rounded-2xl p-2.5 space-y-2 flex-1 max-h-[260px] md:max-h-[340px] overflow-y-auto">
                   {selectedOrderForEdit.items?.map((item, idx) => {
                     const imageUrl = getItemImageUrl(item);
                     return (
                       <div key={idx} className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-card border border-border/50 shadow-2xs">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center justify-between text-sm gap-2 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <div className="relative size-9 rounded-full overflow-hidden bg-muted shrink-0 border-2 border-background shadow-xs">
                               <img
                                 src={imageUrl}
@@ -1065,12 +1065,12 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                                 className="size-full object-cover scale-[1.4]"
                               />
                             </div>
-                            <span className="font-extrabold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                            <span className="font-extrabold text-primary text-xs bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 shrink-0">
                               x{item.quantity}
                             </span>
-                            <span className="font-bold text-[13px] truncate text-foreground">{item.name}</span>
+                            <span className="font-bold text-[13px] truncate text-foreground flex-1 min-w-0">{item.name}</span>
                           </div>
-                          <span className="font-extrabold text-foreground text-sm shrink-0 ml-2">
+                          <span className="font-extrabold text-foreground text-sm shrink-0">
                             {formatPrice(item.unit_price * item.quantity, "MAD")}
                           </span>
                         </div>
@@ -1102,18 +1102,18 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-2.5 pt-2">
+          <DialogFooter className="flex flex-col-reverse sm:flex-row justify-stretch sm:justify-end gap-2.5 pt-2 w-full">
             <Button
               variant="outline"
               onClick={() => setSelectedOrderForEdit(null)}
-              className="rounded-xl font-bold text-xs px-4 h-10 border-border/80 hover:bg-muted"
+              className="w-full sm:w-auto rounded-xl font-bold text-xs px-4 h-11 sm:h-10 border-border/80 hover:bg-muted"
             >
               Annuler
             </Button>
             <Button
               onClick={handleSaveEdit}
               disabled={isSavingEdit}
-              className="rounded-xl font-extrabold text-xs px-5 h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+              className="w-full sm:w-auto rounded-xl font-extrabold text-xs px-5 h-11 sm:h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
             >
               <Check className="size-4 stroke-[2.5]" />
               {isSavingEdit ? "Enregistrement..." : "Enregistrer"}
