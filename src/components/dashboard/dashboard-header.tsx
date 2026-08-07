@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Volume2,
   VolumeX,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -190,24 +191,56 @@ export function DashboardHeader({
 
     toToast.forEach((n) => {
       const { icon: Icon, className } = NOTIF_STYLE[n.kind];
-      toast(n.title, {
-        // Keyed so a re-delivery of the same item replaces its toast
-        // instead of stacking a duplicate.
-        id: notifKey(n),
-        description: n.subtitle,
-        icon: (
-          <span className={cn("flex size-7 items-center justify-center rounded-xl shadow-xs shrink-0", className)}>
-            <Icon className="size-4" />
-          </span>
+      toast.custom(
+        (id) => (
+          <div
+            className={cn(
+              "pointer-events-auto flex items-center justify-between gap-3.5 w-full max-w-sm sm:max-w-md p-3.5 sm:p-4 rounded-2xl bg-card/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-border/80 shadow-2xl transition-all duration-300 ring-1 ring-black/5 dark:ring-white/10",
+              n.kind === "order" && "border-l-4 border-l-emerald-500 shadow-emerald-500/10",
+              n.kind === "reservation" && "border-l-4 border-l-blue-500 shadow-blue-500/10",
+              n.kind === "event_inquiry" && "border-l-4 border-l-amber-500 shadow-amber-500/10"
+            )}
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className={cn(
+                  "size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs border border-white/10",
+                  className
+                )}
+              >
+                <Icon className="size-5 stroke-[2.25]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-extrabold text-[13.5px] text-foreground truncate leading-tight">
+                  {n.title}
+                </div>
+                <div className="text-xs font-semibold text-muted-foreground mt-0.5 truncate">
+                  {n.subtitle}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                toast.dismiss(id);
+                markOrderSeen(n.id);
+                router.push(n.href);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-extrabold bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
+            >
+              <span>Voir</span>
+              <ChevronRight className="size-3.5 stroke-[2.5]" />
+            </button>
+          </div>
         ),
-        action: {
-          label: tl("viewNotification"),
-          onClick: () => {
-            markOrderSeen(n.id);
-            router.push(n.href);
-          },
-        },
-      });
+        {
+          id: notifKey(n),
+          duration: 6000,
+          className: "!bg-transparent !border-0 !shadow-none !p-0 !ring-0 !outline-none w-full",
+          unstyled: true,
+        }
+      );
     });
   }, [notifications, isSuccess, router, tl, soundEnabled]);
 
