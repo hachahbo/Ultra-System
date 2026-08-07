@@ -366,15 +366,15 @@ export function ReservationsView() {
 
       {/* Reservation Details & Table Assignment Modal */}
       <Dialog open={assigning !== null} onOpenChange={(open) => !open && setAssigning(null)}>
-        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-3.5">
+        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-4 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-3.5 pr-6">
               <div className="flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
-                  <CalendarDays className="size-5.5 stroke-[2.25]" />
+                <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
+                  <CalendarDays className="size-5 sm:size-5.5 stroke-[2.25]" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-extrabold text-foreground leading-none">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-none">
                     Réservation — {assigning?.customer_name}
                   </h3>
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -394,7 +394,7 @@ export function ReservationsView() {
           </DialogHeader>
 
           {assigning && (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 py-1">
+            <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 py-1 pr-1">
               {/* Left Column: Guest info, Contact, Notes & Status Actions */}
               <div className="md:col-span-5 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3.5">
@@ -528,25 +528,25 @@ export function ReservationsView() {
 
       {/* Create Reservation Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={(open) => !open && setIsCreateModalOpen(false)}>
-        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 font-display border-b border-border/60 pb-3.5">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
-                <Plus className="size-5.5 stroke-[2.25]" />
+        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-4 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-3 font-display border-b border-border/60 pb-3.5 pr-6">
+              <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
+                <Plus className="size-5 sm:size-5.5 stroke-[2.25]" />
               </div>
               <div>
-                <h3 className="text-xl font-extrabold text-foreground leading-none">
+                <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-tight">
                   Nouvelle réservation
                 </h3>
-                <p className="text-xs font-semibold text-muted-foreground mt-1.5">
+                <p className="text-xs font-semibold text-muted-foreground mt-1">
                   Ajouter une réservation manuellement dans votre calendrier.
                 </p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleCreateSubmit} className="space-y-4 py-1">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+          <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 min-h-0 space-y-4 py-1">
+            <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 pr-1">
               {/* Left Column: Customer Info, Notes & Initial Status */}
               <div className="md:col-span-6 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3.5">
@@ -610,25 +610,27 @@ export function ReservationsView() {
                       type="button"
                       onClick={() => setNewStatus("confirmed")}
                       className={cn(
-                        "py-2.5 px-3 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs",
+                        "py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center",
                         newStatus === "confirmed"
                           ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20"
                           : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <CheckCircle2 className="size-4 stroke-[2.25]" /> Confirmée
+                      <CheckCircle2 className="size-4 stroke-[2.25] shrink-0" />
+                      <span className="truncate">Confirmée</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setNewStatus("new")}
                       className={cn(
-                        "py-2.5 px-3 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs",
+                        "py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center",
                         newStatus === "new"
                           ? "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400 ring-2 ring-orange-500/20"
                           : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <Clock className="size-4 stroke-[2.25]" /> À confirmer (Nouvelle)
+                      <Clock className="size-4 stroke-[2.25] shrink-0" />
+                      <span className="truncate">À confirmer</span>
                     </button>
                   </div>
                 </div>
@@ -657,9 +659,11 @@ export function ReservationsView() {
                             )}
                           >
                             <CalendarDays className="size-3.5 text-primary shrink-0" />
-                            {newDate
-                              ? format(parseISO(newDate), "dd MMMM yyyy", { locale: dateFnsLocale(locale) })
-                              : "Sélectionner une date"}
+                            <span className="truncate">
+                              {newDate
+                                ? format(parseISO(newDate), "dd MMMM yyyy", { locale: dateFnsLocale(locale) })
+                                : "Sélectionner une date"}
+                            </span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-border/80 bg-card" align="start">
@@ -703,14 +707,14 @@ export function ReservationsView() {
                         {newPartySize} pers.
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="grid grid-cols-5 sm:flex sm:flex-wrap items-center gap-1.5">
                       {[1, 2, 3, 4, 5, 6, 8, 10].map((size) => (
                         <button
                           key={size}
                           type="button"
                           onClick={() => setNewPartySize(size)}
                           className={cn(
-                            "px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer",
+                            "h-9 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center justify-center",
                             newPartySize === size
                               ? "border-primary bg-primary text-primary-foreground shadow-xs"
                               : "border-border/80 bg-card text-foreground/80 hover:bg-muted"
@@ -719,14 +723,21 @@ export function ReservationsView() {
                           {size}
                         </button>
                       ))}
-                      <Input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={newPartySize}
-                        onChange={(e) => setNewPartySize(Number(e.target.value))}
-                        className="w-14 h-8 text-center text-xs font-extrabold rounded-xl bg-card border-border/80 ml-auto"
-                      />
+                      <div className="col-span-2 sm:w-16">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={newPartySize}
+                          onChange={(e) => setNewPartySize(Math.max(1, Number(e.target.value)))}
+                          placeholder="Autre"
+                          className={cn(
+                            "h-9 text-center text-xs font-extrabold rounded-xl bg-card border-border/80 transition-all px-1",
+                            ![1, 2, 3, 4, 5, 6, 8, 10].includes(newPartySize) &&
+                              "border-primary ring-2 ring-primary/20 bg-primary/10 text-primary font-bold"
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -753,19 +764,19 @@ export function ReservationsView() {
               </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-2.5 pt-2 border-t border-border/60">
+            <DialogFooter className="gap-2 sm:gap-2.5 pt-2 border-t border-border/60 shrink-0 flex-col-reverse sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-xl font-bold text-xs px-4 h-10 border-border/80 hover:bg-muted"
+                className="w-full sm:w-auto rounded-xl font-bold text-xs px-4 h-11 sm:h-10 border-border/80 hover:bg-muted"
               >
                 Annuler
               </Button>
               <Button
                 type="submit"
                 disabled={createReservationMutation.isPending}
-                className="rounded-xl font-extrabold text-xs px-5 h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                className="w-full sm:w-auto rounded-xl font-extrabold text-xs px-5 h-11 sm:h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
               >
                 <Check className="size-4 stroke-[2.5]" />
                 {createReservationMutation.isPending ? "Enregistrement..." : "Ajouter la réservation"}

@@ -153,7 +153,7 @@ export function MenuTranslationsDialog({
           <Languages className="size-4" /> Traductions
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[88vh] overflow-hidden flex flex-col p-0 gap-0 rounded-2xl">
+      <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[88vh] overflow-hidden flex flex-col min-h-0 p-0 gap-0 rounded-2xl">
         <DialogHeader className="px-6 py-5 border-b border-border bg-muted/20 shrink-0">
           <DialogTitle className="font-display text-xl font-bold">
             Traductions du menu — Anglais
@@ -181,7 +181,7 @@ export function MenuTranslationsDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-8">
           {itemsByCategory.map(({ category, items: categoryItems }) => (
             <section key={category.id} className="space-y-4">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 rounded-xl bg-muted/40 p-3">

@@ -145,15 +145,15 @@ export function ItemFormDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[88vh] flex flex-col">
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
-          <DialogTitle className="font-display text-xl font-bold tracking-tight">
+      <DialogContent className="sm:max-w-xl bg-card text-foreground shadow-2xl p-0 overflow-hidden rounded-3xl ring-1 ring-border/60 border-none max-h-[90vh] sm:max-h-[88vh] flex flex-col min-h-0">
+        <DialogHeader className="shrink-0 px-5 sm:px-6 pt-5 sm:pt-6 pb-2">
+          <DialogTitle className="font-display text-lg sm:text-xl font-bold tracking-tight pr-6">
             {item ? t("editItem", { name: item.name_fr }) : t("newItem")}
           </DialogTitle>
         </DialogHeader>
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, onError)} className="flex flex-col flex-1 overflow-hidden" noValidate>
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
+          <form onSubmit={form.handleSubmit(onSubmit, onError)} className="flex flex-col flex-1 min-h-0 overflow-hidden" noValidate>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-5 sm:space-y-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50">
               <div className="space-y-2">
               <Label>{t("category")}</Label>
               <Select
@@ -280,11 +280,11 @@ export function ItemFormDialog({
 
             </div>
             
-            <div className="shrink-0 border-t border-border/40 bg-card/95 px-6 pb-6 pt-4 backdrop-blur-md flex justify-end gap-3">
-              <Button type="button" variant="ghost" className="rounded-full font-bold hover:bg-muted" onClick={onClose}>
+            <div className="shrink-0 border-t border-border/40 bg-card/95 px-4 sm:px-6 pb-5 sm:pb-6 pt-4 backdrop-blur-md flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
+              <Button type="button" variant="ghost" className="w-full sm:w-auto rounded-full font-bold hover:bg-muted h-11 sm:h-10" onClick={onClose}>
                 {t("cancel")}
               </Button>
-              <Button type="submit" className="rounded-full font-bold px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]" disabled={saving || uploading}>
+              <Button type="submit" className="w-full sm:w-auto rounded-full font-bold px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98] h-11 sm:h-10" disabled={saving || uploading}>
                 {saving ? t("saving") : t("save")}
               </Button>
             </div>

@@ -741,14 +741,14 @@ function CustomerHistoryDialog({
 
   return (
     <Dialog open={customer !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-6 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
-        <DialogHeader className="border-b border-border/60 pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
+      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col min-h-0 rounded-3xl p-4 sm:p-7 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+        <DialogHeader className="border-b border-border/60 pb-4 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pr-6">
+            <div className="flex items-center gap-3">
               {customer && tier && (
                 <div
                   className={cn(
-                    "size-12 rounded-full font-black text-sm flex items-center justify-center shrink-0 shadow-md border-2 border-white/20",
+                    "size-11 sm:size-12 rounded-full font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-md border-2 border-white/20",
                     tier.avatarBg
                   )}
                 >
@@ -760,23 +760,23 @@ function CustomerHistoryDialog({
                     .toUpperCase()}
                 </div>
               )}
-              <div>
-                <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2.5">
-                  {customer?.name}
+              <div className="min-w-0">
+                <DialogTitle className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2 flex-wrap">
+                  <span className="truncate">{customer?.name}</span>
                   {tier && TierIcon && (
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs",
+                        "inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-2xs shrink-0",
                         tier.badgeClass
                       )}
                     >
-                      <TierIcon className="size-3 shrink-0" />
+                      <TierIcon className="size-2.5 shrink-0" />
                       {tier.label}
                     </span>
                   )}
                 </DialogTitle>
                 <p className="text-xs font-semibold text-muted-foreground mt-1 flex items-center gap-1.5">
-                  <CalendarDays className="size-3.5 text-primary" />
+                  <CalendarDays className="size-3.5 text-primary shrink-0" />
                   {customer?.first_seen
                     ? t("customerSince", { date: formatDateTime(customer.first_seen).split(" ")[0] })
                     : ""}
@@ -786,30 +786,30 @@ function CustomerHistoryDialog({
 
             {/* Direct Action Contact CTAs */}
             {customer && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <Button
                   type="button"
                   onClick={() => onSendOffer(customer)}
-                  className="rounded-xl font-extrabold text-xs gap-1.5 px-3 py-2 h-9 bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-2xs cursor-pointer"
+                  className="rounded-xl font-extrabold text-xs gap-1.5 px-2.5 sm:px-3 py-2 h-8.5 sm:h-9 bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-2xs cursor-pointer flex-1 sm:flex-none justify-center whitespace-nowrap"
                 >
-                  <Gift className="size-3.5 stroke-[2.25]" />
-                  Offrir une promo
+                  <Gift className="size-3.5 stroke-[2.25] shrink-0" />
+                  <span>Offrir une promo</span>
                 </Button>
                 <a
                   href={`tel:${customer.phone}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-muted/60 text-foreground hover:bg-muted border border-border/80 transition-all"
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold bg-muted/60 text-foreground hover:bg-muted border border-border/80 transition-all h-8.5 sm:h-9 flex-1 sm:flex-none whitespace-nowrap"
                 >
-                  <Phone className="size-3.5 text-primary" />
+                  <Phone className="size-3.5 text-primary shrink-0" />
                   {customer.phone}
                 </a>
                 <a
                   href={waHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all shadow-2xs"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all shadow-2xs h-8.5 sm:h-9 shrink-0 whitespace-nowrap"
                 >
-                  <MessageCircle className="size-4 stroke-[2.25]" />
-                  WhatsApp
+                  <MessageCircle className="size-4 stroke-[2.25] shrink-0" />
+                  <span>WhatsApp</span>
                 </a>
               </div>
             )}
@@ -817,7 +817,7 @@ function CustomerHistoryDialog({
         </DialogHeader>
 
         {customer && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-1">
+          <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 pt-1 pr-1">
             {/* Left Column: Financial KPIs & Overview */}
             <div className="md:col-span-5 space-y-3.5 flex flex-col justify-between">
               <div className="space-y-3">
@@ -829,28 +829,28 @@ function CustomerHistoryDialog({
                 <div className="bg-primary/10 border border-primary/25 rounded-2xl p-4 shadow-2xs">
                   <div className="flex items-center justify-between text-xs font-extrabold text-primary">
                     <span>Total dépensé</span>
-                    <Receipt className="size-4 text-primary" />
+                    <Receipt className="size-4 text-primary shrink-0" />
                   </div>
-                  <div className="text-2xl font-black text-primary mt-1.5">
+                  <div className="text-xl sm:text-2xl font-black text-primary mt-1.5 truncate">
                     {isPending ? "…" : formatPrice(totalSpent, "MAD")}
                   </div>
                 </div>
 
                 {/* Orders Count & Average Basket Grid */}
                 <div className="grid grid-cols-2 gap-2.5">
-                  <div className="bg-muted/30 border border-border/60 rounded-2xl p-3.5">
-                    <span className="block text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider">
+                  <div className="bg-muted/30 border border-border/60 rounded-2xl p-3.5 min-w-0">
+                    <span className="block text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider truncate">
                       Commandes
                     </span>
-                    <span className="text-lg font-black text-foreground mt-1 block">
+                    <span className="text-base sm:text-lg font-black text-foreground mt-1 block truncate">
                       {orderCount}
                     </span>
                   </div>
-                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5">
-                    <span className="block text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 min-w-0">
+                    <span className="block text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-400 tracking-wider truncate">
                       Panier moyen
                     </span>
-                    <span className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1 block">
+                    <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-1 block truncate">
                       {isPending ? "…" : formatPrice(avgBasket, "MAD")}
                     </span>
                   </div>
@@ -862,29 +862,29 @@ function CustomerHistoryDialog({
                 <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                   Fidélité client
                 </span>
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-muted-foreground">Statut :</span>
-                  <span className="font-extrabold text-foreground">{tier?.label}</span>
+                <div className="flex items-center justify-between text-xs font-bold gap-2">
+                  <span className="text-muted-foreground shrink-0">Statut :</span>
+                  <span className="font-extrabold text-foreground truncate">{tier?.label}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-muted-foreground">Commandes totales :</span>
-                  <span className="font-extrabold text-foreground">{orderCount} commandes</span>
+                <div className="flex items-center justify-between text-xs font-bold gap-2">
+                  <span className="text-muted-foreground shrink-0">Commandes totales :</span>
+                  <span className="font-extrabold text-foreground truncate">{orderCount} commandes</span>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Order History Cards */}
             <div className="md:col-span-7 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Receipt className="size-3.5 text-primary" /> {t("orderHistory")}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 truncate">
+                  <Receipt className="size-3.5 text-primary shrink-0" /> {t("orderHistory")}
                 </span>
-                <span className="text-xs font-bold text-muted-foreground">
+                <span className="text-xs font-bold text-muted-foreground shrink-0">
                   {data?.orders.length ?? 0} commande(s)
                 </span>
               </div>
 
-              <div className="max-h-[380px] overflow-y-auto pr-1.5 space-y-3 custom-scrollbar scrollbar-thin">
+              <div className="max-h-[340px] md:max-h-[380px] overflow-y-auto pr-1 space-y-3 custom-scrollbar scrollbar-thin">
                 {isPending && (
                   <div className="py-16 flex items-center justify-center">
                     <div className="size-7 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -898,9 +898,9 @@ function CustomerHistoryDialog({
                 {data?.orders.map((o) => (
                   <div
                     key={o.id}
-                    className="rounded-2xl border border-border/70 bg-card p-4 text-xs shadow-2xs hover:shadow-xs transition-all space-y-3"
+                    className="rounded-2xl border border-border/70 bg-card p-3.5 sm:p-4 text-xs shadow-2xs hover:shadow-xs transition-all space-y-3"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="font-black text-xs text-foreground bg-muted/60 px-2.5 py-0.5 rounded-lg border border-border/60">
                           CMD-{o.id.slice(0, 4).toUpperCase()}
@@ -920,7 +920,7 @@ function CustomerHistoryDialog({
                         return (
                           <div
                             key={i}
-                            className="flex items-center justify-between text-xs text-foreground bg-muted/20 p-1.5 rounded-xl border border-border/40"
+                            className="flex items-center justify-between text-xs text-foreground bg-muted/20 p-1.5 rounded-xl border border-border/40 gap-2"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className="size-8 rounded-full overflow-hidden shrink-0 border border-border/60 relative bg-muted">
@@ -1021,24 +1021,24 @@ function BroadcastPromoModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-4.5 sm:p-5 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-3">
-        <DialogHeader className="border-b border-border/60 pb-2.5">
-          <DialogTitle className="flex items-center gap-2.5 font-display min-w-0">
+      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col min-h-0 rounded-3xl p-4 sm:p-5 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-3">
+        <DialogHeader className="border-b border-border/60 pb-2.5 shrink-0">
+          <DialogTitle className="flex items-center gap-2.5 font-display min-w-0 pr-6">
             <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs shrink-0">
               <Megaphone className="size-4.5 stroke-[2.25]" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-black text-foreground leading-none">
+              <h3 className="text-base sm:text-lg font-black text-foreground leading-none">
                 Campagne Promo WhatsApp
               </h3>
-              <p className="text-xs font-semibold text-muted-foreground mt-1 leading-normal">
+              <p className="text-xs font-semibold text-muted-foreground mt-1 leading-normal truncate sm:whitespace-normal">
                 Envoyez des offres ciblées et codes promos par WhatsApp selon les tags clients.
               </p>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-3.5 pr-1">
           {/* Left Column: Audience & Template Selection */}
           <div className="md:col-span-6 space-y-3 flex flex-col justify-between">
             <div className="space-y-2.5">
@@ -1208,7 +1208,7 @@ function BroadcastPromoModal({
                 </span>
               </div>
 
-              <div className="max-h-[340px] overflow-y-auto pr-1 space-y-1.5 flex-1 custom-scrollbar scrollbar-thin">
+              <div className="max-h-[300px] md:max-h-[340px] overflow-y-auto pr-1 space-y-1.5 flex-1 custom-scrollbar scrollbar-thin">
                 {targetClients.length === 0 ? (
                   <div className="py-10 text-center text-xs font-semibold text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border/80">
                     Aucun client dans ce groupe d&apos;audience.
@@ -1279,12 +1279,12 @@ function BroadcastPromoModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border/60 pt-2">
+        <div className="flex justify-end gap-2 border-t border-border/60 pt-2 shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl font-bold text-xs px-4 h-8.5 border-border/80 hover:bg-muted cursor-pointer"
+            className="w-full sm:w-auto rounded-xl font-bold text-xs px-4 h-9 sm:h-8.5 border-border/80 hover:bg-muted cursor-pointer"
           >
             Fermer
           </Button>
