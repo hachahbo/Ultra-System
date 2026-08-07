@@ -607,7 +607,9 @@
     "eventCategoryDjSet": "DJ set",
     "eventCategorySpecialMenu": "Special menu",
     "roleOwnerHeader": "Manager",
-    "viewNotification": "View"
+    "viewNotification": "View",
+    "soundOn": "Unmute notification sound",
+    "soundOff": "Mute notification sound"
   },
   "Inventory": {
     "etaToday": "Today {time}",

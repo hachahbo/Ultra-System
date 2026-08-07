@@ -24,6 +24,7 @@ import { formatPrice, formatDateTime } from "@/lib/format";
 import { ORDER_STATUS_DOT, RESERVATION_STATUS_DOT } from "@/components/dashboard/status-dot";
 import type { Order, Reservation } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { markOrderSeen, useSeenOrders } from "@/lib/seen-orders";
 
 export function OverviewView({
   currency,
@@ -61,6 +62,7 @@ export function OverviewView({
   todaysReservations: Pick<Reservation, "id" | "customer_name" | "party_size" | "time" | "status">[];
 }) {
   const t = useTranslations("Overview");
+  const seenOrders = useSeenOrders();
   const panierMoyen = ordersToday > 0 ? revenueToday / ordersToday : 0;
   const [timeRange, setTimeRange] = useState<"today" | "week">("today");
   const [hoveredSegment, setHoveredSegment] = useState<"sur_place" | "livraison" | "a_emporter" | null>(null);
@@ -345,37 +347,49 @@ export function OverviewView({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {lastOrders.map((o) => (
-                      <tr key={o.id} className="transition-colors hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50">
-                        <td className="py-4 pr-4 font-medium text-amber-500/80">
-                          #{o.id.split("-")[0].toUpperCase()}
-                        </td>
-                        <td className="py-4 pr-4">
-                          <p className="font-medium text-foreground">
-                            {o.type === "dine_in" ? t("table", { number: o.table_number ?? "" }) : o.customer_name || t("client")}
-                          </p>
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground max-w-[150px] sm:max-w-[200px]">
-                            {o.items.map((l) => `${l.quantity}× ${l.name}`).join(", ")}
-                          </p>
-                        </td>
-                        <td className="py-4 pr-4 font-medium tabular-nums text-foreground">
-                          {formatPrice(o.total, currency)}
-                        </td>
-                        <td className="py-4 pr-4">
-                          <Badge variant="outline" className={cn(
-                            "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800/80 font-medium",
-                            o.status === "done" && "text-emerald-600 dark:text-emerald-500",
-                            o.status === "preparing" && "text-amber-600 dark:text-amber-500",
-                            o.status === "new" && "text-blue-600 dark:text-blue-500",
-                          )}>
-                            {o.status === "done" ? t("served") : o.status === "preparing" ? t("inProgress") : t("newStatus")}
-                          </Badge>
-                        </td>
-                        <td className="py-4 text-right text-xs text-muted-foreground">
-                          {formatDateTime(o.created_at)}
-                        </td>
-                      </tr>
-                    ))}
+                    {lastOrders.map((o) => {
+                      const isNewUnread = o.status === "new" && !seenOrders.has(o.id);
+                      return (
+                        <tr
+                          key={o.id}
+                          onClick={() => markOrderSeen(o.id)}
+                          className={cn(
+                            "transition-colors cursor-pointer",
+                            isNewUnread
+                              ? "bg-amber-500/12 hover:bg-amber-500/20 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 border-l-4 border-l-orange-500"
+                              : "hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50"
+                          )}
+                        >
+                          <td className="py-4 px-3 font-medium text-amber-500/80">
+                            #{o.id.split("-")[0].toUpperCase()}
+                          </td>
+                          <td className="py-4 pr-4">
+                            <p className="font-medium text-foreground">
+                              {o.type === "dine_in" ? t("table", { number: o.table_number ?? "" }) : o.customer_name || t("client")}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground max-w-[150px] sm:max-w-[200px]">
+                              {o.items.map((l) => `${l.quantity}× ${l.name}`).join(", ")}
+                            </p>
+                          </td>
+                          <td className="py-4 pr-4 font-medium tabular-nums text-foreground">
+                            {formatPrice(o.total, currency)}
+                          </td>
+                          <td className="py-4 pr-4">
+                            <Badge variant="outline" className={cn(
+                              "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800/80 font-medium",
+                              o.status === "done" && "text-emerald-600 dark:text-emerald-500",
+                              o.status === "preparing" && "text-amber-600 dark:text-amber-500",
+                              o.status === "new" && "text-orange-600 dark:text-orange-400 font-bold",
+                            )}>
+                              {o.status === "done" ? t("served") : o.status === "preparing" ? t("inProgress") : t("newStatus")}
+                            </Badge>
+                          </td>
+                          <td className="py-4 pr-3 text-right text-xs text-muted-foreground">
+                            {formatDateTime(o.created_at)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

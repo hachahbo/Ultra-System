@@ -22,6 +22,8 @@ import {
   PartyPopper,
   Globe,
   ExternalLink,
+  Volume2,
+  VolumeX,
   type LucideIcon,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -36,9 +38,16 @@ import {
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { notifKey, selectNotificationsToToast } from "@/lib/notifications";
+import {
+  isNotificationSoundEnabled,
+  playNotificationChime,
+  setNotificationSoundEnabled,
+} from "@/lib/notification-sound";
 import type { NotificationItem } from "@/app/api/dashboard/notifications/route";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+
+import { markOrderSeen, markMultipleOrdersSeen } from "@/lib/seen-orders";
 
 async function fetchNotifications(): Promise<NotificationItem[]> {
   const res = await fetch("/api/dashboard/notifications");
@@ -100,6 +109,18 @@ export function DashboardHeader({
     return Number.isFinite(stored) ? stored : 0;
   });
 
+  const [soundEnabled, setSoundEnabled] = useState(() => isNotificationSoundEnabled());
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      setNotificationSoundEnabled(next);
+      if (next) {
+        playNotificationChime(0.25);
+      }
+      return next;
+    });
+  }, []);
+
   const { data: notifications = [], isSuccess } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
@@ -160,27 +181,35 @@ export function DashboardHeader({
       return;
     }
 
-    selectNotificationsToToast(toastedRef.current, notifications, MAX_TOASTS).forEach(
-      (n) => {
-        const { icon: Icon, className } = NOTIF_STYLE[n.kind];
-        toast(n.title, {
-          // Keyed so a re-delivery of the same item replaces its toast
-          // instead of stacking a duplicate.
-          id: notifKey(n),
-          description: n.subtitle,
-          icon: (
-            <span className={cn("flex size-7 items-center justify-center rounded-xl shadow-xs shrink-0", className)}>
-              <Icon className="size-4" />
-            </span>
-          ),
-          action: {
-            label: tl("viewNotification"),
-            onClick: () => router.push(n.href),
+    const toToast = selectNotificationsToToast(toastedRef.current, notifications, MAX_TOASTS);
+    if (toToast.length === 0) return;
+
+    // One chime per batch, not one per item — a burst of 3 orders arriving
+    // together should sound like a single alert, not a machine-gun of dings.
+    if (soundEnabled) playNotificationChime();
+
+    toToast.forEach((n) => {
+      const { icon: Icon, className } = NOTIF_STYLE[n.kind];
+      toast(n.title, {
+        // Keyed so a re-delivery of the same item replaces its toast
+        // instead of stacking a duplicate.
+        id: notifKey(n),
+        description: n.subtitle,
+        icon: (
+          <span className={cn("flex size-7 items-center justify-center rounded-xl shadow-xs shrink-0", className)}>
+            <Icon className="size-4" />
+          </span>
+        ),
+        action: {
+          label: tl("viewNotification"),
+          onClick: () => {
+            markOrderSeen(n.id);
+            router.push(n.href);
           },
-        });
-      },
-    );
-  }, [notifications, isSuccess, router, tl]);
+        },
+      });
+    });
+  }, [notifications, isSuccess, router, tl, soundEnabled]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => new Date(n.created_at).getTime() > lastSeen).length,
@@ -191,7 +220,9 @@ export function DashboardHeader({
     const now = Date.now();
     localStorage.setItem(storageKey, String(now));
     setLastSeen(now);
-  }, [storageKey]);
+    const orderIds = notifications.filter((n) => n.kind === "order").map((n) => n.id);
+    if (orderIds.length > 0) markMultipleOrdersSeen(orderIds);
+  }, [storageKey, notifications]);
 
   const isDark = theme === "dark";
   const initialLetter = restaurantName.charAt(0).toUpperCase();
@@ -283,6 +314,7 @@ export function DashboardHeader({
                     >
                       <Link
                         href={n.href}
+                        onClick={() => markOrderSeen(n.id)}
                         className={cn(
                           "flex items-start gap-3 p-3 w-full rounded-xl border border-transparent transition-all hover:bg-muted/70 hover:border-border/50",
                           isUnread && "bg-primary/[0.04] border-primary/15 shadow-2xs",
@@ -317,7 +349,22 @@ export function DashboardHeader({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. Dark / Light Theme Toggle Button */}
+        {/* 2. Notification Sound Toggle */}
+        <button
+          type="button"
+          onClick={toggleSound}
+          aria-label={soundEnabled ? tl("soundOff") : tl("soundOn")}
+          aria-pressed={soundEnabled}
+          className="relative hidden sm:flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition-colors hover:bg-muted shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {soundEnabled ? (
+            <Volume2 className="size-4 stroke-[2px]" />
+          ) : (
+            <VolumeX className="size-4 stroke-[2px] text-muted-foreground" />
+          )}
+        </button>
+
+        {/* 3. Dark / Light Theme Toggle Button */}
         <button
           type="button"
           onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -344,7 +391,7 @@ export function DashboardHeader({
           )}
         </button>
 
-        {/* 3. User / Restaurant Profile Pill Button */}
+        {/* 4. User / Restaurant Profile Pill Button */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

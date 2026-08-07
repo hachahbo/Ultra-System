@@ -33,6 +33,7 @@ import { formatPrice } from "@/lib/format";
 import { getDishImage } from "@/lib/image";
 import type { Order } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { markOrderSeen, useSeenOrders } from "@/lib/seen-orders";
 import {
   Table,
   TableBody,
@@ -99,6 +100,7 @@ async function markOrderPaid(orderId: string): Promise<void> {
 export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: boolean }) {
   const t = useTranslations("Orders");
   const queryClient = useQueryClient();
+  const seenOrders = useSeenOrders();
   const [tab, setTab] = useState<Filter>("all");
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -153,6 +155,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
   }, [orders, tab]);
 
   const openEditModal = (order: Order) => {
+    markOrderSeen(order.id);
     setSelectedOrderForEdit(order);
     setEditCustomerName(order.customer_name || "");
     setEditTableNumber(order.table_number || "");
@@ -688,6 +691,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
                   const order = row.original;
+                  const isNewUnread = order.status === "new" && !seenOrders.has(order.id);
                   const code = "CMD-" + order.id.slice(0, 4).toUpperCase();
                   const d = new Date(order.created_at);
                   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -699,7 +703,12 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                     <div
                       key={row.id}
                       onClick={() => openEditModal(order)}
-                      className="rounded-xl border border-border bg-card p-4 shadow-sm hover:border-primary/50 transition-colors cursor-pointer"
+                      className={cn(
+                        "rounded-xl border p-4 shadow-sm transition-colors cursor-pointer",
+                        isNewUnread
+                          ? "bg-amber-500/12 border-orange-500/40 hover:border-orange-500/60 dark:bg-amber-500/15 border-l-4 border-l-orange-500"
+                          : "border-border bg-card hover:border-primary/50"
+                      )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -826,20 +835,28 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      onClick={() => openEditModal(row.original)}
-                      className="border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="py-3.5 px-4 align-middle">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  table.getRowModel().rows.map((row) => {
+                    const isNewUnread = row.original.status === "new" && !seenOrders.has(row.original.id);
+                    return (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        onClick={() => openEditModal(row.original)}
+                        className={cn(
+                          "border-border transition-colors cursor-pointer",
+                          isNewUnread
+                            ? "bg-amber-500/12 hover:bg-amber-500/20 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 border-l-4 border-l-orange-500 font-medium"
+                            : "hover:bg-muted/50"
+                        )}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="py-3.5 px-4 align-middle">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-32 text-center text-[13.5px] text-muted-foreground">
