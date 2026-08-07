@@ -149,6 +149,9 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
       }
       setOrderId(data.id);
       clear();
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     } catch {
       toast.error(tErrors("network"));
     } finally {
