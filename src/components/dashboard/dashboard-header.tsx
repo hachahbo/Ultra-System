@@ -48,7 +48,7 @@ import type { NotificationItem } from "@/app/api/dashboard/notifications/route";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-import { markOrderSeen, markMultipleOrdersSeen } from "@/lib/seen-orders";
+import { markOrderSeen, markMultipleOrdersSeen, useSeenOrders } from "@/lib/seen-orders";
 
 async function fetchNotifications(): Promise<NotificationItem[]> {
   const res = await fetch("/api/dashboard/notifications");
@@ -107,6 +107,12 @@ export function DashboardHeader({
   const [lastSeen, setLastSeen] = useState<number>(() => {
     if (typeof window === "undefined") return 0;
     const stored = Number(window.localStorage.getItem(storageKey));
+    const now = Date.now();
+    // Sanitize any corrupt/future timestamps stored previously
+    if (Number.isFinite(stored) && stored > now + 5000) {
+      window.localStorage.setItem(storageKey, String(now));
+      return now;
+    }
     return Number.isFinite(stored) ? stored : 0;
   });
 
@@ -244,9 +250,21 @@ export function DashboardHeader({
     });
   }, [notifications, isSuccess, router, tl, soundEnabled]);
 
+  const seenOrders = useSeenOrders();
+
+  const isNotifUnread = useCallback(
+    (n: NotificationItem) => {
+      if (n.kind === "order" && seenOrders.has(n.id)) {
+        return false;
+      }
+      return new Date(n.created_at).getTime() > lastSeen;
+    },
+    [lastSeen, seenOrders],
+  );
+
   const unreadCount = useMemo(
-    () => notifications.filter((n) => new Date(n.created_at).getTime() > lastSeen).length,
-    [notifications, lastSeen],
+    () => notifications.filter(isNotifUnread).length,
+    [notifications, isNotifUnread],
   );
 
   const markAllRead = useCallback(() => {
@@ -269,7 +287,6 @@ export function DashboardHeader({
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/60 bg-background/95 px-4 md:px-8 backdrop-blur transition-colors">
-      {/* Left side: Sidebar trigger & title */}
       <div className="flex items-center gap-3 min-w-0">
         <SidebarTrigger className="size-9 rounded-xl border border-border/60 bg-card hover:bg-muted text-foreground transition-colors shadow-sm" />
         <span className="hidden sm:inline-block font-display text-sm font-bold text-foreground truncate max-w-[200px]">
@@ -277,10 +294,8 @@ export function DashboardHeader({
         </span>
       </div>
 
-      {/* Right side navbar items matching user spec */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         
-        {/* 1. Notification Bell Button */}
         <DropdownMenu onOpenChange={(open) => !open && markAllRead()}>
           <DropdownMenuTrigger asChild>
             <button
@@ -336,7 +351,7 @@ export function DashboardHeader({
                 </div>
               ) : (
                 notifications.map((n) => {
-                  const isUnread = new Date(n.created_at).getTime() > lastSeen;
+                  const isUnread = isNotifUnread(n);
                   const style = NOTIF_STYLE[n.kind];
                   const Icon = style.icon;
                   return (
