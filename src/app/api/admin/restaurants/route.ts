@@ -49,6 +49,8 @@ export async function GET(request: Request) {
           .from("orders")
           .select("restaurant_id, total")
           .in("restaurant_id", restaurantIds)
+          // Cancelled orders carry a non-zero total but earned nothing (0030 §9).
+          .neq("status", "cancelled")
           .gte("created_at", monthStart)
           .limit(10_000)
       : Promise.resolve({ data: [] }),
@@ -88,7 +90,12 @@ export async function GET(request: Request) {
   // across every restaurant, not just the current page/filter.
   const [{ data: allStatuses }, { data: allMonthOrders }] = await Promise.all([
     admin.from("restaurants").select("status"),
-    admin.from("orders").select("total").gte("created_at", monthStart).limit(10_000),
+    admin
+      .from("orders")
+      .select("total")
+      .neq("status", "cancelled")
+      .gte("created_at", monthStart)
+      .limit(10_000),
   ]);
   const statuses = (allStatuses ?? []) as { status: string }[];
   const summary = {

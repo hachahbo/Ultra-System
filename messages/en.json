@@ -354,6 +354,7 @@
     "groupSystem": "System",
     "navOverview": "Overview",
     "navKds": "Kitchen (KDS)",
+    "navService": "Service",
     "navOrders": "Orders",
     "navReservations": "Bookings",
     "navMenu": "Menu",
@@ -408,6 +409,12 @@
     "language": "Interface language"
   },
   "Orders": {
+    "statusPending": "To approve",
+    "statusConfirmed": "Approved",
+    "statusPreparing": "In the kitchen",
+    "statusReady": "Ready to serve",
+    "statusServed": "Served",
+    "statusCancelled": "Cancelled",
     "title": "Today's orders",
     "revenue": "Today's revenue",
     "inProgress": "In progress",
@@ -1103,5 +1110,32 @@
     "saveFailed": "Save failed",
     "saving": "Saving…",
     "save": "Save"
+  },
+  "Service": {
+    "laneApprove": "To approve",
+    "laneKitchen": "In the kitchen",
+    "laneReady": "Ready to serve",
+    "approve": "Approve",
+    "reject": "Reject",
+    "serve": "Served",
+    "emptyApprove": "No orders to approve",
+    "emptyKitchen": "Nothing in the kitchen",
+    "emptyReady": "Nothing to serve",
+    "allClear": "All caught up.",
+    "table": "Table",
+    "note": "Note",
+    "soldOut": "Sold out",
+    "markSoldOut": "Mark sold out",
+    "markAvailable": "Back in stock",
+    "approveFailed": "Could not approve the order",
+    "rejectFailed": "Could not reject the order",
+    "serveFailed": "Could not mark as served",
+    "availabilityFailed": "Could not change availability",
+    "loadFailed": "Could not load the service queue",
+    "readyAlert": "Order ready to serve",
+    "soldOutWarning": "Item sold out — check before approving",
+    "dineIn": "Dine in",
+    "delivery": "Delivery",
+    "waiting": "Waiting"
   }
 }

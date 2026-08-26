@@ -17,5 +17,5 @@ export default async function OrdersPage() {
   // order — serveur/cuisine can see and update orders but not money.
   const canSettlePayment = ctx.profile.role === "owner" || ctx.profile.role === "manager";
 
-  return <OrdersView canSettlePayment={canSettlePayment} />;
+  return <OrdersView role={ctx.profile.role} canSettlePayment={canSettlePayment} />;
 }

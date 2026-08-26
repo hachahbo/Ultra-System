@@ -36,6 +36,11 @@ export default async function OverviewPage() {
       supabase
         .from("orders")
         .select("id, type, table_number, customer_name, items, total, status, created_at")
+        // A cancelled order carries a non-zero total but earned nothing, and
+        // would inflate both the revenue series and the order count. Same
+        // exclusion as get_order_aggregates (0030 §9). The recent-activity
+        // list below deliberately still shows them — that one is not a KPI.
+        .neq("status", "cancelled")
         .gte("created_at", historyFrom.toISOString()),
       supabase
         .from("reservations")

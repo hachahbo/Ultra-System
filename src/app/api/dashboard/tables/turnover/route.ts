@@ -5,7 +5,7 @@ import { assertFeature, requireSession } from "@/lib/dashboard";
 // GET /api/dashboard/tables/turnover — live occupancy + rotation metrics.
 // Reuses the "floor_plan" feature flag (table_sessions is a table-level
 // concept, not a separate plan tier) and the same open-to-any-staff-role
-// read policy as /api/dashboard/tables (kitchen-view/reservations-view
+// read policy as /api/dashboard/tables (reservations-view / floor plan
 // consume that route too).
 export async function GET() {
   const guard = await requireSession();

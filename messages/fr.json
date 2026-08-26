@@ -354,6 +354,7 @@
     "groupSystem": "Système",
     "navOverview": "Aperçu",
     "navKds": "Cuisine (KDS)",
+    "navService": "Service",
     "navOrders": "Commandes",
     "navReservations": "Réservations",
     "navMenu": "Menu",
@@ -408,6 +409,12 @@
     "language": "Langue de l'interface"
   },
   "Orders": {
+    "statusPending": "À approuver",
+    "statusConfirmed": "Approuvée",
+    "statusPreparing": "En cuisine",
+    "statusReady": "Prête à servir",
+    "statusServed": "Servie",
+    "statusCancelled": "Annulée",
     "title": "Commandes du jour",
     "revenue": "Revenu du jour",
     "inProgress": "En cours",
@@ -1103,5 +1110,32 @@
     "saveFailed": "Enregistrement impossible",
     "saving": "Enregistrement…",
     "save": "Enregistrer"
+  },
+  "Service": {
+    "laneApprove": "À approuver",
+    "laneKitchen": "En cuisine",
+    "laneReady": "Prêt à servir",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "serve": "Servi",
+    "emptyApprove": "Aucune commande à approuver",
+    "emptyKitchen": "Rien en cuisine",
+    "emptyReady": "Rien à servir",
+    "allClear": "Tout est à jour.",
+    "table": "Table",
+    "note": "Note",
+    "soldOut": "Rupture",
+    "markSoldOut": "Marquer en rupture",
+    "markAvailable": "Remettre en stock",
+    "approveFailed": "Impossible d'approuver la commande",
+    "rejectFailed": "Impossible de refuser la commande",
+    "serveFailed": "Impossible de marquer comme servie",
+    "availabilityFailed": "Impossible de modifier la disponibilité",
+    "loadFailed": "Impossible de charger le service",
+    "readyAlert": "Commande prête à servir",
+    "soldOutWarning": "Article en rupture — vérifiez avant d'approuver",
+    "dineIn": "Sur place",
+    "delivery": "Livraison",
+    "waiting": "En attente"
   }
 }

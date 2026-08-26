@@ -1,6 +1,6 @@
 import type { DiningTable } from "@/lib/types";
 
-// Shared across kitchen-view (orders map), reservations-view (reservation
+// Shared across the floor plan (orders map), reservations-view (reservation
 // map) and the tables editor — keeps the TanStack query key/fetcher in sync
 // across all three consumers of the floor plan.
 export const tablesQueryKey = ["tables"] as const;

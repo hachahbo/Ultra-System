@@ -24,6 +24,10 @@ export async function GET(
     return NextResponse.json({ error: "Erreur de lecture" }, { status: 500 });
   }
 
-  const totalSpent = (orders ?? []).reduce((sum, o) => sum + Number(o.total), 0);
+  // Lifetime value must not count orders the restaurant rejected — the list
+  // itself still shows them, since it is the customer's history, not a KPI.
+  const totalSpent = (orders ?? [])
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + Number(o.total), 0);
   return NextResponse.json({ orders: orders ?? [], total_spent: totalSpent });
 }

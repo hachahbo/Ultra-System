@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,9 +26,19 @@ export default async function RootLayout({
   // client provider — messages are forwarded from the request config.
   const locale = await getLocale();
 
+  // EMD design system flag. It has to sit on <html> rather than the dashboard
+  // layout's own wrapper because dialogs, dropdowns and sonner toasts portal to
+  // document.body — a wrapper-scoped attribute would leave all of them on the
+  // public site's warm palette. Pathname comes from the x-pathname header that
+  // proxy.ts forwards; Server Components have no other way to read the URL.
+  // Public [slug] pages are deliberately excluded — they keep their own theme.
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const emd = pathname.startsWith("/dashboard") || undefined;
+
   return (
     <html
       lang={locale}
+      data-emd={emd}
       className={`${rootFontClassNames} h-full antialiased overflow-x-hidden`}
       suppressHydrationWarning
     >

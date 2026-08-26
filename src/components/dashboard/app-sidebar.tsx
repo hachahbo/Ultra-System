@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   CalendarDays,
+  ConciergeBell,
   LayoutDashboard,
   LayoutGrid,
   LineChart,
@@ -57,6 +58,7 @@ const groups: Group[] = [
     items: [
       { href: "/dashboard", label: "navOverview", icon: LayoutDashboard, exact: true },
       { href: "/dashboard/kds", label: "navKds", icon: UtensilsCrossed, feature: "kds" },
+      { href: "/dashboard/service", label: "navService", icon: ConciergeBell },
       { href: "/dashboard/orders", label: "navOrders", icon: ShoppingBag },
       { href: "/dashboard/reservations", label: "navReservations", icon: CalendarDays, feature: "reservations" },
     ],
@@ -118,10 +120,10 @@ export function AppSidebar({
     .filter((g) => g.items.length > 0);
 
   return (
-    <Sidebar collapsible="icon" className="border-r-border dark:border-r-0 rounded-r-lg overflow-hidden dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+    <Sidebar collapsible="icon" className="border-r border-r-border bg-[var(--bg)]">
       <SidebarHeader className="p-4 pb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pt-4">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <div className="flex size-[34px] shrink-0 items-center justify-center rounded-[10px] bg-primary text-base font-extrabold text-primary-foreground group-data-[collapsible=icon]:mx-auto overflow-hidden">
+          <div className="flex size-[32px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--r-sm)] border border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[13px] font-semibold text-[var(--accent-text)] group-data-[collapsible=icon]:mx-auto">
             {logoUrl ? (
               <img src={logoUrl} alt={restaurantName} className="size-full object-contain bg-white" />
             ) : (
@@ -129,7 +131,7 @@ export function AppSidebar({
             )}
           </div>
           {!collapsed && (
-            <p className="truncate font-display text-[16px] font-extrabold tracking-tight">
+            <p className="truncate text-[13px] font-semibold text-[var(--text)]">
               {restaurantName}
             </p>
           )}
@@ -139,7 +141,7 @@ export function AppSidebar({
       <SidebarContent className="px-2 pt-2 group-data-[collapsible=icon]:px-0">
         {visibleGroups.map((group) => (
           <SidebarGroup key={group.label} className="pt-2 pb-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2">
-            <SidebarGroupLabel className="px-3 text-[10px] font-bold tracking-[1.2px] text-muted-foreground uppercase">
+            <SidebarGroupLabel className="px-[10px] pb-2 text-[10px] font-semibold uppercase tracking-[0.09em] text-[var(--text-subtle)]">
               {t(group.label)}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -155,11 +157,13 @@ export function AppSidebar({
                         isActive={active}
                         tooltip={t(item.label)}
                         className={cn(
-                          "min-h-[44px] rounded-[14px] px-3.5 transition-all duration-300",
-                          "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
-                          active
-                            ? "bg-primary text-primary-foreground font-bold shadow-[0_6px_16px_rgba(var(--primary-rgb),0.4)] dark:bg-white/10 dark:text-white dark:shadow-none hover:bg-primary/90 hover:text-primary-foreground dark:hover:bg-white/15 dark:hover:text-white"
-                            : "text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground"
+                          "relative min-h-[34px] rounded-[var(--r-sm)] px-[10px] text-[var(--text-muted)] transition-colors",
+                          "hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
+                          "group-data-[collapsible=icon]:!size-[34px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto",
+                          // Sanctioned accent use #2: a 2px bar, nothing more.
+                          // The icon and label stay neutral on purpose.
+                          active &&
+                            "bg-[var(--surface-2)] font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] before:absolute before:left-0 before:h-4 before:w-[2px] before:rounded-r-[2px] before:bg-[var(--accent-fill)] before:content-['']"
                         )}
                       >
                         <Link
@@ -167,8 +171,13 @@ export function AppSidebar({
                           onClick={() => isMobile && setOpenMobile(false)}
                           className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0"
                         >
-                          <item.icon className="size-[18px] shrink-0" />
-                          <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">{t(item.label)}</span>
+                          <item.icon
+                            className={cn(
+                              "size-[15px] shrink-0",
+                              active ? "opacity-100" : "opacity-75"
+                            )}
+                          />
+                          <span className="text-[13px] group-data-[collapsible=icon]:hidden">{t(item.label)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -180,7 +189,7 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pb-4">
+      <SidebarFooter className="mt-auto border-t border-[var(--border)] p-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:pb-4">
         <SidebarMenu className="group-data-[collapsible=icon]:items-center">
           <ClockWidget />
           <SidebarMenuItem className="w-full">
@@ -188,12 +197,12 @@ export function AppSidebar({
               onClick={signOut}
               tooltip={t("signOut")}
               className={cn(
-                "min-h-[44px] rounded-[14px] px-3.5 text-muted-foreground font-semibold hover:bg-accent/50 hover:text-foreground transition-all duration-300",
-                "group-data-[collapsible=icon]:!size-[40px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                "min-h-[34px] rounded-[var(--r-sm)] px-[10px] text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
+                "group-data-[collapsible=icon]:!size-[34px] group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
               )}
             >
-              <LogOut className="size-[18px] mr-1.5 group-data-[collapsible=icon]:mr-0 shrink-0" />
-              <span className="text-[13.5px] group-data-[collapsible=icon]:hidden">Déconnexion</span>
+              <LogOut className="size-[15px] shrink-0 opacity-75 group-data-[collapsible=icon]:mr-0" />
+              <span className="text-[13px] group-data-[collapsible=icon]:hidden">{t("signOut")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

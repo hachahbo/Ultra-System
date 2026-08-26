@@ -194,7 +194,7 @@ test.describe("Dashboard CRUD — manager", () => {
     expect(updated.status(), await updated.text()).toBe(200);
   });
 
-  test("orders: create (dine-in), update status, delete", async () => {
+  test("orders: create (dine-in), walk the workflow, delete", async () => {
     const menu = await api.get("/api/dashboard/menu");
     const { items } = await menu.json();
     const item = (items as { id: string; in_stock: boolean }[]).find((i) => i.in_stock);
@@ -203,18 +203,27 @@ test.describe("Dashboard CRUD — manager", () => {
     const created = await api.post("/api/dashboard/orders", {
       data: { type: "dine_in", table_number: "T1", lines: [{ item_id: item!.id, quantity: 1, options: [] }] },
     });
-    // Asserts the correct behavior (this is expected to currently FAIL):
-    // `orders` has no RLS insert policy for authenticated staff — only
-    // "tenant read" and "tenant update" (supabase/migrations/0001_init.sql).
-    // Every staff-created order from the dashboard POS 500s until an
-    // "orders tenant insert" policy is added. Left asserting 201 rather
-    // than the buggy 500 so this test goes green the moment it's fixed,
-    // instead of needing to be rewritten.
+    // The RLS insert policy this used to fail on landed in 0027.
     expect(created.status(), await created.text()).toBe(201);
     if (created.status() === 201) {
       const { id } = await created.json();
-      const updated = await api.patch(`/api/dashboard/orders/${id}`, { data: { status: "preparing" } });
-      expect(updated.status(), await updated.text()).toBe(200);
+
+      // A POS order is approved by the act of being typed in, so 0030's
+      // trigger has already fanned it out and moved it to 'preparing'.
+      const fetched = await api.get(`/api/dashboard/orders`);
+      const { orders } = await fetched.json();
+      const mine = (orders as { id: string; status: string }[]).find((o) => o.id === id);
+      expect(mine?.status, "POS order should be approved on arrival").toBe("preparing");
+
+      // The state machine is the gate now, not just the role: 'preparing' has
+      // no path to 'served' — the kitchen has to bump its tickets first.
+      const illegal = await api.patch(`/api/dashboard/orders/${id}`, { data: { status: "served" } });
+      expect(illegal.status(), await illegal.text()).toBe(403);
+
+      // Cancelling out of 'preparing' is legal for this role.
+      const cancelled = await api.patch(`/api/dashboard/orders/${id}`, { data: { status: "cancelled" } });
+      expect(cancelled.status(), await cancelled.text()).toBe(200);
+
       const deleted = await api.delete(`/api/dashboard/orders/${id}`);
       expect(deleted.status(), await deleted.text()).toBe(200);
     }

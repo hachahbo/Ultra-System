@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMD Data Table — Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — identical to the Settings mockup
+   ============================================================ */
+:root{
+  --bg:#0B0B0C; --surface:#131315; --surface-2:#1A1A1D; --surface-3:#212125;
+  --border:#26262A; --border-strong:#33333A; --border-ctrl:#63636D;
+  --text:#F4F4F5; --text-muted:#A1A1AA; --text-subtle:#8B8B93;
+  --accent:#F97316; --accent-hover:#FB8A3C; --accent-press:#EA6A0A;
+  --accent-text:#F97316;
+  --accent-subtle:rgba(249,115,22,.12); --accent-border:rgba(249,115,22,.35);
+  --on-accent:#1A0C02;
+  --success:#22C55E; --success-bg:rgba(34,197,94,.12);
+  --warning:#EAB308; --warning-bg:rgba(234,179,8,.12);
+  --danger:#EF4444;  --danger-bg:rgba(239,68,68,.12);
+  --info:#3B82F6;    --info-bg:rgba(59,130,246,.12);
+  --shadow-pop:0 8px 24px rgba(0,0,0,.55);
+  --r-sm:6px; --r-md:12px; --r-pill:999px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --row-h:44px;
+}
+body.compact{--row-h:34px}
+
+
+/* ============================================================
+   LIGHT — selected for the light surface, not an inversion of dark.
+   Measured (ratio vs the surface named):
+     text 17.7 · muted 7.7 · subtle 5.3 · accent-text 5.2
+     success 5.0 · warning 4.9 · danger 4.8 · info 6.7
+     border-ctrl 3.4 (WCAG 1.4.11) · series-1 4.4 · series-2 3.2
+   NOTE --accent stays #F97316 as a FILL, but orange as small marks or text
+   is only 2.8:1 on white — those use --accent-text (#C2410C).
+   ============================================================ */
+:root[data-theme="light"]{
+  --bg:#FAFAFA; --surface:#FFFFFF; --surface-2:#F4F4F5; --surface-3:#E9E9EC;
+  --border:#E4E4E7; --border-strong:#D4D4D8; --border-ctrl:#8B8B93;
+  --text:#18181B; --text-muted:#52525B; --text-subtle:#6B6B75;
+  --accent:#F97316; --accent-hover:#EA6A0A; --accent-press:#C2410C;
+  --accent-text:#C2410C;
+  --accent-subtle:rgba(249,115,22,.12); --accent-border:rgba(249,115,22,.45);
+  --on-accent:#1A0C02;
+  --success:#15803D; --success-bg:rgba(21,128,61,.11);
+  --warning:#A16207; --warning-bg:rgba(161,98,7,.12);
+  --danger:#DC2626;  --danger-bg:rgba(220,38,38,.10);
+  --info:#1D4ED8;    --info-bg:rgba(29,78,216,.10);
+  --shadow-pop:0 8px 24px rgba(16,16,20,.12);
+  --shadow-modal:0 24px 60px rgba(16,16,20,.18);
+  /* chart roles: documented LIGHT slots 1-2, validated on #FFFFFF —
+     CVD ΔE 24.7 protan / 32.7 tritan, normal-vision 33.6 */
+  --series-1:#2A78D6; --series-2:#EB6834;
+  --series-1-soft:rgba(42,120,214,.16); --series-2-soft:rgba(235,104,52,.14);
+  --grid:#E9E9EC;
+}
+/* the dimmed "false" glyph needs a darker base on white to clear 3:1 */
+:root[data-theme="light"] .bool.no{color:#4A4A52}
+
+:root[data-theme="light"] .ic-moon{display:none}
+:root[data-theme="light"] .ic-sun{display:block!important}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* ============================================================ SHELL */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);height:100vh;transition:padding-right .22s ease}
+.sidebar{background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.org{display:flex;align-items:center;gap:10px;margin:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md)}
+.org-mark{width:32px;height:32px;flex:none;border-radius:8px;background:var(--accent-subtle);border:1px solid var(--accent-border);display:grid;place-items:center;color:var(--accent)}
+.org-name{font-weight:600;font-size:13px;letter-spacing:-.01em}
+.org-sub{font-size:11px;color:var(--text-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-side{display:flex;align-items:center;gap:8px;margin:0 12px 14px;padding:7px 10px;background:var(--surface);border:1px solid var(--border-ctrl);border-radius:var(--r-sm);color:var(--text-subtle);font-size:13px;width:calc(100% - 24px)}
+.search-side kbd{margin-left:auto;font:500 10px/1 var(--mono);background:var(--surface-3);border:1px solid var(--border-strong);padding:3px 5px;border-radius:4px}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-subtle);padding:0 22px 8px}
+.nav{display:flex;flex-direction:column;gap:1px;padding:0 10px;overflow-y:auto;min-height:0}
+.nav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--r-sm);color:var(--text-muted);font-size:13px;position:relative}
+.nav a:hover{background:var(--surface-2);color:var(--text)}
+.nav a svg{width:15px;height:15px;flex:none;opacity:.75}
+.nav a.is-active{background:var(--surface-2);color:var(--text);font-weight:500}
+.nav a.is-active svg{opacity:1}
+.nav a.is-active::before{content:"";position:absolute;left:0;width:2px;height:16px;background:var(--accent-text);border-radius:0 2px 2px 0}
+.user{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px;border-top:1px solid var(--border)}
+.avatar-xs{width:28px;height:28px;border-radius:var(--r-pill);flex:none;background:var(--surface-3);border:1px solid var(--border-strong);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--text-muted)}
+
+.content{overflow-y:auto;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:0 28px;height:56px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);flex:none}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-subtle)}
+.crumb b{color:var(--text);font-weight:500}
+.icon-btn{width:30px;height:30px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--text-subtle)}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+.page{padding:24px 28px 48px;flex:1;min-width:0}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.page-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.page-head .sub{font-size:13px;color:var(--text-subtle);margin-top:2px}
+
+/* ============================================================ BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:var(--r-sm);font-size:13px;font-weight:500;white-space:nowrap;border:1px solid transparent;transition:background .12s,border-color .12s,color .12s}
+.btn svg{width:14px;height:14px;flex:none}
+.btn-primary{background:var(--accent);color:var(--on-accent);font-weight:600}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{color:var(--text-muted);border-color:var(--border-ctrl)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--text);border-color:var(--text-subtle)}
+.btn-ghost.on{background:var(--surface-2);color:var(--text);border-color:var(--text-subtle)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-sm{height:28px;padding:0 10px;font-size:12px}
+.btn-link{color:var(--text-muted);font-size:12px;font-weight:500;padding:4px 6px;border-radius:var(--r-sm)}
+.btn-link:hover{color:var(--text);background:var(--surface-2)}
+.cnt{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 5px;border-radius:var(--r-pill);background:var(--accent);color:var(--on-accent);font:700 10px/1 var(--font)}
+
+/* ============================================================ TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;position:relative}
+.search{position:relative;flex:1;min-width:200px;max-width:340px}
+.search input{width:100%;height:34px;padding:0 11px 0 33px;background:var(--surface-2);color:var(--text);border:1px solid var(--border-ctrl);border-radius:var(--r-sm);font-size:13px;font-family:inherit}
+.search input::placeholder{color:var(--text-subtle)}
+.search input:focus{outline:2px solid var(--accent-text);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:11px;top:10px;width:14px;height:14px;color:var(--text-subtle);pointer-events:none}
+.spacer{flex:1}
+
+/* scope: a state, so a segmented control — not a button pretending to be one */
+.seg{display:inline-flex;gap:2px;padding:3px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm)}
+.seg button{height:26px;padding:0 11px;border-radius:4px;font-size:12px;font-weight:500;color:var(--text-subtle)}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--surface);border:1px solid var(--border-strong);color:var(--text)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fchip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 6px 0 10px;border-radius:var(--r-sm);background:var(--surface-3);border:1px solid var(--border-ctrl);font-size:12px;color:var(--text-muted)}
+.fchip b{color:var(--text);font-weight:500}
+.fchip button{width:16px;height:16px;border-radius:3px;display:grid;place-items:center;color:var(--text-subtle)}
+.fchip button:hover{background:var(--danger-bg);color:var(--danger)}
+.fchip svg{width:9px;height:9px}
+
+/* selection bar replaces the toolbar */
+.selbar{display:none;align-items:center;gap:10px;height:46px;padding:0 12px;margin-bottom:12px;background:var(--accent-subtle);border:1px solid var(--accent-border);border-radius:var(--r-sm)}
+body.has-sel .selbar{display:flex}
+body.has-sel .toolbar,body.has-sel .chips{display:none}
+.selbar .n{font-size:13px;font-weight:600}
+
+/* ============================================================ TABLE */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+/* `overflow-x:auto` computes overflow-y to `auto` too, which makes .tw the
+   sticky containing block. So make it a real scroll viewport and stick the
+   header to its own top — the toolbar and pager then stay pinned while rows
+   scroll. Sticking to `top:56px` against the page instead lands the header
+   on top of row 1. */
+.tw{overflow:auto;max-height:clamp(300px,calc(100vh - 340px),920px)}
+/* `border-collapse: separate` + zero spacing is the safe pairing for sticky <th>;
+   `collapse` has a history of dropping sticky borders across browser versions.
+   Every rule here is a bottom border only, so the result is visually identical. */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+thead th{
+  position:sticky;top:0;z-index:10;
+  background:var(--surface-2);
+  text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-subtle);padding:0 14px;height:38px;white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:var(--text)}
+.th{display:inline-flex;align-items:center;gap:5px}
+.th .sort{width:12px;height:12px;opacity:0;transition:opacity .12s}
+thead th:hover .sort{opacity:.5}
+thead th.sorted{color:var(--text)}
+thead th.sorted .sort{opacity:1;color:var(--accent-text)}
+/* ---- inline column filter row -------------------------------------------
+   A second thead row, sticky under the labels. Subordinate to the header:
+   shorter, no uppercase, controls sit on --surface so they read as inputs
+   rather than as a second set of column titles. */
+thead tr:first-child th{top:0}
+/* --frow-top is measured from the real header height at runtime — hardcoding it
+   drifts the moment header padding or font-size changes, and the symptom is the
+   filter row sitting on top of row 1. */
+thead tr.frow th{top:var(--frow-top,38px);height:38px;padding:0 8px 6px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+body.nofilters thead tr.frow{display:none}
+
+.fc{width:100%;height:28px;padding:0 8px;background:var(--surface);color:var(--text);
+  border:1px solid var(--border-ctrl);border-radius:5px;font:400 12px var(--font)}
+.fc::placeholder{color:var(--text-subtle)}
+.fc:hover{border-color:var(--text-subtle)}
+.fc:focus{outline:2px solid var(--accent-text);outline-offset:1px;border-color:transparent}
+/* A column carrying a value is visible at a glance, without a separate icon.
+   background-COLOR, not the `background` shorthand — the shorthand resets
+   background-repeat/position/size, which tiles the select's chevron sprite. */
+.fc.on{border-color:var(--accent-border);background-color:var(--accent-subtle);color:var(--text);font-weight:500}
+select.fc{appearance:none;padding-right:22px;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B8B93' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 6px center;background-size:11px}
+select.fc.on{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F97316' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>")}
+.fc-c{display:grid;place-items:center}
+.fclr{width:26px;height:26px;border-radius:5px;display:grid;place-items:center;color:var(--text-subtle);margin-left:auto}
+.fclr:hover{background:var(--danger-bg);color:var(--danger)}
+.fclr:disabled{opacity:.3;pointer-events:none}
+.fclr svg{width:13px;height:13px}
+
+tbody td{padding:0 14px;height:var(--row-h);border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text-muted);transition:height .15s}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.sel td{background:var(--accent-subtle)}
+.c-check{width:40px;padding-left:14px}
+.c-id{width:56px}
+.c-act{width:1%;text-align:right;white-space:nowrap}
+
+/* checkbox */
+.cb{appearance:none;width:15px;height:15px;border-radius:4px;border:1px solid var(--border-ctrl);background:var(--surface);display:grid;place-items:center;cursor:pointer;flex:none}
+.cb:checked{background:var(--accent);border-color:var(--accent)}
+.cb:checked::after{content:"";width:8px;height:5px;border-left:2px solid var(--on-accent);border-bottom:2px solid var(--on-accent);transform:rotate(-45deg) translateY(-1px)}
+
+/* user cell — merges Photo + Username + First + Last into one column */
+.ucell{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:30px;height:30px;flex:none;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-strong);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.02em;transition:width .15s,height .15s}
+body.compact .av{width:22px;height:22px;font-size:9.5px}
+.uname{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uhandle{font:400 11.5px/1.3 var(--mono);color:var(--text-subtle);white-space:nowrap}
+body.compact .uhandle{display:none}
+.mono{font-family:var(--mono);font-size:12px}
+.subtle{color:var(--text-subtle)}
+
+/* email + copy on hover */
+.cpy{display:inline-flex;align-items:center;gap:6px}
+.cpy .mini{width:20px;height:20px;border-radius:4px;display:grid;place-items:center;color:var(--text-subtle);opacity:0;transition:opacity .12s}
+tr:hover .cpy .mini{opacity:1}
+.cpy .mini:hover{background:var(--surface-3);color:var(--text)}
+.cpy .mini svg{width:11px;height:11px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:var(--r-pill);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge.ok{background:var(--success-bg);color:var(--success)}
+.badge.warn{background:var(--warning-bg);color:var(--warning)}
+.badge.dgr{background:var(--danger-bg);color:var(--danger)}
+.badge.info{background:var(--info-bg);color:var(--info)}
+.badge.neu{background:var(--surface-3);color:var(--text-muted)}
+
+/* booleans as glyphs — the eye skips the negatives */
+.bool{display:inline-grid;place-items:center;width:18px;height:18px}
+.bool.yes{color:var(--success)}
+.bool.no{color:var(--text-subtle);opacity:.6}
+.bool svg{width:14px;height:14px}
+
+.rowbtn{width:26px;height:26px;border-radius:5px;display:inline-grid;place-items:center;color:var(--text-subtle)}
+.rowbtn:hover{background:var(--surface-3);color:var(--text)}
+.rowbtn svg{width:14px;height:14px}
+
+/* ONE pagination bar, inside the card */
+.pager{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--border);background:var(--surface-2);flex-wrap:wrap}
+.pager .info{font-size:12px;color:var(--text-subtle)}
+.pager .info b{color:var(--text);font-weight:500}
+.rpp{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-subtle)}
+.rpp select{height:28px;padding:0 24px 0 9px;background:var(--surface);color:var(--text);border:1px solid var(--border-ctrl);border-radius:var(--r-sm);font-size:12px;font-family:inherit;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B8B93' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 7px center;background-size:12px}
+.pages{display:flex;align-items:center;gap:3px}
+.pg{min-width:28px;height:28px;padding:0 7px;border-radius:var(--r-sm);font-size:12.5px;font-weight:500;color:var(--text-muted);display:grid;place-items:center}
+.pg:hover{background:var(--surface-3);color:var(--text)}
+.pg.on{background:var(--surface-3);border:1px solid var(--border-strong);color:var(--text);font-weight:600}
+.pg:disabled{opacity:.3;pointer-events:none}
+.pg svg{width:13px;height:13px}
+.pg.gap{pointer-events:none;color:var(--text-subtle);min-width:18px;padding:0}
+
+/* top pager mirrors the bottom one — same component, border flipped */
+.pager.top{border-top:0;border-bottom:1px solid var(--border)}
+
+/* go-to-page: doubles as the current-page readout */
+.goto{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-subtle);white-space:nowrap}
+.goto input{
+  width:46px;height:28px;padding:0 6px;text-align:center;
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border-ctrl);border-radius:var(--r-sm);
+  font:500 12.5px var(--mono);font-variant-numeric:tabular-nums;
+  -moz-appearance:textfield;
+}
+.goto input::-webkit-outer-spin-button,.goto input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.goto input:focus{outline:2px solid var(--accent-text);outline-offset:1px;border-color:transparent}
+.goto input.bad{border-color:var(--danger);color:var(--danger)}
+.goto .of{color:var(--text-subtle)}
+
+/* ============================================================ STATE REFERENCE */
+.spec{margin-top:24px}
+.spec h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-subtle);margin-bottom:12px}
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.spec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px}
+.spec-card h4{font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px}
+.spec-row{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:11.5px;color:var(--text-subtle)}
+.spec-row .lbl{margin-left:auto;font-size:11px}
+
+.blank{display:grid;place-items:center;text-align:center;padding:44px 24px;gap:10px}
+.blank .bi{width:40px;height:40px;border-radius:var(--r-md);background:var(--surface-3);display:grid;place-items:center;color:var(--text-subtle)}
+.blank .bi svg{width:19px;height:19px}
+.blank b{font-size:14px;font-weight:600;color:var(--text)}
+.blank p{font-size:12.5px;color:var(--text-subtle);max-width:280px}
+.skel{height:10px;border-radius:4px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:sh 1.4s infinite}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ============================================================ ANNOTATIONS */
+/* NB: do NOT add `thead` or `thead th` here.
+   - `thead th{position:relative}` sits after the sticky declaration and would
+     silently win, so the header would scroll away.
+   - `thead{position:relative}` is subtler and cost me a debugging round: it makes
+     the thead the containing block, and a sticky cell can never travel outside
+     its containing block. The header stays "sticky" in computed style and still
+     scrolls off — which looks like sticky being broken rather than over-ridden.
+   `position:sticky` is itself a positioned value, so .anno anchors to the th fine. */
+.toolbar,.card,.pager,.selbar{position:relative}
+/* the card clips its corners, which would eat markers on its edges */
+body.annotate .card{overflow:visible}
+body.annotate .tw{overflow:visible;max-height:none}
+.anno{position:absolute;z-index:30;width:20px;height:20px;border-radius:50%;background:var(--info);color:#fff;font:700 11px/20px var(--font);text-align:center;box-shadow:0 0 0 3px var(--bg);opacity:0;transform:scale(.6);pointer-events:none;transition:opacity .18s,transform .18s}
+body.annotate .anno{opacity:1;transform:scale(1)}
+body.annotate [data-fix]{box-shadow:0 0 0 1px var(--info),0 0 0 5px var(--info-bg);border-radius:var(--r-sm)}
+.legend{position:fixed;right:0;top:0;bottom:0;width:340px;z-index:50;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;transform:translateX(100%);transition:transform .22s ease}
+body.annotate .legend{transform:none}
+body.annotate .app{padding-right:340px}
+body.filters .app{padding-right:320px}
+.legend h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.legend .lead{font-size:12px;color:var(--text-subtle);margin-bottom:16px}
+.legend ol{list-style:none;display:flex;flex-direction:column;gap:13px}
+.legend li{display:flex;gap:10px;font-size:12.5px;line-height:1.55}
+.legend .n{width:20px;height:20px;flex:none;border-radius:50%;background:var(--info);color:#fff;font:700 11px/20px var(--font);text-align:center}
+.legend li b{display:block;color:var(--text);font-weight:600;margin-bottom:1px}
+.legend li span{color:var(--text-muted)}
+.legend .div{height:1px;background:var(--border);margin:16px 0}
+
+.fabs{position:fixed;right:20px;bottom:20px;z-index:70;display:flex;gap:8px}
+.fab{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 15px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-strong);font-size:13px;font-weight:500;color:var(--text);box-shadow:var(--shadow-pop)}
+.fab:hover{border-color:var(--info)}
+.fab.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.fab svg{width:15px;height:15px}
+body.annotate .fabs{right:360px}
+body.annotate .fab.a{background:var(--info);border-color:var(--info);color:#fff}
+body.filters .fabs{right:340px}
+
+@media (max-width:1000px){.app{grid-template-columns:minmax(0,1fr)}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="org">
+      <div class="org-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4h11v-4"/></svg></div>
+      <div style="min-width:0"><div class="org-name">EMD Organization</div><div class="org-sub">Structure &amp; Hierarchy</div></div>
+    </div>
+    <button class="search-side">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Search <kbd>⌘K</kbd>
+    </button>
+    <div class="nav-label">Organization</div>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>Home</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12 12 20l-8-8V4h8z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg>Tags</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="6" rx="1"/><rect x="13" y="4" width="8" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/></svg>Tag Categories</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M10 21v-5h4v5"/></svg>Structures</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h10M7 7 5 5m2 2L5 9M17 17H7m10 0 2 2m-2-2 2-2"/></svg>Relation Types</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21h16M6 21V9l6-4 6 4v12"/><path d="M10 13h4M10 17h4"/></svg>Units</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>Relations</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M17 11h4M19 9v4"/></svg>User Units</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>Functional Roles</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="2" y="16" width="6" height="5" rx="1"/><rect x="16" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M5 16v-2h14v2"/></svg>Organization Chart</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.5 10.5 7-4m-7 7 7 4"/></svg>Organization Overview</a>
+      <a href="#" class="is-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5M18 20a6 6 0 0 0-3-5.2"/></svg>Users</a>
+    </nav>
+    <div class="user">
+      <div class="avatar-xs">AU</div>
+      <div style="min-width:0;flex:1"><div style="font-size:12.5px;font-weight:500">Admin User</div><div style="font-size:11px;color:var(--text-subtle)">Platform Administrator</div></div>
+      <button class="icon-btn" aria-label="Sign out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:15px;height:15px"><path d="M15 17l5-5-5-5M20 12H9M12 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/></svg></button>
+    </div>
+  </aside>
+
+  <!-- ============ CONTENT ============ -->
+  <main class="content">
+    <div class="topbar">
+      <button class="icon-btn" aria-label="Toggle sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button>
+      <div class="crumb">Organization <span>/</span> <b>Users</b></div>
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Switch theme" title="Switch theme" style="margin-left:auto">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;display:none"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+    </div>
+
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>Users</h1>
+          <div class="sub">People with an account in this workspace.</div>
+        </div>
+      </div>
+
+      <!-- ---------- TOOLBAR: one row ---------- -->
+      <div class="toolbar" data-fix>
+        <span class="anno" data-n="1" style="top:-11px;left:-11px"></span>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input placeholder="Search name, username or email…">
+        </div>
+
+        <button class="btn btn-ghost on" id="fbtn" onclick="toggleFilterRow()" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+          Filters <span class="cnt" id="fcount" hidden>0</span>
+        </button>
+
+        <div class="seg" role="group" aria-label="Record scope">
+          <button class="on" onclick="seg(this)">Active</button>
+          <button onclick="seg(this)">Trashed</button>
+          <button onclick="seg(this)">All</button>
+        </div>
+
+        <span class="spacer"></span>
+
+        <button class="btn btn-ghost btn-sm" onclick="document.body.classList.toggle('compact')" title="Row density" aria-label="Toggle row density">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>Columns</button>
+        <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Export</button>
+        <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Create user</button>
+      </div>
+
+      <!-- Chips appear ONLY when the filter row is collapsed — otherwise the
+           inline inputs already show every active filter, and the chips are
+           a second copy of the same state. -->
+      <div class="chips" id="chips" hidden></div>
+
+      <!-- selection bar (appears when rows are checked) -->
+      <div class="selbar">
+        <span class="anno" data-n="7" style="top:-11px;left:-11px"></span>
+        <span class="n"><span id="selN">0</span> selected</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>Assign role</button>
+        <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21h16M6 21V9l6-4 6 4v12"/></svg>Add to unit</button>
+        <button class="btn btn-ghost btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Export</button>
+        <button class="btn btn-danger btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>Deactivate</button>
+        <button class="btn-link" onclick="clearSel()">Clear</button>
+      </div>
+
+      <!-- ---------- TABLE ---------- -->
+      <div class="card">
+        <!-- TOP pager — same component as the bottom one -->
+        <div class="pager top" id="pagerTop"></div>
+
+        <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th class="c-check"><input type="checkbox" class="cb" id="all" onchange="toggleAll(this)" aria-label="Select all"></th>
+              <th class="c-id sortable"><span class="anno" data-n="2" style="top:-10px;left:-6px"></span><span class="th">ID<svg class="sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></span></th>
+              <th class="sortable sorted" data-fix><span class="anno" data-n="3" style="top:-10px;left:-8px"></span><span class="th">User<svg class="sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 15 6-6 6 6"/></svg></span></th>
+              <th class="sortable"><span class="th">Email<svg class="sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></span></th>
+              <th data-fix><span class="anno" data-n="4" style="top:-10px;left:-8px"></span><span class="th">Status</span></th>
+              <th style="text-align:center" data-fix><span class="anno" data-n="5" style="top:-10px;left:-8px"></span><span class="th">Premium</span></th>
+              <th style="text-align:center"><span class="th">2FA</span></th>
+              <th class="sortable"><span class="th">Last login<svg class="sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></span></th>
+              <th class="sortable"><span class="th">Created<svg class="sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></span></th>
+              <th class="c-act">Actions</th>
+            </tr>
+
+            <!-- INLINE COLUMN FILTERS — one control per column, no separate icons -->
+            <tr class="frow" data-fix>
+              <th><span class="anno" data-n="2" style="top:2px;left:-8px"></span></th>
+              <th><input class="fc" data-f="id" type="text" inputmode="numeric" placeholder="ID" aria-label="Filter by ID"></th>
+              <th><input class="fc" data-f="user" type="text" placeholder="Name or username" aria-label="Filter by user"></th>
+              <th><input class="fc" data-f="email" type="text" placeholder="Email" aria-label="Filter by email"></th>
+              <th>
+                <select class="fc" data-f="status" aria-label="Filter by status">
+                  <option value="">Any status</option><option>Active</option><option>Invited</option>
+                  <option>Pending</option><option>Suspended</option>
+                </select>
+              </th>
+              <th>
+                <select class="fc" data-f="premium" aria-label="Filter by premium">
+                  <option value="">Any</option><option>Yes</option><option>No</option>
+                </select>
+              </th>
+              <th>
+                <select class="fc" data-f="2fa" aria-label="Filter by two-factor">
+                  <option value="">Any</option><option>Enabled</option><option>Not enabled</option>
+                </select>
+              </th>
+              <th>
+                <select class="fc" data-f="lastlogin" aria-label="Filter by last login">
+                  <option value="">Any time</option><option>Last 24 hours</option><option>Last 7 days</option>
+                  <option>Last 30 days</option><option>Never</option>
+                </select>
+              </th>
+              <th>
+                <select class="fc" data-f="created" aria-label="Filter by created date">
+                  <option value="">Any time</option><option>Last 7 days</option><option>Last 30 days</option>
+                  <option>This year</option><option>Custom range…</option>
+                </select>
+              </th>
+              <th class="c-act">
+                <button class="fclr" id="fclr" onclick="clearFilters()" disabled
+                        title="Clear all filters" aria-label="Clear all filters">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v6l-4 2v-8z"/><path d="m17 3 4 4m0-4-4 4" stroke-width="2.2"/></svg>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+        </div>
+
+        <!-- BOTTOM pager -->
+        <div class="pager" id="pagerBot">
+          <span class="anno" data-n="6" style="top:-11px;left:-11px"></span>
+        </div>
+      </div>
+
+      <!-- ---------- STATE REFERENCE ---------- -->
+      <section class="spec">
+        <h2>State reference — spec for the Vue component</h2>
+        <div class="spec-grid">
+
+          <div class="spec-card">
+            <h4>Status badges</h4>
+            <div class="spec-row"><span class="badge ok"><i class="dot"></i>Active</span><span class="lbl">success</span></div>
+            <div class="spec-row"><span class="badge info"><i class="dot"></i>Invited</span><span class="lbl">info</span></div>
+            <div class="spec-row"><span class="badge warn"><i class="dot"></i>Pending</span><span class="lbl">warning</span></div>
+            <div class="spec-row"><span class="badge dgr"><i class="dot"></i>Suspended</span><span class="lbl">danger</span></div>
+            <div class="spec-row"><span class="badge neu"><i class="dot"></i>Trashed</span><span class="lbl">neutral</span></div>
+          </div>
+
+          <div class="spec-card">
+            <h4>Booleans, not pills</h4>
+            <div class="spec-row"><span class="bool yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 13 4 4L19 7"/></svg></span>True — success check</div>
+            <div class="spec-row"><span class="bool no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 12h12"/></svg></span>False — dimmed dash</div>
+            <div class="spec-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:10px;line-height:1.5">A red pill on every "No" made a healthy table look like an incident report.</div>
+          </div>
+
+          <div class="spec-card">
+            <h4>Empty cell</h4>
+            <div class="spec-row"><span class="subtle mono">Never</span><span class="lbl">no last login</span></div>
+            <div class="spec-row"><span class="subtle">Not set</span><span class="lbl">optional field</span></div>
+            <div class="spec-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:10px;line-height:1.5">Never leave a cell blank — a blank cell is indistinguishable from a render failure.</div>
+          </div>
+
+          <div class="spec-card" style="padding:0;overflow:hidden">
+            <div class="blank">
+              <div class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+              <b>No users match</b>
+              <p>Try removing a filter or widening the date range.</p>
+              <button class="btn btn-ghost btn-sm">Clear filters</button>
+            </div>
+          </div>
+
+          <div class="spec-card">
+            <h4>Loading — skeleton rows</h4>
+            <div style="display:flex;flex-direction:column;gap:11px;padding-top:2px">
+              <div style="display:flex;align-items:center;gap:10px"><div class="skel" style="width:26px;height:26px;border-radius:999px"></div><div style="flex:1"><div class="skel" style="width:60%;margin-bottom:5px"></div><div class="skel" style="width:40%;height:8px"></div></div></div>
+              <div style="display:flex;align-items:center;gap:10px"><div class="skel" style="width:26px;height:26px;border-radius:999px"></div><div style="flex:1"><div class="skel" style="width:75%;margin-bottom:5px"></div><div class="skel" style="width:35%;height:8px"></div></div></div>
+              <div style="display:flex;align-items:center;gap:10px"><div class="skel" style="width:26px;height:26px;border-radius:999px"></div><div style="flex:1"><div class="skel" style="width:50%;margin-bottom:5px"></div><div class="skel" style="width:45%;height:8px"></div></div></div>
+            </div>
+          </div>
+
+          <div class="spec-card">
+            <h4>Row menu</h4>
+            <div style="background:var(--surface-2);border:1px solid var(--border-strong);border-radius:var(--r-sm);box-shadow:var(--shadow-pop);padding:4px">
+              <div class="spec-row" style="padding:6px 8px;color:var(--text-muted);font-size:12.5px">View profile</div>
+              <div class="spec-row" style="padding:6px 8px;color:var(--text-muted);font-size:12.5px">Edit user</div>
+              <div class="spec-row" style="padding:6px 8px;color:var(--text-muted);font-size:12.5px">Reset password</div>
+              <div style="height:1px;background:var(--border);margin:4px 0"></div>
+              <div class="spec-row" style="padding:6px 8px;color:var(--danger);font-size:12.5px">Move to trash</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ============ FILTER PANEL ============ -->
+<!-- ============ LEGEND ============ -->
+<aside class="legend" aria-label="Changes">
+  <h3>What changed</h3>
+  <p class="lead">Seven fixes to the Users table.</p>
+  <ol>
+    <li><span class="n">1</span><div><b>One toolbar row</b><span>Search, filters, scope and actions on a single line. "Without Trashed" became a proper Active/Trashed/All segmented control — it's a state, not a button. Active filters show as removable chips.</span></div></li>
+    <li><span class="n">2</span><div><b>Filter row rebuilt, not removed</b><span>Still inline under the headers, but subordinate to them — 38px, no uppercase, controls on a lighter surface so they read as inputs rather than a second row of column titles. One control per column instead of an input plus a funnel icon. A column carrying a value turns accent, so active filters are visible without a legend. The stray <code>val</code> placeholder and the mystery refresh icon are gone; the row end is a clear-all that disables itself when there is nothing to clear. Collapsible from the toolbar, and chips appear only when it's collapsed.</span></div></li>
+    <li><span class="n">3</span><div><b>13 columns → 10</b><span>Photo + Username + First Name + Last Name collapsed into one User cell: avatar, full name, username beneath. No more truncated "First Na…" headers. And the photo has an initials fallback — the old table rendered broken-image glyphs.</span></div></li>
+    <li><span class="n">4</span><div><b>Status is green, not amber</b><span>Amber reads as a warning. Active is a success state, so it uses success green and stops competing with the orange accent.</span></div></li>
+    <li><span class="n">5</span><div><b>Booleans became glyphs</b><span>Every "No" was a red pill, so a perfectly healthy table looked like a wall of errors. True is a green check, false a dimmed dash — the eye scans for the exceptions instead of drowning in them.</span></div></li>
+    <li><span class="n">6</span><div><b>Two pagers, one component</b><span>Top and bottom, so you can page without scrolling back up — but rendered by a single function, which is what the old markup got wrong. Duplicated markup drifts; two mounts of one renderer can't. Both slimmed, both inside the card, and <b>Go to</b> added — it doubles as the current-page readout and earns its keep the moment the page count passes ~8. Try the <b>1,240 rows</b> toggle to see the ellipsis window.</span></div></li>
+    <li><span class="n">7</span><div><b>Selection does something</b><span>The checkboxes had no visible consequence. Selecting rows now swaps the toolbar for a bulk action bar. Tick a row to see it.</span></div></li>
+  </ol>
+  <div class="div"></div>
+  <p class="lead" style="margin:0">Row height dropped 57px → 44px, with a compact 34px mode. At 50 rows per page that's roughly 650px less scrolling.</p>
+</aside>
+
+<div class="fabs">
+  <button class="fab" onclick="bigData(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+    1,240 rows
+  </button>
+  <button class="fab a" onclick="document.body.classList.toggle('annotate')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+    Show changes
+  </button>
+</div>
+
+<script>
+const USERS = [
+  {id:1, name:'System Administrator', u:'sysadmin', e:'sysadmin@example.com', st:'ok:Active', p:0, f:0, ll:'2 hours ago', cr:'06/02/2026'},
+  {id:2, name:'Admin User',           u:'admino',   e:'admin@example.com',     st:'ok:Active', p:0, f:0, ll:'18 minutes ago', cr:'06/02/2026'},
+  {id:3, name:'Sarah Johnson',        u:'manager1', e:'manager1@example.com',  st:'ok:Active', p:1, f:0, ll:'Yesterday', cr:'06/02/2026'},
+  {id:4, name:'David Williams',       u:'manager2', e:'manager2@example.com',  st:'ok:Active', p:1, f:1, ll:'3 days ago', cr:'06/02/2026'},
+  {id:5, name:'Alice Chen',           u:'dev1',     e:'dev1@example.com',      st:'ok:Active', p:0, f:1, ll:'4 hours ago', cr:'06/02/2026'},
+  {id:6, name:'Bob Martin',           u:'dev2',     e:'dev2@example.com',      st:'ok:Active', p:0, f:0, ll:'6 days ago', cr:'06/02/2026'},
+  {id:7, name:'Emma Davis',           u:'support1', e:'support1@example.com',  st:'ok:Active', p:0, f:0, ll:'1 hour ago', cr:'06/02/2026'},
+  {id:8, name:'James Wilson',         u:'support2', e:'support2@example.com',  st:'ok:Active', p:0, f:0, ll:'Yesterday', cr:'06/02/2026'},
+  {id:9, name:'Olivia Brown',         u:'support3', e:'support3@example.com',  st:'ok:Active', p:0, f:0, ll:'2 weeks ago', cr:'06/01/2026'},
+  {id:10,name:null,                   u:'testnotification', e:'test-notification@gmail.com', st:'info:Invited', p:0, f:0, ll:null, cr:'06/02/2026'},
+];
+
+const initials = n => n ? n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() : '—';
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 13 4 4L19 7"/></svg>';
+const DASH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 12h12"/></svg>';
+const COPY  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+const DOTS  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';
+const EYE   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg>';
+
+function renderRows(){
+const offset = (PG.page - 1) * PG.perPage;
+document.getElementById('tb').innerHTML = USERS.map((b, k) => {
+  const u = {...b, id: offset + k + 1};             // IDs track the page
+  const [cls, label] = u.st.split(':');
+  return `<tr>
+    <td class="c-check"><input type="checkbox" class="cb rowcb" onchange="syncSel()" aria-label="Select ${u.u}"></td>
+    <td class="c-id"><span class="mono subtle">${u.id}</span></td>
+    <td>
+      <div class="ucell">
+        <div class="av">${initials(u.name)}</div>
+        <div style="min-width:0">
+          <div class="uname">${u.name || '<span class="subtle" style="font-weight:400">No name set</span>'}</div>
+          <div class="uhandle">@${u.u}</div>
+        </div>
+      </div>
+    </td>
+    <td><span class="cpy">${u.e}<button class="mini" aria-label="Copy email">${COPY}</button></span></td>
+    <td><span class="badge ${cls}"><i class="dot"></i>${label}</span></td>
+    <td style="text-align:center"><span class="bool ${u.p?'yes':'no'}" title="${u.p?'Yes':'No'}">${u.p?CHECK:DASH}</span></td>
+    <td style="text-align:center"><span class="bool ${u.f?'yes':'no'}" title="${u.f?'Enabled':'Not enabled'}">${u.f?CHECK:DASH}</span></td>
+    <td>${u.ll ? `<span title="06/02/2026 14:32">${u.ll}</span>` : '<span class="subtle mono">Never</span>'}</td>
+    <td><span class="mono subtle">${u.cr}</span></td>
+    <td class="c-act">
+      <button class="rowbtn" aria-label="View">${EYE}</button>
+      <button class="rowbtn" aria-label="More actions">${DOTS}</button>
+    </td>
+  </tr>`;
+}).join('');
+}
+/* NB: renderRows() reads PG, which is declared further down — call it after
+   that block, not here, or it hits the temporal dead zone. */
+
+document.querySelectorAll('.anno').forEach(el => el.textContent = el.dataset.n);
+
+function syncSel(){
+  const boxes = [...document.querySelectorAll('.rowcb')];
+  const on = boxes.filter(b => b.checked);
+  boxes.forEach(b => b.closest('tr').classList.toggle('sel', b.checked));
+  document.getElementById('selN').textContent = on.length;
+  document.body.classList.toggle('has-sel', on.length > 0);
+  const all = document.getElementById('all');
+  all.checked = on.length === boxes.length && boxes.length > 0;
+  all.indeterminate = on.length > 0 && on.length < boxes.length;
+}
+function toggleAll(el){
+  document.querySelectorAll('.rowcb').forEach(b => b.checked = el.checked);
+  syncSel();
+}
+function clearSel(){
+  document.querySelectorAll('.rowcb').forEach(b => b.checked = false);
+  document.getElementById('all').checked = false;
+  syncSel();
+}
+function seg(el){
+  [...el.parentElement.children].forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ============================================================
+   INLINE COLUMN FILTERS
+   The inputs are the single source of truth. Everything else —
+   the count badge, the clear button, the collapsed-state chips —
+   is derived from reading them, so nothing can fall out of sync.
+   ============================================================ */
+const F_LABEL = {id:'ID',user:'User',email:'Email',status:'Status',
+                 premium:'Premium','2fa':'2FA',lastlogin:'Last login',created:'Created'};
+
+const activeFilters = () =>
+  [...document.querySelectorAll('.fc')]
+    .filter(el => el.value.trim() !== '')
+    .map(el => ({key: el.dataset.f, value: el.value.trim(), el}));
+
+function syncFilters(){
+  const act = activeFilters();
+
+  document.querySelectorAll('.fc').forEach(el =>
+    el.classList.toggle('on', el.value.trim() !== ''));
+
+  const badge = document.getElementById('fcount');
+  badge.textContent = act.length;
+  badge.hidden = act.length === 0;
+
+  document.getElementById('fclr').disabled = act.length === 0;
+
+  /* Chips are the fallback view for when the row is hidden — never both */
+  const collapsed = document.body.classList.contains('nofilters');
+  const chips = document.getElementById('chips');
+  chips.hidden = !(collapsed && act.length);
+  if (!chips.hidden) {
+    chips.innerHTML = act.map(f =>
+      `<span class="fchip">${F_LABEL[f.key]} <b>${f.value}</b>
+         <button aria-label="Remove ${F_LABEL[f.key]} filter" data-clear="${f.key}">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 5l14 14M19 5 5 19"/></svg>
+         </button></span>`).join('') +
+      `<button class="btn-link" onclick="clearFilters()">Clear all</button>`;
+    chips.querySelectorAll('[data-clear]').forEach(b =>
+      b.addEventListener('click', () => {
+        document.querySelector(`.fc[data-f="${b.dataset.clear}"]`).value = '';
+        syncFilters();
+      }));
+  }
+}
+
+function clearFilters(){
+  document.querySelectorAll('.fc').forEach(el => el.value = '');
+  syncFilters();
+}
+
+function toggleFilterRow(){
+  const btn = document.getElementById('fbtn');
+  const hidden = document.body.classList.toggle('nofilters');
+  btn.classList.toggle('on', !hidden);
+  btn.setAttribute('aria-pressed', String(!hidden));
+  syncFilters();
+}
+
+/* text inputs debounce; selects fire immediately */
+let fTimer;
+document.querySelectorAll('input.fc').forEach(el =>
+  el.addEventListener('input', () => { clearTimeout(fTimer); fTimer = setTimeout(syncFilters, 300); }));
+document.querySelectorAll('select.fc').forEach(el =>
+  el.addEventListener('change', syncFilters));
+
+/* Pin the filter row directly beneath the label row, measured not assumed. */
+function placeFilterRow(){
+  const head = document.querySelector('thead tr:first-child');
+  if (!head) return;
+  document.documentElement.style.setProperty('--frow-top', head.getBoundingClientRect().height + 'px');
+}
+placeFilterRow();
+addEventListener('resize', placeFilterRow);
+
+/* seed one filter so the active state is visible on load */
+document.querySelector('.fc[data-f="status"]').value = 'Active';
+syncFilters();
+
+/* ============================================================
+   PAGINATION — one renderer, two mounts.
+   Top and bottom are the SAME function so they cannot drift apart;
+   that was the real problem with the original duplicated markup,
+   not the fact that there were two of them.
+   ============================================================ */
+const PG = { page: 1, perPage: 10, total: 35 };
+
+const CH_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 6-6 6 6 6"/></svg>';
+const CH_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6"/></svg>';
+
+const pageCount = () => Math.max(1, Math.ceil(PG.total / PG.perPage));
+
+/* Windowed page list: always first, last, current ±1, ellipsis for the gaps.
+   Under 8 pages every number is shown and no ellipsis appears. */
+function pageList(){
+  const n = pageCount(), c = PG.page;
+  if (n <= 7) return Array.from({length:n}, (_,i)=>i+1);
+  const out = new Set([1, n, c, c-1, c+1]);
+  if (c <= 3)     [2,3,4].forEach(p=>out.add(p));
+  if (c >= n-2)   [n-1,n-2,n-3].forEach(p=>out.add(p));
+  const list = [...out].filter(p => p>=1 && p<=n).sort((a,b)=>a-b);
+  const withGaps = [];
+  list.forEach((p,i) => {
+    if (i && p - list[i-1] > 1) withGaps.push('…');
+    withGaps.push(p);
+  });
+  return withGaps;
+}
+
+function renderPagers(){
+  const n = pageCount();
+  const from = (PG.page-1)*PG.perPage + 1;
+  const to   = Math.min(PG.page*PG.perPage, PG.total);
+
+  const numbers = pageList().map(p =>
+    p === '…'
+      ? `<span class="pg gap">…</span>`
+      : `<button class="pg ${p===PG.page?'on':''}" data-go="${p}"${p===PG.page?' aria-current="page"':''}>${p}</button>`
+  ).join('');
+
+  const html = `
+    <span class="info">Showing <b>${from.toLocaleString()}–${to.toLocaleString()}</b> of <b>${PG.total.toLocaleString()}</b></span>
+    <span class="spacer"></span>
+    <span class="rpp">Rows
+      <select data-rpp>${[10,25,50,100].map(v=>`<option ${v===PG.perPage?'selected':''}>${v}</option>`).join('')}</select>
+    </span>
+    <div class="pages">
+      <button class="pg" data-go="1" ${PG.page===1?'disabled':''} aria-label="First page">«</button>
+      <button class="pg" data-go="${PG.page-1}" ${PG.page===1?'disabled':''} aria-label="Previous page">${CH_L}</button>
+      ${numbers}
+      <button class="pg" data-go="${PG.page+1}" ${PG.page===n?'disabled':''} aria-label="Next page">${CH_R}</button>
+      <button class="pg" data-go="${n}" ${PG.page===n?'disabled':''} aria-label="Last page">»</button>
+    </div>
+    <label class="goto">Go to
+      <input type="number" min="1" max="${n}" value="${PG.page}" data-goto
+             inputmode="numeric" aria-label="Go to page">
+      <span class="of">of ${n}</span>
+    </label>`;
+
+  ['pagerTop','pagerBot'].forEach(id => {
+    const el = document.getElementById(id);
+    const anno = el.querySelector('.anno');          // keep the annotation marker
+    el.innerHTML = html;
+    if (anno) el.appendChild(anno);
+  });
+  wirePagers();
+}
+
+function goTo(p){
+  const n = pageCount();
+  PG.page = Math.min(n, Math.max(1, p|0));
+  renderPagers();
+  renderRows();
+  clearSel();
+  /* a page change scrolls the row viewport back to the top, never the page */
+  document.querySelector('.tw').scrollTop = 0;
+}
+
+function wirePagers(){
+  document.querySelectorAll('.pager [data-go]').forEach(b =>
+    b.addEventListener('click', () => goTo(+b.dataset.go)));
+
+  document.querySelectorAll('.pager [data-rpp]').forEach(s =>
+    s.addEventListener('change', () => {
+      /* keep the first visible row visible instead of dumping the user on page 1 */
+      const anchor = (PG.page-1)*PG.perPage;
+      PG.perPage = +s.value;
+      PG.page = Math.floor(anchor / PG.perPage) + 1;
+      renderPagers();
+      renderRows();
+    }));
+
+  document.querySelectorAll('.pager [data-goto]').forEach(inp => {
+    const commit = () => {
+      const n = pageCount(), v = parseInt(inp.value, 10);
+      if (!Number.isFinite(v) || v < 1 || v > n) {   // reject, don't silently clamp
+        inp.classList.add('bad');
+        setTimeout(() => { inp.classList.remove('bad'); inp.value = PG.page; }, 900);
+        return;
+      }
+      goTo(v);
+    };
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { inp.value = PG.page; inp.blur(); }
+    });
+    inp.addEventListener('blur', () => { inp.value = PG.page; inp.classList.remove('bad'); });
+  });
+}
+
+function bigData(el){
+  PG.total = PG.total === 35 ? 1240 : 35;
+  PG.page = 1;
+  el.classList.toggle('on', PG.total !== 35);
+  renderPagers();
+  renderRows();
+}
+renderPagers();
+renderRows();
+document.querySelectorAll('th.sortable').forEach(th => th.addEventListener('click', () => {
+  const was = th.classList.contains('sorted');
+  document.querySelectorAll('th.sorted').forEach(o => { o.classList.remove('sorted'); o.dataset.dir=''; });
+  th.classList.add('sorted');
+  const dir = was && th.dataset.dir === 'asc' ? 'desc' : 'asc';
+  th.dataset.dir = dir;
+  th.querySelector('.sort').innerHTML = dir === 'asc'
+    ? '<path d="m6 15 6-6 6 6"/>' : '<path d="m6 9 6 6 6-6"/>';
+}));
+
+function toggleTheme(){
+  const r = document.documentElement;
+  r.setAttribute('data-theme', r.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+}
+</script>
+</body>
+</html>

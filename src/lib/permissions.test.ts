@@ -8,6 +8,7 @@ import { canAccessRoute, canWrite, defaultRouteFor, ROLES, type Role } from "./p
 const EXPECTED_ROUTE_ACCESS: Record<string, Role[]> = {
   "/dashboard": ["owner", "manager"],
   "/dashboard/kds": ["owner", "manager", "serveur", "cuisine"],
+  "/dashboard/service": ["owner", "manager", "serveur"],
   "/dashboard/orders": ["owner", "manager", "serveur", "cuisine"],
   "/dashboard/reservations": ["owner", "manager", "serveur"],
   "/dashboard/menu": ["owner", "manager", "serveur", "cuisine"],
@@ -87,8 +88,8 @@ describe("defaultRouteFor", () => {
     expect(defaultRouteFor("owner")).toBe("/dashboard");
     expect(defaultRouteFor("manager")).toBe("/dashboard");
   });
-  it("serveur lands on /dashboard/orders and cuisine lands on /dashboard/kds (their Aperçu is hidden)", () => {
-    expect(defaultRouteFor("serveur")).toBe("/dashboard/orders");
+  it("serveur lands on /dashboard/service and cuisine lands on /dashboard/kds (their Aperçu is hidden)", () => {
+    expect(defaultRouteFor("serveur")).toBe("/dashboard/service");
     expect(defaultRouteFor("cuisine")).toBe("/dashboard/kds");
   });
   it("every role's default route is itself accessible to that role (no redirect loops)", () => {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/order-flow";
 import {
   CalendarClock,
   CalendarDays,
@@ -25,6 +26,15 @@ import { ORDER_STATUS_DOT, RESERVATION_STATUS_DOT } from "@/components/dashboard
 import type { Order, Reservation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { markOrderSeen, useSeenOrders } from "@/lib/seen-orders";
+
+const ORDER_STATUS_TEXT: Record<OrderStatus, string> = {
+  pending: "text-orange-600 dark:text-orange-400 font-bold",
+  confirmed: "text-blue-600 dark:text-blue-400",
+  preparing: "text-amber-600 dark:text-amber-500",
+  ready: "text-orange-600 dark:text-orange-400 font-bold",
+  served: "text-emerald-600 dark:text-emerald-500",
+  cancelled: "text-muted-foreground line-through",
+};
 
 export function OverviewView({
   currency,
@@ -62,6 +72,8 @@ export function OverviewView({
   todaysReservations: Pick<Reservation, "id" | "customer_name" | "party_size" | "time" | "status">[];
 }) {
   const t = useTranslations("Overview");
+  // Status labels live in Orders.* so every surface names a state identically.
+  const tOrders = useTranslations("Orders");
   const seenOrders = useSeenOrders();
   const panierMoyen = ordersToday > 0 ? revenueToday / ordersToday : 0;
   const [timeRange, setTimeRange] = useState<"today" | "week">("today");
@@ -348,7 +360,7 @@ export function OverviewView({
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {lastOrders.map((o) => {
-                      const isNewUnread = o.status === "new" && !seenOrders.has(o.id);
+                      const isNewUnread = o.status === "pending" && !seenOrders.has(o.id);
                       return (
                         <tr
                           key={o.id}
@@ -377,11 +389,9 @@ export function OverviewView({
                           <td className="py-4 pr-4">
                             <Badge variant="outline" className={cn(
                               "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800/80 font-medium",
-                              o.status === "done" && "text-emerald-600 dark:text-emerald-500",
-                              o.status === "preparing" && "text-amber-600 dark:text-amber-500",
-                              o.status === "new" && "text-orange-600 dark:text-orange-400 font-bold",
+                              ORDER_STATUS_TEXT[o.status],
                             )}>
-                              {o.status === "done" ? t("served") : o.status === "preparing" ? t("inProgress") : t("newStatus")}
+                              {tOrders(ORDER_STATUS_LABELS[o.status])}
                             </Badge>
                           </td>
                           <td className="py-4 pr-3 text-right text-xs text-muted-foreground">

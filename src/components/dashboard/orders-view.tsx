@@ -4,6 +4,13 @@ import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  allowedTransitions,
+  isActive,
+  ORDER_STATUS_LABELS,
+  type OrderStatus,
+} from "@/lib/order-flow";
+import type { Role } from "@/lib/permissions";
+import {
   Plus,
   Search,
   ChevronRight,
@@ -21,6 +28,9 @@ import {
   CheckCircle2,
   User,
   Hash,
+  Ban,
+  BellRing,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -66,16 +76,22 @@ async function fetchMenu(): Promise<{ items: Array<{ id: string; image_url: stri
 
 type Filter = "all" | "active" | "done";
 
-// `label` indexes into the Orders.* messages.
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string; darkBg: string; darkColor: string }> = {
-  new: { label: "inProgress", bg: "rgba(236, 91, 26, 0.14)", color: "#c94e10", darkBg: "rgba(236, 91, 26, 0.2)", darkColor: "#f7814b" },
-  preparing: { label: "ready", bg: "rgba(111, 143, 208, 0.16)", color: "#3a5fa0", darkBg: "rgba(111, 143, 208, 0.25)", darkColor: "#84a5e0" },
-  done: { label: "done", bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
+// `label` indexes into the Orders.* messages, via ORDER_STATUS_LABELS so every
+// surface names a state identically. (The pre-0030 table labelled 'preparing'
+// as "ready" and 'new' as "inProgress" — both wrong, and invisible until the
+// two concepts became separate states.)
+const STATUS_MAP: Record<OrderStatus, { label: string; icon: typeof Clock; bg: string; color: string; darkBg: string; darkColor: string }> = {
+  pending: { label: ORDER_STATUS_LABELS.pending, icon: Clock, bg: "rgba(236, 91, 26, 0.14)", color: "#c94e10", darkBg: "rgba(236, 91, 26, 0.2)", darkColor: "#f7814b" },
+  confirmed: { label: ORDER_STATUS_LABELS.confirmed, icon: ClipboardCheck, bg: "rgba(111, 143, 208, 0.16)", color: "#3a5fa0", darkBg: "rgba(111, 143, 208, 0.25)", darkColor: "#84a5e0" },
+  preparing: { label: ORDER_STATUS_LABELS.preparing, icon: Utensils, bg: "rgba(111, 143, 208, 0.16)", color: "#3a5fa0", darkBg: "rgba(111, 143, 208, 0.25)", darkColor: "#84a5e0" },
+  ready: { label: ORDER_STATUS_LABELS.ready, icon: BellRing, bg: "rgba(236, 91, 26, 0.14)", color: "#c94e10", darkBg: "rgba(236, 91, 26, 0.2)", darkColor: "#f7814b" },
+  served: { label: ORDER_STATUS_LABELS.served, icon: CheckCircle2, bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
+  cancelled: { label: ORDER_STATUS_LABELS.cancelled, icon: Ban, bg: "rgba(120, 120, 120, 0.14)", color: "#6b7280", darkBg: "rgba(160, 160, 160, 0.2)", darkColor: "#9ca3af" },
 };
 
-const getStatusBadge = (status: string) => STATUS_MAP[status] || STATUS_MAP.new;
+const getStatusBadge = (status: string) => STATUS_MAP[status as OrderStatus] ?? STATUS_MAP.pending;
 
-// Phase 8.1 — payment_status is orthogonal to fulfilment status (a 'done'
+// Phase 8.1 — payment_status is orthogonal to fulfilment status (a 'served'
 // order can still be 'unpaid'). Same badge shape as STATUS_MAP above.
 const PAYMENT_STATUS_MAP: Record<string, { label: string; bg: string; color: string; darkBg: string; darkColor: string }> = {
   paid: { label: "paymentPaid", bg: "rgba(63, 143, 111, 0.16)", color: "#2f7357", darkBg: "rgba(63, 143, 111, 0.25)", darkColor: "#5eb892" },
@@ -97,7 +113,13 @@ async function markOrderPaid(orderId: string): Promise<void> {
   }
 }
 
-export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: boolean }) {
+export function OrdersView({
+  role,
+  canSettlePayment = false,
+}: {
+  role: Role;
+  canSettlePayment?: boolean;
+}) {
   const t = useTranslations("Orders");
   const queryClient = useQueryClient();
   const seenOrders = useSeenOrders();
@@ -110,7 +132,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
   const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<Order | null>(null);
   const [editCustomerName, setEditCustomerName] = useState("");
   const [editTableNumber, setEditTableNumber] = useState("");
-  const [editStatus, setEditStatus] = useState<"new" | "preparing" | "done">("new");
+  const [editStatus, setEditStatus] = useState<OrderStatus>("pending");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Delete Modal State
@@ -148,8 +170,11 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      if (tab === "active" && o.status !== "new" && o.status !== "preparing") return false;
-      if (tab === "done" && o.status !== "done") return false;
+      // "active" is anything still on the floor; the closed bucket is the
+      // orders that were actually delivered — a cancelled one was not, and
+      // shows only under "all".
+      if (tab === "active" && !isActive(o.status)) return false;
+      if (tab === "done" && o.status !== "served") return false;
       return true;
     });
   }, [orders, tab]);
@@ -159,7 +184,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
     setSelectedOrderForEdit(order);
     setEditCustomerName(order.customer_name || "");
     setEditTableNumber(order.table_number || "");
-    setEditStatus((order.status as "new" | "preparing" | "done") || "new");
+    setEditStatus(order.status);
   };
 
   const handleSaveEdit = async () => {
@@ -212,10 +237,22 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
       .filter(Boolean);
   }, [rowSelection, filteredOrders]);
 
-  const handleBulkStatusChange = async (newStatus: "new" | "preparing" | "done") => {
+  // Targets legal for EVERY order in the selection. A mixed selection
+  // (some pending, some ready) correctly offers only what they share, which
+  // is usually just "cancelled" — better than firing a batch half of which
+  // the state machine will reject.
+  const bulkTargets = useMemo(() => {
+    const selected = filteredOrders.filter((o) => selectedOrderIds.includes(o.id));
+    if (selected.length === 0) return [] as OrderStatus[];
+    return selected
+      .map((o) => allowedTransitions(role, o.status))
+      .reduce((shared, next) => shared.filter((st) => next.includes(st)));
+  }, [filteredOrders, selectedOrderIds, role]);
+
+  const handleBulkStatusChange = async (newStatus: OrderStatus) => {
     if (selectedOrderIds.length === 0) return;
     try {
-      await Promise.all(
+      const results = await Promise.all(
         selectedOrderIds.map((id) =>
           fetch(`/api/dashboard/orders/${id}`, {
             method: "PATCH",
@@ -224,7 +261,14 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
           })
         )
       );
-      toast.success(`${selectedOrderIds.length} commande(s) mise(s) à jour`);
+      // Report what actually happened: a 409 from a concurrent update is
+      // normal here, and silently claiming success would hide it.
+      const ok = results.filter((r) => r.ok).length;
+      if (ok === results.length) {
+        toast.success(`${ok} commande(s) mise(s) à jour`);
+      } else {
+        toast.warning(`${ok}/${results.length} commande(s) mise(s) à jour`);
+      }
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setRowSelection({});
     } catch {
@@ -533,9 +577,13 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
   });
 
   const stats = useMemo(() => {
-    const enCours = orders.filter(o => o.status === "new" || o.status === "preparing").length;
-    const terminees = orders.filter(o => o.status === "done").length;
-    const revenu = orders.reduce((sum, o) => sum + Number(o.total), 0);
+    const enCours = orders.filter(o => isActive(o.status)).length;
+    const terminees = orders.filter(o => o.status === "served").length;
+    // A cancelled order carries a non-zero total but earned nothing. Mirrors
+    // the same exclusion in get_order_aggregates (0030 §9).
+    const revenu = orders
+      .filter(o => o.status !== "cancelled")
+      .reduce((sum, o) => sum + Number(o.total), 0);
 
     return [
       { label: t("title"), value: String(orders.length) },
@@ -598,33 +646,23 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-semibold text-muted-foreground mr-1">{t("changeStatus")}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatusChange("new")}
-                className="rounded-xl text-xs font-bold border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-              >
-                {t("inProgress")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatusChange("preparing")}
-                className="rounded-xl text-xs font-bold border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
-              >
-                {t("ready")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleBulkStatusChange("done")}
-                className="rounded-xl text-xs font-bold border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-              >
-                {t("done")}
-              </Button>
-
-              <div className="h-4 w-px bg-border mx-1" />
+              {bulkTargets.length > 0 && (
+                <>
+                  <span className="text-xs font-semibold text-muted-foreground mr-1">{t("changeStatus")}</span>
+                  {bulkTargets.map((st) => (
+                    <Button
+                      key={st}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkStatusChange(st)}
+                      className="rounded-xl text-xs font-bold"
+                    >
+                      {t(STATUS_MAP[st].label)}
+                    </Button>
+                  ))}
+                  <div className="h-4 w-px bg-border mx-1" />
+                </>
+              )}
 
               <Button
                 size="sm"
@@ -691,7 +729,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
                   const order = row.original;
-                  const isNewUnread = order.status === "new" && !seenOrders.has(order.id);
+                  const isNewUnread = order.status === "pending" && !seenOrders.has(order.id);
                   const code = "CMD-" + order.id.slice(0, 4).toUpperCase();
                   const d = new Date(order.created_at);
                   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -836,7 +874,7 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => {
-                    const isNewUnread = row.original.status === "new" && !seenOrders.has(row.original.id);
+                    const isNewUnread = row.original.status === "pending" && !seenOrders.has(row.original.id);
                     return (
                       <TableRow
                         key={row.id}
@@ -959,15 +997,19 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                     <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                       {t("orderStatus")}
                     </Label>
+                    {/* Only the current state plus the transitions this role
+                        may actually perform. Offering the full six would just
+                        manufacture 403s — and the two system transitions
+                        (confirmed→preparing, preparing→ready) are the
+                        database's to make, never a button's. */}
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                      {(["new", "preparing", "done"] as const).map((st) => {
+                      {[
+                        selectedOrderForEdit.status,
+                        ...allowedTransitions(role, selectedOrderForEdit.status),
+                      ].map((st) => {
                         const isSelected = editStatus === st;
-                        const styleConfig = {
-                          new: { active: "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400 ring-2 ring-orange-500/20", icon: Clock },
-                          preparing: { active: "border-blue-500/50 bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/20", icon: Utensils },
-                          done: { active: "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20", icon: CheckCircle2 },
-                        }[st];
-                        const Icon = styleConfig.icon;
+                        const conf = STATUS_MAP[st];
+                        const Icon = conf.icon;
                         return (
                           <button
                             key={st}
@@ -976,12 +1018,12 @@ export function OrdersView({ canSettlePayment = false }: { canSettlePayment?: bo
                             className={cn(
                               "flex items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 sm:px-2.5 rounded-2xl text-[11px] sm:text-xs font-extrabold border transition-all duration-150 shadow-2xs cursor-pointer truncate",
                               isSelected
-                                ? styleConfig.active
+                                ? "border-primary/50 bg-primary/10 text-primary ring-2 ring-primary/20"
                                 : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                             )}
                           >
                             <Icon className="size-3.5 stroke-[2.25] shrink-0" />
-                            <span className="truncate">{t(STATUS_MAP[st]?.label ?? "inProgress")}</span>
+                            <span className="truncate">{t(conf.label)}</span>
                           </button>
                         );
                       })}

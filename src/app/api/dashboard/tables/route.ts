@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { assertFeature, requireRole, requireSession } from "@/lib/dashboard";
 import { tableSchema } from "@/lib/schemas";
 
-// Tenant read — reused by kitchen-view.tsx and reservations-view.tsx as well
+// Tenant read — reused by reservations-view.tsx and the floor plan as well
 // as the /dashboard/tables floor plan, so this stays open to any
 // authenticated role rather than the floor-plan page's own role gate.
 export async function GET() {

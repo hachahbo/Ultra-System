@@ -24,6 +24,10 @@ export async function GET(request: Request) {
     supabase
       .from("orders")
       .select("created_at, type, total, items, customer_id")
+      // Cancelled orders earned nothing and were never cooked — excluding them
+      // here keeps the revenue series, the order counts and the top-items
+      // ranking honest. Same exclusion as get_order_aggregates (0030 §9).
+      .neq("status", "cancelled")
       .gte("created_at", from.toISOString())
       .limit(10_000),
     supabase.from("customers").select("id, first_seen"),

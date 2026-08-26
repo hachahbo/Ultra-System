@@ -25,6 +25,7 @@ export const ROUTE_ACCESS: { prefix: string; exact?: boolean; roles: Role[] }[] 
   { prefix: "/dashboard/analytics", roles: ["owner"] },
   { prefix: "/dashboard/customers", roles: ["owner", "manager"] },
   { prefix: "/dashboard/inventory", roles: ["owner", "manager", "cuisine"] },
+  { prefix: "/dashboard/service", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/tables", roles: ["owner", "manager", "serveur"] },
   { prefix: "/dashboard/menu", roles: ["owner", "manager", "serveur", "cuisine"] },
   { prefix: "/dashboard/events", roles: ["owner", "manager"] },
@@ -81,5 +82,6 @@ export function canWrite(role: Role, resource: Resource): boolean {
 export function defaultRouteFor(role: Role): string {
   if (role === "owner" || role === "manager") return "/dashboard";
   if (role === "cuisine") return "/dashboard/kds";
-  return "/dashboard/orders";
+  // A waiter's job is the service queue, not the back-office orders grid.
+  return "/dashboard/service";
 }

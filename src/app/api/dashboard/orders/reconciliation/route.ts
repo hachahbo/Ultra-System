@@ -18,7 +18,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("orders")
-    .select("id, type, table_number, customer_name, total, payment_status, paid_by, created_at")
+    .select("id, type, table_number, customer_name, total, status, payment_status, paid_by, created_at")
     .eq("restaurant_id", guard.ctx.restaurant.id)
     .gte("created_at", todayStart)
     .order("created_at", { ascending: false });
@@ -29,11 +29,17 @@ export async function GET() {
 
   const orders = (data ?? []) as Pick<
     Order,
-    "id" | "type" | "table_number" | "customer_name" | "total" | "payment_status" | "paid_by" | "created_at"
+    "id" | "type" | "table_number" | "customer_name" | "total" | "status" | "payment_status" | "paid_by" | "created_at"
   >[];
 
   const paidOrders = orders.filter((o) => o.payment_status === "paid");
-  const unpaidOrders = orders.filter((o) => o.payment_status === "unpaid");
+  // A cancelled order that was never paid is not money anyone owes, so it must
+  // not land in "outstanding". A cancelled order that WAS paid deliberately
+  // stays in `paidOrders` — that is real cash collected against a refund due,
+  // and hiding it would make the till not balance.
+  const unpaidOrders = orders.filter(
+    (o) => o.payment_status === "unpaid" && o.status !== "cancelled",
+  );
 
   const collectedTotal = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
   const outstandingTotal = unpaidOrders.reduce((sum, o) => sum + Number(o.total), 0);

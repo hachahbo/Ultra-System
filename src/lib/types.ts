@@ -1,3 +1,5 @@
+import type { OrderStatus } from "@/lib/order-flow";
+
 // Database row types + the public menu JSON shape (plan.md §8).
 // Names stay as language objects so the trilingual option remains free later.
 
@@ -331,11 +333,19 @@ export type Order = {
   promo_code: string | null;
   discount_amount: number;
   total: number;
-  status: "new" | "preparing" | "done";
+  status: OrderStatus;
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
   paid_at: string | null;
   paid_by: string | null;
+  // Lifecycle stamps (0030_order_workflow.sql). The _at columns are written by
+  // triggers so they cannot be forgotten; the _by columns come from the API's
+  // session profile.
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  ready_at: string | null;
+  served_at: string | null;
+  served_by: string | null;
   created_at: string;
   updated_at: string;
 };

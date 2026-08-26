@@ -35,12 +35,15 @@ export async function GET(
       .from("orders")
       .select("created_at, total")
       .eq("restaurant_id", id)
+      // Cancelled orders carry a non-zero total but earned nothing (0030 §9).
+      .neq("status", "cancelled")
       .gte("created_at", from.toISOString())
       .limit(10_000),
     admin
       .from("orders")
       .select("id", { count: "exact", head: true })
-      .eq("restaurant_id", id),
+      .eq("restaurant_id", id)
+      .neq("status", "cancelled"),
     admin
       .from("audit_logs")
       .select("*")

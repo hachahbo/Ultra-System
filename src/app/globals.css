@@ -131,6 +131,223 @@
   --sidebar-ring: #ff6a2c;
 }
 
+/* ============================================================================
+   EMD design system — DASHBOARD ONLY.
+
+   `data-emd` is stamped on <html> by src/app/layout.tsx for /dashboard/*
+   requests, so portalled UI (dialogs, dropdowns, sonner toasts) that mounts
+   on document.body inherits these too. The public [slug] restaurant sites
+   keep the warm "Warm Classic" palette in :root above, untouched — they have
+   their own per-restaurant overrides in src/lib/theme.ts.
+
+   Two layers here:
+     1. the raw EMD ramp (--bg / --surface / --text / --border …)
+     2. a remap of the shadcn semantic names onto it, so all 28 components in
+        components/ui and their ~60 consumers inherit the system for free.
+
+   NOTE ON --accent: shadcn's --accent means "subtle hover surface", NOT the
+   brand accent. EMD's orange therefore lives in --primary (+ the --accent-*
+   sub-tokens below). Do not set --accent to orange: `hover:bg-accent` appears
+   across the dashboard and would blow the 4-per-screen accent budget on every
+   screen at once.
+
+   Every value is contrast-measured; ratios are noted in the skill's
+   references/tokens.md. Do not invent new colours here.
+   ============================================================================ */
+
+[data-emd] {
+  /* ---- surfaces: true neutral, so orange is the only warm thing on screen */
+  --bg:            #FAFAFA;
+  --surface:       #FFFFFF;
+  --surface-2:     #F4F4F5;
+  --surface-3:     #E9E9EC;
+
+  /* ---- borders: three tiers, NOT interchangeable.
+     --border is decorative separation. --border-ctrl is anything clickable
+     (3:1, WCAG 1.4.11). Never put --border on a control. */
+  --border:        #E4E4E7;
+  --border-strong: #D4D4D8;
+  /* Re-measured from the skill's #8B8B93, which is 2.79:1 against --surface-3
+     and misses the 3:1 interactive floor there (the skill measures it against
+     white only). #84848C clears 3:1 against every surface in the ramp. */
+  --border-ctrl:   #84848C;   /* 3.06:1 on --surface-3 … 3.71:1 on --surface */
+
+  /* ---- text */
+  --text:          #18181B;   /* 17.7:1 */
+  --text-muted:    #52525B;   /*  7.7:1 */
+  /* Re-measured from the skill's #6B6B75, which lands at 4.35:1 on --surface-3
+     and misses the 4.5:1 floor. The skill's figure is against --surface only. */
+  --text-subtle:   #676771;   /*  4.6:1 on --surface-3, 5.6:1 on --surface */
+
+  /* ---- accent. Budget: 4 uses per screen — primary button, active-nav bar,
+     meter fill, focus ring. Forbidden on card icons, headings, badges,
+     secondary links, decorative dots. */
+  --accent-fill:   #F97316;
+  --accent-hover:  #EA6A0A;
+  --accent-press:  #C2410C;
+  --accent-text:   #C2410C;   /* orange as TEXT must darken — #F97316 is 2.8:1 on white */
+  --accent-subtle: rgba(249, 115, 22, 0.10);
+  --accent-border: rgba(249, 115, 22, 0.45);
+  --on-accent:     #1A0C02;
+
+  /* ---- semantic status */
+  /* warning/danger are one step darker than the skill's #A16207 / #DC2626,
+     which sit at 4.48:1 and 4.39:1 on --surface-2 — just under the 4.5 floor
+     for status text on a hover row. These clear it on every light surface. */
+  --success: #0E7936;  --success-bg: rgba(14, 121, 54, 0.10);
+  --warning: #995A00;  --warning-bg: rgba(153, 90, 0, 0.10);
+  --danger:  #D01A1A;  --danger-bg:  rgba(208, 26, 26, 0.10);
+  --info:    #1D4ED8;  --info-bg:    rgba(29, 78, 216, 0.10);
+  /* Solid-fill red, for white text on a filled chip or a destructive hover.
+     Separate role from --danger for the same reason --accent-text is separate
+     from --accent: one colour cannot be light enough to read AS text on a dark
+     surface and dark enough to carry white text ON it. */
+  --danger-fill: #D01A1A;   /* white on it: 5.46:1 */
+
+  /* ---- floating elements ONLY. Elevation is borders, not shadows. */
+  --shadow-pop:   0 8px 24px rgba(16, 16, 20, 0.12);
+  --shadow-modal: 0 24px 60px rgba(16, 16, 20, 0.18);
+  --scrim:        rgba(16, 16, 20, 0.4);
+
+  /* ---- chart roles: a channel of their own, NOT part of the accent budget */
+  --series-1:      #2A78D6;
+  --series-2:      #EB6834;
+  --series-1-soft: rgba(42, 120, 214, 0.16);
+  --series-2-soft: rgba(235, 104, 52, 0.14);
+  --grid:          #E9E9EC;
+
+  /* ---- shape: exactly three radius steps, no others */
+  --r-sm:   6px;    /* controls: buttons, inputs, nav items, chips */
+  --r-md:   12px;   /* cards, panels, modals */
+  --r-pill: 999px;  /* badges, avatars */
+
+  /* ---- rhythm: 4px base, no invented values */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 28px; --sp-8: 32px;
+
+  /* ---- fixed layout metrics */
+  --topbar-h:   56px;
+  --card-pad:   18px;
+  --grid-gap:   20px;
+  --page-pad-y: 28px;
+  --page-pad-x: 32px;
+  --page-max:   1240px;
+
+  /* ---- control heights */
+  --h-btn:    34px;
+  --h-btn-sm: 28px;
+  --h-input:  36px;
+  --h-row:    52px;
+
+  /* ---- type: six sizes, no others. Inter for UI, JetBrains Mono for IDs. */
+  --font-sans:       var(--f-emd-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display:    var(--f-emd-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-geist-mono: var(--f-emd-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* :root sets font-family directly and is unlayered, so @layer base cannot
+     win against it — restate it here at equal specificity, later in the file. */
+  font-family: var(--font-sans);
+
+  --t-display: 600 22px/1.25   var(--font-sans);
+  --t-title:   600 20px/1.3    var(--font-sans);
+  --t-heading: 600 13.5px/1.4  var(--font-sans);
+  --t-body:    400 14px/1.5    var(--font-sans);
+  --t-small:   400 12.5px/1.5  var(--font-sans);
+  --t-label:   600 11px/1.4    var(--font-sans);
+
+  --track-tight: -0.02em;   /* display + title only */
+  --track-label:  0.06em;   /* uppercase labels only */
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur:      180ms;
+
+  /* ======== shadcn semantic remap — everything below resolves to the ramp ==== */
+  --background:            var(--bg);
+  --foreground:            var(--text);
+  --card:                  var(--surface);
+  --card-foreground:       var(--text);
+  --popover:               var(--surface-2);
+  --popover-foreground:    var(--text);
+
+  --primary:               var(--accent-fill);
+  --primary-foreground:    var(--on-accent);
+  --secondary:             var(--surface-2);
+  --secondary-foreground:  var(--text);
+  --muted:                 var(--surface-2);
+  --muted-foreground:      var(--text-muted);
+  --accent:                var(--surface-2);   /* hover surface — NOT orange, see note above */
+  --accent-foreground:     var(--text);
+  --destructive:           var(--danger);
+  --destructive-foreground:#FFFFFF;
+
+  --input:                 var(--border-ctrl); /* rule 3: controls need a 3:1 boundary */
+  --ring:                  var(--accent-fill); /* sanctioned accent use #4 */
+  --radius:                0.5rem;             /* → rounded-md lands at 6.4px ≈ --r-sm */
+
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--info);
+  --chart-4: var(--warning);
+  --chart-5: var(--success);
+
+  --sidebar:                    var(--bg);
+  --sidebar-foreground:         var(--text);
+  --sidebar-primary:            var(--accent-fill);
+  --sidebar-primary-foreground: var(--on-accent);
+  --sidebar-accent:             var(--surface-2);
+  --sidebar-accent-foreground:  var(--text);
+  --sidebar-border:             var(--border);
+  --sidebar-ring:               var(--accent-fill);
+}
+
+/* Dark. Only the ramp is restated — the shadcn remap above resolves through it.
+   Specificity (0,2,0) beats both `.dark` and `[data-emd]`, so order is safe. */
+[data-emd].dark {
+  --bg:            #0B0B0C;
+  --surface:       #131315;
+  --surface-2:     #1A1A1D;
+  --surface-3:     #212125;
+
+  --border:        #26262A;
+  --border-strong: #33333A;
+  /* Re-measured from the skill's #63636D. That value is 3.1:1 against
+     --surface, but the input spec puts a --border-ctrl edge around a
+     --surface-2 fill, where it drops to 2.92:1 and fails WCAG 1.4.11.
+     #6C6C76 clears 3:1 against every surface in the ramp. */
+  --border-ctrl:   #6C6C76;   /* 3.09:1 on --surface-3 … 3.79:1 on --bg */
+
+  --text:          #F4F4F5;   /* 16.9:1 */
+  --text-muted:    #A1A1AA;   /*  7.2:1 */
+  --text-subtle:   #8B8B93;   /*  5.5:1 — NOT #71717A, that fails AA */
+
+  --accent-fill:   #F97316;
+  --accent-hover:  #FB8A3C;
+  --accent-press:  #EA6A0A;
+  --accent-text:   #F97316;   /* 7.0:1 on --bg */
+  --accent-subtle: rgba(249, 115, 22, 0.12);
+  --accent-border: rgba(249, 115, 22, 0.35);
+  --on-accent:     #1A0C02;   /* 6.8:1 on the fill */
+
+  /* danger/info nudged one step off the skill's #EF4444 / #3B82F6, which read
+     at 4.26:1 and 4.36:1 on --surface-3 (a hovered dropdown row) and miss the
+     4.5 floor there. */
+  --success: #22C55E;  --success-bg: rgba(34, 197, 94, 0.12);
+  --warning: #EAB308;  --warning-bg: rgba(234, 179, 8, 0.12);
+  --danger:  #F54A4A;  --danger-bg:  rgba(245, 74, 74, 0.12);
+  --info:    #3F86FA;  --info-bg:    rgba(63, 134, 250, 0.12);
+  --danger-fill: #DD3232;   /* white on it: 4.59:1 */
+
+  --shadow-pop:   0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.7);
+  --scrim:        rgba(0, 0, 0, 0.6);
+
+  --series-1:      #3987E5;
+  --series-2:      #D95926;
+  --series-1-soft: rgba(57, 135, 229, 0.16);
+  --series-2-soft: rgba(217, 89, 38, 0.14);
+  --grid:          #232327;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -147,6 +364,38 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans), 'Roboto', sans-serif;
+  }
+
+  /* ---- EMD dashboard base -------------------------------------------------
+     In @layer base on purpose: Tailwind utilities live in a later layer, so a
+     `duration-300` or `rounded-xl` on a component still wins over these. */
+
+  /* The global 500ms colour transition is sluggish for a dense admin UI. */
+  [data-emd] * { transition-duration: var(--dur); }
+
+  /* Sanctioned accent use #4, and the most important one. Never remove it. */
+  [data-emd] :focus-visible {
+    outline: 2px solid var(--accent-fill);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  [data-emd] ::selection { background: var(--accent-subtle); color: var(--text); }
+
+  /* Identifiers only — order refs, table numbers, timestamps, tokens. */
+  [data-emd] .emd-id {
+    font-family: var(--font-geist-mono);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+  }
+
+  /* The uppercase field label from the spec. */
+  [data-emd] .emd-label {
+    display: block;
+    font: var(--t-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--text-subtle);
   }
 
   body[data-scroll-locked],
@@ -190,6 +439,34 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: var(--primary, #ff6a2c);
+}
+
+/* Rule 1: a scrollbar thumb is decoration, not an action — it does not get the
+   accent. Neutral ramp only inside the dashboard. */
+[data-emd] ::-webkit-scrollbar { width: 10px; height: 10px; }
+[data-emd] ::-webkit-scrollbar-track { background: transparent; }
+[data-emd] ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+[data-emd] ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-ctrl);
+  background-clip: content-box;
+}
+[data-emd] .scrollbar-thin,
+[data-emd] .custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+[data-emd] .scrollbar-thin::-webkit-scrollbar-thumb,
+[data-emd] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+[data-emd] .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+[data-emd] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--border-ctrl);
 }
 
 .scrollbar-thin,
@@ -382,4 +659,334 @@
     0 25px 60px -12px rgba(0, 0, 0, 0.85) !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
   color: #ffffff !important;
+}
+/* ============================================================================
+   EMD component layer — dashboard only.
+
+   Keyed on the data-slot / data-variant / data-size attributes shadcn already
+   emits, rather than editing components/ui/*. Two reasons:
+
+     1. Those 28 components are shared with the public [slug] restaurant sites.
+        Editing them would drag the neutral palette onto every customer's menu
+        page; scoping under [data-emd] cannot.
+     2. This sits in @layer components, so Tailwind's utilities layer still
+        wins — a per-instance `className="h-12"` on a Button keeps working.
+
+   Spec source: .claude/skills/emd-design-system/references/components.md
+   ============================================================================ */
+
+@layer components {
+
+  /* ---------------------------------------------------------------- Button */
+  [data-emd] [data-slot="button"] {
+    height: var(--h-btn);
+    gap: 7px;
+    padding-inline: 14px;
+    border-radius: var(--r-sm);
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
+  }
+  [data-emd] [data-slot="button"] svg:not([class*="size-"]) { width: 14px; height: 14px; }
+  [data-emd] [data-slot="button"]:disabled { opacity: .45; pointer-events: none; }
+
+  /* sanctioned accent use #1 — exactly one per page */
+  [data-emd] [data-slot="button"][data-variant="default"] {
+    background: var(--accent-fill);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+  [data-emd] [data-slot="button"][data-variant="default"]:hover  { background: var(--accent-hover); }
+  [data-emd] [data-slot="button"][data-variant="default"]:active { background: var(--accent-press); }
+
+  /* ghost-with-a-border: the default secondary action */
+  [data-emd] [data-slot="button"][data-variant="outline"] {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border-ctrl);   /* rule 3: 3:1 interactive boundary */
+  }
+  [data-emd] [data-slot="button"][data-variant="outline"]:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--text-subtle);
+  }
+
+  [data-emd] [data-slot="button"][data-variant="secondary"] {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  [data-emd] [data-slot="button"][data-variant="secondary"]:hover { background: var(--surface-3); }
+
+  [data-emd] [data-slot="button"][data-variant="ghost"] {
+    color: var(--text-muted);
+  }
+  [data-emd] [data-slot="button"][data-variant="ghost"]:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  [data-emd] [data-slot="button"][data-variant="destructive"] {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  [data-emd] [data-slot="button"][data-variant="destructive"]:hover {
+    background: var(--danger-fill);
+    color: #fff;
+  }
+
+  /* the per-card "Edit" affordance — text only, no border, and NOT orange */
+  [data-emd] [data-slot="button"][data-variant="link"] {
+    height: auto;
+    padding: 4px 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  [data-emd] [data-slot="button"][data-variant="link"]:hover {
+    color: var(--text);
+    background: var(--surface-2);
+    text-decoration: none;
+  }
+
+  [data-emd] [data-slot="button"][data-size="sm"],
+  [data-emd] [data-slot="button"][data-size="xs"] {
+    height: var(--h-btn-sm);
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+  [data-emd] [data-slot="button"][data-size="icon"] {
+    width: 30px; height: 30px; padding: 0;
+    color: var(--text-subtle);
+  }
+  [data-emd] [data-slot="button"][data-size="icon-sm"],
+  [data-emd] [data-slot="button"][data-size="icon-xs"] {
+    width: 26px; height: 26px; padding: 0;
+  }
+  [data-emd] [data-slot="button"][data-size="lg"] { height: 38px; padding-inline: 18px; }
+
+  /* ------------------------------------------------------------------ Card */
+  /* Rule 4: elevation is a border and a surface change, never a shadow —
+     shadows are invisible on #0B0B0C. Drops shadcn's ring-1 treatment. */
+  [data-emd] [data-slot="card"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: none;
+    gap: 0;
+    padding-block: 0;
+    color: var(--text);
+  }
+  [data-emd] [data-slot="card-header"] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  [data-emd] [data-slot="card-title"] {
+    font: var(--t-heading);
+    letter-spacing: normal;
+    color: var(--text);
+  }
+  [data-emd] [data-slot="card-description"] {
+    font-size: 12.5px;
+    color: var(--text-subtle);
+  }
+  [data-emd] [data-slot="card-action"] { margin-left: auto; }
+  [data-emd] [data-slot="card-content"] { padding: var(--card-pad); }
+  [data-emd] [data-slot="card-footer"] {
+    padding: 14px var(--card-pad);
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  /* ----------------------------------------------------------------- Badge */
+  /* Badges are NEVER orange — status is not an accent (rule 1). `default`
+     therefore resolves to the neutral chip, not to --primary. */
+  [data-emd] [data-slot="badge"] {
+    height: 20px;
+    padding-inline: 8px;
+    gap: 5px;
+    border-radius: var(--r-pill);
+    border: 1px solid transparent;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  [data-emd] [data-slot="badge"][data-variant="default"],
+  [data-emd] [data-slot="badge"][data-variant="secondary"] {
+    background: var(--surface-3);
+    color: var(--text-muted);
+  }
+  [data-emd] [data-slot="badge"][data-variant="outline"] {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text-muted);
+  }
+  [data-emd] [data-slot="badge"][data-variant="destructive"] {
+    background: var(--danger-bg);
+    color: var(--danger);
+  }
+  /* opt-in semantic variants, applied with a plain className */
+  [data-emd] [data-slot="badge"].badge-ok   { background: var(--success-bg); color: var(--success); }
+  [data-emd] [data-slot="badge"].badge-warn { background: var(--warning-bg); color: var(--warning); }
+  [data-emd] [data-slot="badge"].badge-info { background: var(--info-bg);    color: var(--info); }
+
+  /* --------------------------------------------------- Input / Textarea / Select */
+  [data-emd] [data-slot="input"],
+  [data-emd] [data-slot="textarea"],
+  [data-emd] [data-slot="select-trigger"] {
+    min-height: var(--h-input);
+    padding-inline: 11px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border-ctrl);
+    border-radius: var(--r-sm);
+    font-size: 13.5px;
+  }
+  [data-emd] [data-slot="input"] { height: var(--h-input); }
+  [data-emd] [data-slot="textarea"] { padding-block: 9px; }
+  [data-emd] [data-slot="input"]::placeholder,
+  [data-emd] [data-slot="textarea"]::placeholder { color: var(--text-subtle); }
+  [data-emd] [data-slot="input"]:hover,
+  [data-emd] [data-slot="textarea"]:hover,
+  [data-emd] [data-slot="select-trigger"]:hover { border-color: var(--text-subtle); }
+  [data-emd] [data-slot="input"]:focus-visible,
+  [data-emd] [data-slot="textarea"]:focus-visible,
+  [data-emd] [data-slot="select-trigger"]:focus-visible {
+    outline: 2px solid var(--accent-fill);
+    outline-offset: 1px;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  [data-emd] [data-slot="input"][aria-invalid="true"],
+  [data-emd] [data-slot="textarea"][aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: none;
+  }
+  [data-emd] [data-slot="input"]:disabled,
+  [data-emd] [data-slot="textarea"]:disabled { opacity: .5; background: var(--surface-2); }
+
+  /* ---------------------------------------------------------------- Switch */
+  /* The "on" fill is the one accent permitted inside a card body — it carries
+     state, not decoration, so a card full of toggles is still one accent use. */
+  [data-emd] [data-slot="switch"] {
+    width: 38px;
+    height: 22px;
+    border-radius: var(--r-pill);
+  }
+  [data-emd] [data-slot="switch"][data-state="unchecked"] {
+    background: var(--surface-3);
+    border: 1px solid var(--border-ctrl);
+  }
+  [data-emd] [data-slot="switch"][data-state="checked"] {
+    background: var(--accent-fill);
+    border-color: transparent;
+  }
+  [data-emd] [data-slot="switch-thumb"] {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    transition: transform var(--dur) var(--ease);
+  }
+  [data-emd] [data-slot="switch"][data-state="checked"] [data-slot="switch-thumb"] {
+    transform: translateX(16px);
+    background: #fff;
+  }
+
+  /* ----------------------------------------------------------------- Table */
+  [data-emd] [data-slot="table"] { border-collapse: collapse; }
+  [data-emd] [data-slot="table-head"] {
+    font: var(--t-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--text-subtle);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    height: auto;
+  }
+  [data-emd] [data-slot="table-cell"] {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text);
+  }
+  [data-emd] [data-slot="table-body"] tr:last-child [data-slot="table-cell"] { border-bottom: 0; }
+  [data-emd] [data-slot="table-row"]:hover { background: var(--surface-2); }
+
+  /* ------------------------------------------ Dialog / Dropdown / Popover / Toast */
+  /* Rule 4: the ONLY three places a shadow is allowed, and they darken rather
+     than lift. */
+  [data-emd] [data-slot="dialog-overlay"],
+  [data-emd] [data-slot="alert-dialog-overlay"] {
+    background: var(--scrim);
+    backdrop-filter: blur(2px);
+  }
+  [data-emd] [data-slot="dialog-content"],
+  [data-emd] [data-slot="alert-dialog-content"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-modal);
+  }
+  [data-emd] [data-slot="dialog-title"],
+  [data-emd] [data-slot="alert-dialog-title"] { font-size: 18px; font-weight: 600; }
+  [data-emd] [data-slot="dialog-description"],
+  [data-emd] [data-slot="alert-dialog-description"] { font-size: 13px; color: var(--text-subtle); }
+
+  [data-emd] [data-slot="dropdown-menu-content"],
+  [data-emd] [data-slot="popover-content"],
+  [data-emd] [data-slot="select-content"] {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-pop);
+    padding: 4px;
+  }
+  [data-emd] [data-slot="dropdown-menu-item"],
+  [data-emd] [data-slot="select-item"] {
+    min-height: 32px;
+    font-size: 13px;
+    border-radius: 4px;
+    color: var(--text-muted);
+  }
+  [data-emd] [data-slot="dropdown-menu-item"]:hover,
+  [data-emd] [data-slot="dropdown-menu-item"][data-highlighted],
+  [data-emd] [data-slot="select-item"][data-highlighted] {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+  [data-emd] [data-slot="dropdown-menu-item"][data-variant="destructive"] { color: var(--danger); }
+
+  /* ------------------------------------------------------------------ Tabs */
+  /* A segmented control is a neutral selection, not a primary action — the
+     selected segment does NOT get the accent. */
+  [data-emd] [data-slot="tabs-list"] {
+    background: var(--surface-2);
+    border-radius: var(--r-sm);
+    padding: 3px;
+  }
+  [data-emd] [data-slot="tabs-trigger"] {
+    font-size: 13px;
+    color: var(--text-muted);
+    border-radius: 4px;
+  }
+  [data-emd] [data-slot="tabs-trigger"][data-state="active"] {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    box-shadow: none;
+  }
+
+  /* -------------------------------------------------------------- Skeleton */
+  [data-emd] [data-slot="skeleton"] { background: var(--surface-2); border-radius: var(--r-sm); }
+
+  /* ------------------------------------------------------- Separator / rule */
+  [data-emd] [data-slot="separator"] { background: var(--border); }
 }

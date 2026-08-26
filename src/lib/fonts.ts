@@ -1,4 +1,4 @@
-import { Roboto, Plus_Jakarta_Sans } from "next/font/google";
+import { Roboto, Plus_Jakarta_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import type { FontPairKey } from "@/lib/types";
 
 // This file is imported by the ROOT layout (every route, incl. /dashboard
@@ -18,9 +18,29 @@ const darnaClassicSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+// EMD design system (dashboard only, see the [data-emd] block in globals.css).
+// Inter carries all UI text; JetBrains Mono is reserved for identifiers —
+// order IDs, table numbers, timestamps, tokens. Never mono for prose, never
+// Inter for an ID. Loaded here rather than in the dashboard layout because
+// next/font must be called at module scope in a Server Component graph.
+const emdSans = Inter({
+  weight: ["400", "500", "600", "700"],
+  variable: "--f-emd-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+const emdMono = JetBrains_Mono({
+  weight: ["400", "500"],
+  variable: "--f-emd-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const rootFontClassNames = [
   darnaClassicDisplay.variable,
   darnaClassicSans.variable,
+  emdSans.variable,
+  emdMono.variable,
 ].join(" ");
 
 export const FONT_PAIRS: Record<

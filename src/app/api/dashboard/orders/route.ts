@@ -136,6 +136,12 @@ export async function POST(request: Request) {
       subtotal,
       delivery_fee: 0,
       total: subtotal,
+      // A waiter typing the order at the table IS the approval — there is no
+      // one left to approve it. Starting at the 'pending' default would park
+      // the order in its own author's approval queue. The 0030 trigger takes
+      // it straight on to 'preparing' and fans it out to the KDS.
+      status: "confirmed",
+      confirmed_by: guard.ctx.profile.id,
       payment_method: "cash",
       payment_status: input.paid_now ? "paid" : "unpaid",
       paid_at: input.paid_now ? now : null,

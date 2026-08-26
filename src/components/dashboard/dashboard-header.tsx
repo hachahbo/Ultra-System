@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
@@ -18,6 +18,7 @@ import {
   LogOut,
   CheckCheck,
   ShoppingBag,
+  BellRing,
   CalendarDays,
   PartyPopper,
   Globe,
@@ -60,10 +61,51 @@ async function fetchNotifications(): Promise<NotificationItem[]> {
 // selectNotificationsToToast for why.
 const MAX_TOASTS = 3;
 
-const NOTIF_STYLE: Record<NotificationItem["kind"], { icon: LucideIcon; className: string }> = {
-  order: { icon: ShoppingBag, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20" },
-  reservation: { icon: CalendarDays, className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20" },
-  event_inquiry: { icon: PartyPopper, className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20" },
+const NOTIF_STYLE: Record<
+  NotificationItem["kind"],
+  { icon: LucideIcon; className: string; bar: string }
+> = {
+  order: {
+    icon: ShoppingBag,
+    className: "bg-[var(--success-bg)] text-[var(--success)]",
+    bar: "bg-[var(--success)]",
+  },
+  // Food is plated and going cold — the most time-critical alert in the feed,
+  // so it keeps the loudest colour. That is --warning, not the accent: orange
+  // on a decorative icon chip is exactly the rule-1 misuse the system bans.
+  order_ready: {
+    icon: BellRing,
+    className: "bg-[var(--warning-bg)] text-[var(--warning)]",
+    bar: "bg-[var(--warning)]",
+  },
+  reservation: {
+    icon: CalendarDays,
+    className: "bg-[var(--info-bg)] text-[var(--info)]",
+    bar: "bg-[var(--info)]",
+  },
+  event_inquiry: {
+    icon: PartyPopper,
+    className: "bg-[var(--surface-3)] text-[var(--text-muted)]",
+    bar: "bg-[var(--border-ctrl)]",
+  },
+};
+
+// Topbar breadcrumb labels, keyed off the second path segment. Same
+// Dashboard.nav* messages the sidebar uses, so the crumb and the active nav
+// item always read identically.
+const CRUMB_KEYS: Record<string, string> = {
+  kds: "navKds",
+  orders: "navOrders",
+  reservations: "navReservations",
+  menu: "navMenu",
+  events: "navEvents",
+  tables: "navTables",
+  inventory: "navInventory",
+  customers: "navCustomers",
+  analytics: "navAnalytics",
+  team: "navTeam",
+  settings: "navSettings",
+  variances: "navVariances",
 };
 
 // The header calls the owner "Gérant" rather than ROLE_LABELS' "Admin".
@@ -92,12 +134,30 @@ export function DashboardHeader({
 }) {
   const locale = useLocale();
   const tl = useTranslations("Labels");
+  const t = useTranslations("Dashboard");
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Breadcrumb tail. Only the section segment is shown — deeper routes
+  // (/orders/reconciliation, /inventory/variances) resolve to the deepest
+  // segment we have a label for, so the crumb never renders a raw slug or an
+  // id. Falls back to no tail on /dashboard itself.
+  // Not memoised on purpose: a useMemo here makes React Compiler bail out of
+  // optimizing this whole component (useTranslations' `t` is not a stable dep),
+  // and the work is a two-segment string split.
+  const crumb = (() => {
+    const segments = pathname.split("/").filter(Boolean).slice(1);
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const key = CRUMB_KEYS[segments[i]];
+      if (key) return t(key);
+    }
+    return null;
+  })();
 
   // ── Notifications ────────────────────────────────────────────────────────
   // Feed is derived server-side from recent orders + pending reservations.
@@ -196,31 +256,30 @@ export function DashboardHeader({
     if (soundEnabled) playNotificationChime();
 
     toToast.forEach((n) => {
-      const { icon: Icon, className } = NOTIF_STYLE[n.kind];
+      const { icon: Icon, className, bar } = NOTIF_STYLE[n.kind];
       toast.custom(
         (id) => (
           <div
             className={cn(
-              "pointer-events-auto flex items-center justify-between gap-3.5 w-full max-w-sm sm:max-w-md p-3.5 sm:p-4 rounded-2xl bg-card/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-border/80 shadow-2xl transition-all duration-300 ring-1 ring-black/5 dark:ring-white/10",
-              n.kind === "order" && "border-l-4 border-l-emerald-500 shadow-emerald-500/10",
-              n.kind === "reservation" && "border-l-4 border-l-blue-500 shadow-blue-500/10",
-              n.kind === "event_inquiry" && "border-l-4 border-l-amber-500 shadow-amber-500/10"
+              "pointer-events-auto relative flex w-full max-w-sm items-center justify-between gap-3.5 overflow-hidden rounded-[var(--r-sm)] border border-[var(--border-strong)] bg-[var(--surface-2)] p-3.5 shadow-[var(--shadow-pop)] sm:max-w-md sm:p-4"
             )}
           >
+            {/* 3px semantic bar — the toast's only colour carrier besides the chip */}
+            <span className={cn("absolute inset-y-0 left-0 w-[3px]", bar)} aria-hidden />
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
                 className={cn(
-                  "size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs border border-white/10",
+                  "flex size-9 shrink-0 items-center justify-center rounded-[var(--r-sm)]",
                   className
                 )}
               >
-                <Icon className="size-5 stroke-[2.25]" />
+                <Icon className="size-[18px]" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-extrabold text-[13.5px] text-foreground truncate leading-tight">
+                <div className="truncate text-[13.5px] font-medium leading-tight text-[var(--text)]">
                   {n.title}
                 </div>
-                <div className="text-xs font-semibold text-muted-foreground mt-0.5 truncate">
+                <div className="mt-0.5 truncate text-xs text-[var(--text-subtle)]">
                   {n.subtitle}
                 </div>
               </div>
@@ -233,10 +292,10 @@ export function DashboardHeader({
                 markOrderSeen(n.id);
                 router.push(n.href);
               }}
-              className="inline-flex items-center gap-1 text-xs font-extrabold bg-primary text-primary-foreground hover:bg-primary/90 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
+              className="inline-flex h-[var(--h-btn-sm)] shrink-0 cursor-pointer items-center gap-1 rounded-[var(--r-sm)] bg-[var(--accent-fill)] px-2.5 text-xs font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]"
             >
               <span>Voir</span>
-              <ChevronRight className="size-3.5 stroke-[2.5]" />
+              <ChevronRight className="size-3.5" />
             </button>
           </div>
         ),
@@ -286,12 +345,21 @@ export function DashboardHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/60 bg-background/95 px-4 md:px-8 backdrop-blur transition-colors">
-      <div className="flex items-center gap-3 min-w-0">
-        <SidebarTrigger className="size-9 rounded-xl border border-border/60 bg-card hover:bg-muted text-foreground transition-colors shadow-sm" />
-        <span className="hidden sm:inline-block font-display text-sm font-bold text-foreground truncate max-w-[200px]">
-          {restaurantName}
-        </span>
+    <header className="sticky top-0 z-40 flex h-[var(--topbar-h)] w-full items-center justify-between border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] px-4 backdrop-blur-[8px] md:px-8">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarTrigger className="size-[30px] rounded-[var(--r-sm)] text-[var(--text-subtle)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]" />
+        {/* Breadcrumb, not a title — the page owns its own <h1>. */}
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1.5 text-[13px] text-[var(--text-subtle)] sm:flex">
+          <Link href="/dashboard" className="truncate transition-colors hover:text-[var(--text)]">
+            {t("navDashboard")}
+          </Link>
+          {crumb && (
+            <>
+              <ChevronRight className="size-3.5 shrink-0 opacity-60" aria-hidden />
+              <span className="truncate font-medium text-[var(--text)]">{crumb}</span>
+            </>
+          )}
+        </nav>
       </div>
 
       <div className="flex items-center gap-2.5 sm:gap-3">
@@ -302,29 +370,25 @@ export function DashboardHeader({
               type="button"
               aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lues)` : "Notifications"}
               className={cn(
-                "relative flex size-10 shrink-0 items-center justify-center rounded-full border transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                unreadCount > 0
-                  ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 shadow-primary/10"
-                  : "border-border/70 bg-card text-foreground hover:bg-muted"
+                "relative flex size-[30px] shrink-0 items-center justify-center rounded-[var(--r-sm)] text-[var(--text-subtle)] transition-colors",
+                "hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
+                unreadCount > 0 && "text-[var(--text)]"
               )}
             >
-              <Bell className={cn("size-4 stroke-[2px] transition-transform group-hover:rotate-12", unreadCount > 0 && "text-primary")} />
+              <Bell className="size-4" />
               {unreadCount > 0 && (
-                <>
-                  <span className="absolute -top-0.5 -right-0.5 size-3 animate-ping rounded-full bg-[#e36329] opacity-75" />
-                  <span className="absolute -top-1 -right-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-[#e36329] px-1 text-[10px] font-extrabold text-white ring-2 ring-card shadow-md shadow-orange-500/20">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                </>
+                <span className="absolute -top-1 -right-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-[var(--r-pill)] bg-[var(--danger-fill)] px-1 text-[10px] font-semibold text-white ring-2 ring-[var(--bg)]">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-84 sm:w-96 rounded-2xl border-border/80 bg-card/98 backdrop-blur-xl p-2.5 shadow-2xl space-y-1.5">
+          <DropdownMenuContent align="end" className="w-84 space-y-1.5 p-1.5 sm:w-96">
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <span className="font-display text-sm font-extrabold text-foreground">Notifications</span>
+                <span className="text-[13.5px] font-semibold text-[var(--text)]">Notifications</span>
                 {unreadCount > 0 && (
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-extrabold text-primary">
+                  <span className="rounded-[var(--r-pill)] bg-[var(--surface-3)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-muted)]">
                     {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
                   </span>
                 )}
@@ -332,7 +396,7 @@ export function DashboardHeader({
               {notifications.length > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-[11.5px] font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 hover:underline"
+                  className="flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
                 >
                   <CheckCheck className="size-3.5" /> Tout marquer comme lu
                 </button>
@@ -341,11 +405,11 @@ export function DashboardHeader({
             <div className="max-h-[400px] overflow-y-auto py-1 space-y-1.5">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground/50">
-                    <Bell className="size-6 stroke-[1.75]" />
+                  <div className="flex size-10 items-center justify-center rounded-[var(--r-md)] bg-[var(--surface-3)] text-[var(--text-subtle)]">
+                    <Bell className="size-5" />
                   </div>
-                  <p className="text-[13px] font-bold text-foreground mt-1">Aucune notification</p>
-                  <p className="text-[11.5px] text-muted-foreground max-w-[200px]">
+                  <p className="mt-1 text-[14px] font-semibold text-[var(--text)]">Aucune notification</p>
+                  <p className="max-w-[320px] text-[13px] text-[var(--text-subtle)]">
                     Vos dernières commandes et réservations apparaîtront ici en temps réel.
                   </p>
                 </div>
@@ -358,35 +422,35 @@ export function DashboardHeader({
                     <DropdownMenuItem
                       key={notifKey(n)}
                       asChild
-                      className="p-0 rounded-xl cursor-pointer focus:bg-transparent"
+                      className="cursor-pointer p-0 focus:bg-transparent"
                     >
                       <Link
                         href={n.href}
                         onClick={() => markOrderSeen(n.id)}
                         className={cn(
-                          "flex items-start gap-3 p-3 w-full rounded-xl border border-transparent transition-all hover:bg-muted/70 hover:border-border/50",
-                          isUnread && "bg-primary/[0.04] border-primary/15 shadow-2xs",
+                          "flex w-full items-start gap-3 rounded-[var(--r-sm)] border border-transparent p-3 transition-colors hover:bg-[var(--surface-3)]",
+                          isUnread && "bg-[var(--surface-3)] border-[var(--border-strong)]",
                         )}
                       >
                         <div
                           className={cn(
-                            "size-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs mt-0.5",
+                            "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[var(--r-sm)]",
                             style.className,
                           )}
                         >
-                          <Icon className="size-4.5 stroke-[2.25]" />
+                          <Icon className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
-                            <p className="text-[13px] font-extrabold text-foreground leading-tight truncate">{n.title}</p>
-                            <span className="text-[10px] font-medium text-muted-foreground/80 shrink-0">
+                            <p className="truncate text-[13px] font-medium leading-tight text-[var(--text)]">{n.title}</p>
+                            <span className="shrink-0 text-[10px] text-[var(--text-subtle)]">
                               {formatDistanceToNowStrict(new Date(n.created_at), { locale: dateFnsLocale(locale), addSuffix: true })}
                             </span>
                           </div>
-                          <p className="text-[12px] font-medium text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{n.subtitle}</p>
+                          <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-[var(--text-muted)]">{n.subtitle}</p>
                         </div>
                         {isUnread && (
-                          <span className="mt-2 size-2 shrink-0 rounded-full bg-[#e36329] shadow-[0_0_8px_rgba(227,99,41,0.7)] animate-pulse" />
+                          <span className="mt-2 size-2 shrink-0 rounded-full bg-[var(--danger)]" aria-label="Non lue" />
                         )}
                       </Link>
                     </DropdownMenuItem>
@@ -403,7 +467,7 @@ export function DashboardHeader({
           onClick={toggleSound}
           aria-label={soundEnabled ? tl("soundOff") : tl("soundOn")}
           aria-pressed={soundEnabled}
-          className="relative hidden sm:flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition-colors hover:bg-muted shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="relative hidden size-[30px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--r-sm)] text-[var(--text-subtle)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)] sm:flex"
         >
           {soundEnabled ? (
             <Volume2 className="size-4 stroke-[2px]" />
@@ -417,7 +481,7 @@ export function DashboardHeader({
           type="button"
           onClick={() => setTheme(isDark ? "light" : "dark")}
           aria-label="Changer le thème"
-          className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition-colors hover:bg-muted shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-hidden"
+          className="relative flex size-[30px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--r-sm)] text-[var(--text-subtle)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
         >
           {mounted && (
             <AnimatePresence mode="wait" initial={false}>
@@ -444,10 +508,10 @@ export function DashboardHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2.5 rounded-full border border-border/80 bg-card p-1 pr-3.5 sm:pr-4 shadow-sm hover:bg-muted/50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex cursor-pointer items-center gap-2.5 rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--surface)] p-1 pr-3.5 transition-colors hover:bg-[var(--surface-2)] sm:pr-4"
             >
               {/* Avatar Circle with Initial or Logo */}
-              <div className="flex size-8 sm:size-9 items-center justify-center rounded-full bg-[#e36329] text-white font-extrabold text-sm shadow-sm shrink-0 overflow-hidden">
+              <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-[var(--r-pill)] border border-[var(--border-strong)] bg-[var(--surface-3)] text-[11px] font-semibold text-[var(--text-muted)]">
                 {logoUrl ? (
                   <img src={logoUrl} alt={restaurantName} className="size-full object-cover" />
                 ) : (
@@ -457,32 +521,32 @@ export function DashboardHeader({
 
               {/* Name and Role labels */}
               <div className="flex flex-col text-left min-w-0">
-                <span className="text-[13px] font-extrabold text-foreground leading-tight truncate max-w-[110px] sm:max-w-[150px]">
+                <span className="max-w-[110px] truncate text-[12.5px] font-medium leading-tight text-[var(--text)] sm:max-w-[150px]">
                   {restaurantName}
                 </span>
-                <span className="text-[11px] font-semibold text-muted-foreground leading-tight truncate mt-0.5">
+                <span className="mt-0.5 truncate text-[11px] leading-tight text-[var(--text-subtle)]">
                   {roleLabel}
                 </span>
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60 rounded-2xl border-border bg-card p-2 shadow-2xl">
+          <DropdownMenuContent align="end" className="w-60 p-1">
             <DropdownMenuLabel className="px-3 py-2">
-              <p className="text-[13px] font-extrabold text-foreground truncate">{restaurantName}</p>
-              <p className="text-[11.5px] font-medium text-muted-foreground truncate mt-0.5">{email}</p>
+              <p className="truncate text-[12.5px] font-medium text-[var(--text)]">{restaurantName}</p>
+              <p className="mt-0.5 truncate text-[11px] text-[var(--text-subtle)]">{email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border/60" />
-            <DropdownMenuItem asChild className="rounded-xl cursor-pointer font-semibold text-xs py-2.5 bg-primary/5 text-primary hover:bg-primary/10 transition-colors">
+            <DropdownMenuItem asChild className="cursor-pointer text-xs">
               <a
                 href={`/${restaurantSlug || "orendezvous"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between w-full"
               >
-                <span className="flex items-center gap-2 font-bold">
-                  <Globe className="size-4 text-primary" /> Visiter le site web
+                <span className="flex items-center gap-2 font-medium">
+                  <Globe className="size-4 opacity-75" /> Visiter le site web
                 </span>
-                <ExternalLink className="size-3.5 text-primary/70" />
+                <ExternalLink className="size-3.5 opacity-60" />
               </a>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="rounded-xl cursor-pointer font-semibold text-xs py-2.5">
