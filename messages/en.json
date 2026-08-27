@@ -1118,6 +1118,7 @@
     "approve": "Approve",
     "reject": "Reject",
     "serve": "Served",
+    "markReady": "Mark ready",
     "emptyApprove": "No orders to approve",
     "emptyKitchen": "Nothing in the kitchen",
     "emptyReady": "Nothing to serve",
@@ -1136,6 +1137,19 @@
     "soldOutWarning": "Item sold out — check before approving",
     "dineIn": "Dine in",
     "delivery": "Delivery",
-    "waiting": "Waiting"
+    "takeaway": "Takeaway",
+    "waiting": "Waiting",
+    "statOpen": "OPEN",
+    "statAvg": "AVG PREP",
+    "statLate": "LATE",
+    "statServed": "SERVED",
+    "filterAll": "All",
+    "filterDineIn": "Dine in",
+    "filterTakeaway": "Takeaway",
+    "filterDelivery": "Delivery",
+    "sortOldest": "Oldest first",
+    "sortNewest": "Newest first",
+    "searchPlaceholder": "Ticket, table or item",
+    "subtitle": "{open} live tickets · {late} past {max} min"
   }
 }

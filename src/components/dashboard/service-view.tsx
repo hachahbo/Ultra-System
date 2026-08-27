@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   AlertTriangle,
+  ArrowUpDown,
   Ban,
   Check,
   ChefHat,
@@ -13,6 +14,7 @@ import {
   Clock,
   PackageX,
   RotateCcw,
+  Search,
   UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,14 +25,11 @@ import {
   playNotificationChime,
 } from "@/lib/notification-sound";
 import { formatPrice } from "@/lib/format";
-import { isInKitchen, type OrderStatus } from "@/lib/order-flow";
+import { isInKitchen, normalizeOrderStatus, type OrderStatus } from "@/lib/order-flow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
-// Declared locally rather than imported from lib/types, matching kds-view.tsx:
-// this view reads a narrow projection of `orders`, and Order's own status union
-// is still the pre-0030 triple until Phase 4 rewires the back-office grid.
 
 type ServiceLine = {
   item_id: string;
@@ -59,7 +58,14 @@ async function fetchOrders(): Promise<ServiceOrder[]> {
   const res = await fetch("/api/dashboard/orders");
   if (!res.ok) throw new Error("orders fetch failed");
   const { orders } = await res.json();
-  return (orders ?? []) as ServiceOrder[];
+  // Normalised at the boundary so every lane predicate below compares against
+  // a status this build knows. An un-migrated database still returns the
+  // pre-0030 'new'/'done', which match no lane at all — the order would not
+  // error, it would just silently never appear on the board.
+  return ((orders ?? []) as ServiceOrder[]).map((o) => ({
+    ...o,
+    status: normalizeOrderStatus(o.status),
+  }));
 }
 
 /** item_id → in_stock, so the approval lane can flag a dish that is 86'd. */
@@ -72,19 +78,44 @@ async function fetchAvailability(): Promise<Record<string, boolean>> {
   );
 }
 
-async function patchStatus(order: ServiceOrder, status: OrderStatus): Promise<void> {
+/**
+ * Carries the server's authoritative row back to onError so a lost optimistic
+ * race can be reconciled instead of rolled back. A 409 is not a failure the
+ * user has to care about — it means our `updated_at` was stale, and the body
+ * hands us the fresh one.
+ */
+class OrderConflictError extends Error {
+  constructor(message: string, readonly fresh: ServiceOrder | null) {
+    super(message);
+    this.name = "OrderConflictError";
+  }
+}
+
+/**
+ * Returns the row the DATABASE holds after the write, which is not the row we
+ * asked for: `orders_touch_updated_at` (0010) rewrites updated_at on every
+ * UPDATE, and approving fires fan_order_to_kds (0030 §4) whose nested
+ * `set status='preparing'` bumps it a second time. Callers must feed this back
+ * into the cache — the next PATCH's optimistic-concurrency predicate compares
+ * against updated_at, so a cache holding a stale one 409s on the next click.
+ */
+async function patchStatus(order: ServiceOrder, status: OrderStatus): Promise<ServiceOrder> {
   const res = await fetch(`/api/dashboard/orders/${order.id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    // updated_at is the optimistic-concurrency token: if another waiter moved
-    // this order since we rendered it, the API answers 409 instead of letting
-    // us clobber their action.
     body: JSON.stringify({ status, updated_at: order.updated_at }),
   });
+  const body = await res.json().catch(() => null);
   if (!res.ok) {
-    const body = await res.json().catch(() => null);
+    if (res.status === 409) {
+      throw new OrderConflictError(
+        body?.error ?? "Commande déjà mise à jour",
+        (body?.order ?? null) as ServiceOrder | null,
+      );
+    }
     throw new Error(body?.error ?? "status update failed");
   }
+  return body.order as ServiceOrder;
 }
 
 async function patchAvailability(itemId: string, inStock: boolean): Promise<void> {
@@ -106,6 +137,7 @@ const LANES = [
     icon: ClipboardCheck,
     match: (s: OrderStatus) => s === "pending",
     accent: "text-orange-600 dark:text-orange-400",
+    badgeBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   },
   {
     key: "kitchen",
@@ -113,7 +145,8 @@ const LANES = [
     empty: "emptyKitchen",
     icon: ChefHat,
     match: isInKitchen,
-    accent: "text-blue-600 dark:text-blue-400",
+    accent: "text-orange-600 dark:text-orange-400",
+    badgeBg: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
   },
   {
     key: "ready",
@@ -122,10 +155,20 @@ const LANES = [
     icon: UtensilsCrossed,
     match: (s: OrderStatus) => s === "ready",
     accent: "text-emerald-600 dark:text-emerald-400",
+    badgeBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   },
 ] as const;
 
 type LaneKey = (typeof LANES)[number]["key"];
+type ChannelFilter = "all" | "dine_in" | "takeaway" | "delivery";
+
+// Helper to derive order channel type
+function channelTypeOf(order: ServiceOrder): ChannelFilter {
+  if (order.type === "dine_in") return "dine_in";
+  const noteLower = (order.note ?? "").toLowerCase();
+  if (noteLower.includes("takeaway") || noteLower.includes("emporter")) return "takeaway";
+  return "delivery";
+}
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -133,15 +176,17 @@ export function ServiceView() {
   const locale = useLocale();
   const t = useTranslations("Service");
   const queryClient = useQueryClient();
+
   const [activeLane, setActiveLane] = useState<LaneKey>("approve");
-  // Lazily initialised: Date.now() is impure, so it may not be called during
-  // render itself. Owned here rather than in each card so one timer drives the
-  // whole board's age colouring.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
+  const [sortOrder, setSortOrder] = useState<"oldest" | "newest">("oldest");
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(() => Date.now());
 
-  // Re-tick every 30s so the "waiting 4 min" ages stay honest without a poll.
+  // Re-tick every 15s to keep live age numbers accurate
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    const timer = setInterval(() => setNow(Date.now()), 15_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -157,8 +202,7 @@ export function ServiceView() {
     staleTime: 60_000,
   });
 
-  // Realtime: the whole point of this screen is that it moves on its own.
-  // Mirrors the kds-view.tsx subscription pattern.
+  // Supabase Realtime subscription
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -174,9 +218,7 @@ export function ServiceView() {
     };
   }, [queryClient]);
 
-  // The alert this whole workflow exists to deliver. A ref (not state) holds
-  // the last-known ready set so this never re-renders on its own; the first
-  // load seeds it silently, or every order already up would chime at once.
+  // Sound & notification alert on ready orders
   const knownReady = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (!orders) return;
@@ -193,22 +235,44 @@ export function ServiceView() {
     }
   }, [orders, t]);
 
+  /** Replace one order in the cache with the server's own copy of it. */
+  const commitOrder = useCallback(
+    (fresh: ServiceOrder) => {
+      queryClient.setQueryData<ServiceOrder[]>(["orders"], (old) =>
+        (old ?? []).map((o) => (o.id === fresh.id ? fresh : o)),
+      );
+    },
+    [queryClient],
+  );
+
   const statusMutation = useMutation({
     mutationFn: ({ order, to }: { order: ServiceOrder; to: OrderStatus }) =>
       patchStatus(order, to),
     onMutate: async ({ order, to }) => {
       await queryClient.cancelQueries({ queryKey: ["orders"] });
       const prev = queryClient.getQueryData<ServiceOrder[]>(["orders"]);
-      // Approving hands off to the kitchen: 0030's trigger advances the order
-      // to 'preparing' in the same transaction, so that — not 'confirmed' — is
-      // the state to show optimistically.
       const optimistic = to === "confirmed" ? "preparing" : to;
       queryClient.setQueryData<ServiceOrder[]>(["orders"], (old) =>
         (old ?? []).map((o) => (o.id === order.id ? { ...o, status: optimistic } : o)),
       );
       return { prev };
     },
+    // The optimistic row above moved the card to its new lane but kept the OLD
+    // updated_at, which is exactly the value the next PATCH would send as its
+    // concurrency predicate — and the server has since bumped it (twice, when
+    // approving). Overwriting with the returned row is what stops the second
+    // click on a card from 409-ing before the onSettled refetch lands.
+    onSuccess: (fresh) => commitOrder(fresh),
     onError: (err, _vars, ctx) => {
+      // A 409 means someone (or our own stale cache) beat us to it. The server
+      // sent the winning row, so heal the board with it rather than reverting
+      // to a snapshot that is even older.
+      if (err instanceof OrderConflictError) {
+        if (err.fresh) commitOrder(err.fresh);
+        else if (ctx?.prev) queryClient.setQueryData(["orders"], ctx.prev);
+        toast.warning(err.message);
+        return;
+      }
       if (ctx?.prev) queryClient.setQueryData(["orders"], ctx.prev);
       toast.error(err instanceof Error ? err.message : t("approveFailed"));
     },
@@ -222,27 +286,95 @@ export function ServiceView() {
     onError: () => toast.error(t("availabilityFailed")),
   });
 
-  const byLane = useMemo(() => {
+  const toggleItemCheck = (orderId: string, itemIdx: number) => {
+    const key = `${orderId}:${itemIdx}`;
+    setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Group & Filter Orders
+  const { byLane, stats, channelCounts } = useMemo(() => {
+    const allOrders = orders ?? [];
     const grouped = { approve: [], kitchen: [], ready: [] } as Record<LaneKey, ServiceOrder[]>;
-    for (const order of orders ?? []) {
+    
+    // Calculate stats
+    let totalPrepSec = 0;
+    let openCount = 0;
+    let lateCount = 0;
+    let servedCount = 0;
+
+    const counts: Record<ChannelFilter, number> = { all: allOrders.length, dine_in: 0, takeaway: 0, delivery: 0 };
+
+    for (const order of allOrders) {
+      const ch = channelTypeOf(order);
+      counts[ch] += 1;
+
+      if (order.status === "served") {
+        servedCount += 1;
+        continue;
+      }
+
+      if (order.status === "cancelled") continue;
+
+      openCount += 1;
+      const createdTime = new Date(order.created_at).getTime();
+      const ageSec = Math.floor((now - createdTime) / 1000);
+      totalPrepSec += ageSec;
+
+      if (ageSec >= 12 * 60) lateCount += 1;
+
+      // Filter by Channel
+      if (channelFilter !== "all" && ch !== channelFilter) continue;
+
+      // Filter by Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const code = order.id.slice(0, 5).toLowerCase();
+        const table = (order.table_number ?? "").toLowerCase();
+        const customer = (order.customer_name ?? "").toLowerCase();
+        const matchItem = order.items.some((i) => i.name.toLowerCase().includes(q));
+        if (!code.includes(q) && !table.includes(q) && !customer.includes(q) && !matchItem) {
+          continue;
+        }
+      }
+
       const lane = LANES.find((l) => l.match(order.status));
       if (lane) grouped[lane.key].push(order);
     }
-    // Oldest first everywhere — the queue is a queue.
+
+    // Sort orders
     for (const key of Object.keys(grouped) as LaneKey[]) {
-      grouped[key].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      );
+      grouped[key].sort((a, b) => {
+        const tA = new Date(a.created_at).getTime();
+        const tB = new Date(b.created_at).getTime();
+        return sortOrder === "oldest" ? tA - tB : tB - tA;
+      });
     }
-    return grouped;
-  }, [orders]);
+
+    const avgSec = openCount > 0 ? Math.floor(totalPrepSec / openCount) : 0;
+    const avgMin = Math.floor(avgSec / 60);
+    const avgRemainderSec = avgSec % 60;
+    const avgFormatted = `${avgMin}:${String(avgRemainderSec).padStart(2, "0")}`;
+
+    return {
+      byLane: grouped,
+      stats: { open: openCount, avgFormatted, late: lateCount, served: servedCount },
+      channelCounts: counts,
+    };
+  }, [orders, now, channelFilter, searchQuery, sortOrder]);
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-[280px] rounded-2xl" />
-        ))}
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-[320px] rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -256,14 +388,125 @@ export function ServiceView() {
     );
   }
 
+  const channels: { key: ChannelFilter; label: string }[] = [
+    { key: "all", label: "filterAll" },
+    { key: "dine_in", label: "filterDineIn" },
+    { key: "takeaway", label: "filterTakeaway" },
+    { key: "delivery", label: "filterDelivery" },
+  ];
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Lane switcher — the primary navigation on a phone, a live count
-          summary on a tablet where all three lanes are visible at once. */}
+    <div className="flex flex-col gap-6">
+      {/* KPI Cards & Toolbar */}
+      <div className="flex flex-col gap-4">
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="flex flex-col rounded-xl border border-border bg-card p-3.5 shadow-xs">
+            <span className="text-[10px] font-extrabold tracking-wider uppercase text-muted-foreground">
+              {t("statOpen")}
+            </span>
+            <span className="mt-1 text-2xl font-black tracking-tight tabular-nums text-foreground">
+              {stats.open}
+            </span>
+          </div>
+
+          <div className="flex flex-col rounded-xl border border-border bg-card p-3.5 shadow-xs">
+            <span className="text-[10px] font-extrabold tracking-wider uppercase text-muted-foreground">
+              {t("statAvg")}
+            </span>
+            <span className="mt-1 text-2xl font-black tracking-tight tabular-nums text-foreground">
+              {stats.avgFormatted}
+            </span>
+          </div>
+
+          <div
+            className={cn(
+              "flex flex-col rounded-xl border p-3.5 shadow-xs transition-colors",
+              stats.late > 0
+                ? "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+                : "border-border bg-card text-foreground"
+            )}
+          >
+            <span className="text-[10px] font-extrabold tracking-wider uppercase text-muted-foreground">
+              {t("statLate")}
+            </span>
+            <span className="mt-1 text-2xl font-black tracking-tight tabular-nums">
+              {stats.late}
+            </span>
+          </div>
+
+          <div className="flex flex-col rounded-xl border border-border bg-card p-3.5 shadow-xs">
+            <span className="text-[10px] font-extrabold tracking-wider uppercase text-muted-foreground">
+              {t("statServed")}
+            </span>
+            <span className="mt-1 text-2xl font-black tracking-tight tabular-nums text-foreground">
+              {stats.served}
+            </span>
+          </div>
+        </div>
+
+        {/* Toolbar: Channel Filter Pills, Search & Sort */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Channel Filters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {channels.map((ch) => {
+              const active = channelFilter === ch.key;
+              const count = channelCounts[ch.key];
+              return (
+                <button
+                  key={ch.key}
+                  type="button"
+                  onClick={() => setChannelFilter(ch.key)}
+                  className={cn(
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 py-1.5 text-xs font-bold transition-all",
+                    active
+                      ? "border-foreground bg-foreground text-background shadow-xs"
+                      : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  {t(ch.label)}
+                  <span
+                    className={cn(
+                      "min-w-4 rounded-md px-1 py-0.2 text-[10px] font-extrabold tabular-nums text-center",
+                      active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search & Sort */}
+          <div className="flex flex-1 items-center justify-end gap-2 min-w-[280px]">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs focus-within:border-ring focus-within:ring-1 focus-within:ring-ring flex-1 sm:max-w-xs">
+              <Search className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="w-full bg-transparent text-xs font-semibold text-foreground placeholder:text-muted-foreground outline-none"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSortOrder((prev) => (prev === "oldest" ? "newest" : "oldest"))}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+            >
+              <ArrowUpDown className="size-3.5" aria-hidden="true" />
+              {sortOrder === "oldest" ? t("sortOldest") : t("sortNewest")}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Tab Switcher */}
       <div
         className="flex items-center gap-2 overflow-x-auto no-scrollbar lg:hidden"
         role="tablist"
-        aria-label={t("laneApprove")}
       >
         {LANES.map((lane) => {
           const count = byLane[lane.key].length;
@@ -275,17 +518,17 @@ export function ServiceView() {
               aria-selected={active}
               onClick={() => setActiveLane(lane.key)}
               className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[13px] font-bold transition-all",
+                "flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition-all",
                 active
-                  ? "border-black bg-black text-white shadow-sm dark:border-white dark:bg-white dark:text-black"
-                  : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
+                  ? "border-foreground bg-foreground text-background shadow-xs"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
               {t(lane.label)}
               <span
                 className={cn(
-                  "min-w-5 rounded-full px-1.5 py-0.5 text-[11px] font-extrabold tabular-nums",
-                  active ? "bg-white/20 dark:bg-black/20" : "bg-muted",
+                  "min-w-5 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums",
+                  active ? "bg-background/20" : "bg-muted"
                 )}
               >
                 {count}
@@ -295,6 +538,7 @@ export function ServiceView() {
         })}
       </div>
 
+      {/* 3-Column Kanban Grid */}
       <div className="grid gap-4 lg:grid-cols-3">
         {LANES.map((lane) => {
           const laneOrders = byLane[lane.key];
@@ -302,27 +546,33 @@ export function ServiceView() {
           return (
             <section
               key={lane.key}
-              // One lane at a time on a phone; all three side by side from lg up.
               className={cn(
                 "flex-col gap-3",
-                activeLane === lane.key ? "flex" : "hidden lg:flex",
+                activeLane === lane.key ? "flex" : "hidden lg:flex"
               )}
               aria-label={t(lane.label)}
             >
-              <header className="hidden items-center gap-2 px-1 lg:flex">
-                <LaneIcon className={cn("size-4", lane.accent)} aria-hidden="true" />
-                <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-muted-foreground">
+              <header className="flex items-center gap-2 px-1 py-0.5">
+                <div
+                  className={cn(
+                    "flex size-7 items-center justify-center rounded-lg border text-xs font-bold",
+                    lane.badgeBg
+                  )}
+                >
+                  <LaneIcon className="size-4" aria-hidden="true" />
+                </div>
+                <h2 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
                   {t(lane.label)}
                 </h2>
-                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-muted-foreground">
+                <span className="ml-auto rounded-md bg-muted px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-muted-foreground">
                   {laneOrders.length}
                 </span>
               </header>
 
               {laneOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-6 py-12 text-center">
-                  <LaneIcon className="size-6 text-muted-foreground/40" aria-hidden="true" />
-                  <p className="text-sm font-medium text-foreground">{t(lane.empty)}</p>
+                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border px-6 py-12 text-center bg-card/40">
+                  <LaneIcon className="size-6 text-muted-foreground/30" aria-hidden="true" />
+                  <p className="text-sm font-bold text-foreground">{t(lane.empty)}</p>
                   <p className="text-xs text-muted-foreground">{t("allClear")}</p>
                 </div>
               ) : (
@@ -334,6 +584,8 @@ export function ServiceView() {
                     locale={locale}
                     now={now}
                     availability={availability}
+                    checkedItems={checkedItems}
+                    onToggleCheck={toggleItemCheck}
                     busy={statusMutation.isPending}
                     onStatus={(to) => statusMutation.mutate({ order, to })}
                     onToggleAvailability={(itemId, inStock) =>
@@ -350,7 +602,7 @@ export function ServiceView() {
   );
 }
 
-// ── Card ───────────────────────────────────────────────────────────────────
+// ── Card Component ─────────────────────────────────────────────────────────
 
 function OrderCard({
   order,
@@ -358,6 +610,8 @@ function OrderCard({
   locale,
   now,
   availability,
+  checkedItems,
+  onToggleCheck,
   busy,
   onStatus,
   onToggleAvailability,
@@ -367,6 +621,8 @@ function OrderCard({
   locale: string;
   now: number;
   availability: Record<string, boolean> | undefined;
+  checkedItems: Record<string, boolean>;
+  onToggleCheck: (orderId: string, itemIdx: number) => void;
   busy: boolean;
   onStatus: (to: OrderStatus) => void;
   onToggleAvailability: (itemId: string, inStock: boolean) => void;
@@ -374,9 +630,6 @@ function OrderCard({
   const t = useTranslations("Service");
   const code = order.id.slice(0, 5).toUpperCase();
 
-  // Ready orders age from the moment the kitchen finished, not from when the
-  // customer ordered — that is the number telling a waiter the food is dying
-  // under the pass.
   const since = lane === "ready" && order.ready_at ? order.ready_at : order.created_at;
   const ageMins = Math.floor((now - new Date(since).getTime()) / 60000);
   const isWarning = ageMins >= 10 && ageMins < 20;
@@ -389,30 +642,31 @@ function OrderCard({
   return (
     <article
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all",
+        "flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs transition-all",
         isDanger
           ? "border-red-500/50 shadow-red-500/10"
           : isWarning
-            ? "border-orange-500/50"
-            : "border-border",
+            ? "border-amber-500/50"
+            : "border-border"
       )}
     >
+      {/* Card Header */}
       <header
         className={cn(
-          "flex items-start justify-between gap-3 border-b border-border p-3",
-          isDanger ? "bg-red-500/10" : isWarning ? "bg-orange-500/10" : "bg-accent/30",
+          "flex items-start justify-between gap-3 border-b border-border p-3.5",
+          isDanger ? "bg-red-500/10" : isWarning ? "bg-amber-500/10" : "bg-muted/40"
         )}
       >
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5 text-[15px] font-extrabold">
+          <div className="flex flex-wrap items-center gap-1.5 text-base font-extrabold tracking-tight">
             #{code}
             {order.table_number && (
-              <span className="rounded-md bg-black px-2 py-0.5 text-xs font-bold text-white dark:bg-white dark:text-black">
+              <span className="rounded-md bg-foreground px-2 py-0.5 text-xs font-bold text-background">
                 {t("table")} {order.table_number}
               </span>
             )}
           </div>
-          <p className="mt-0.5 truncate text-[11px] font-medium text-muted-foreground">
+          <p className="mt-0.5 truncate text-[11px] font-semibold text-muted-foreground">
             {order.type === "dine_in" ? t("dineIn") : t("delivery")}
             {order.customer_name ? ` · ${order.customer_name}` : ""}
           </p>
@@ -420,41 +674,58 @@ function OrderCard({
         <div className="shrink-0 text-right">
           <div
             className={cn(
-              "flex items-center justify-end gap-1 text-xs font-bold",
+              "flex items-center justify-end gap-1 text-xs font-extrabold tabular-nums",
               isDanger
-                ? "text-red-500"
+                ? "text-red-600 dark:text-red-400"
                 : isWarning
-                  ? "text-orange-500"
-                  : "text-muted-foreground",
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground"
             )}
           >
-            <Clock className="size-3.5" aria-hidden="true" />
+            <Clock className="size-3.5 shrink-0" aria-hidden="true" />
             {formatDistanceToNowStrict(new Date(since), {
               locale: dateFnsLocale(locale),
               addSuffix: false,
             })}
           </div>
-          <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground tabular-nums">
+          <div className="mt-0.5 text-[11px] font-bold text-foreground tabular-nums">
             {formatPrice(order.total)}
           </div>
         </div>
       </header>
 
-      <div className="flex flex-col gap-2.5 p-3">
+      {/* Card Body & Plating Checklist */}
+      <div className="flex flex-col gap-2.5 p-3.5">
         {order.items.map((line, i) => {
           const inStock = availability?.[line.item_id];
           const soldOut = inStock === false;
+          const isChecked = !!checkedItems[`${order.id}:${i}`];
+
           return (
-            <div key={`${line.item_id}-${i}`} className="flex gap-2.5">
-              <span className="w-6 shrink-0 text-[15px] font-extrabold tabular-nums">
+            <div
+              key={`${line.item_id}-${i}`}
+              onClick={() => lane === "kitchen" && onToggleCheck(order.id, i)}
+              className={cn(
+                "flex items-start gap-2.5 rounded-lg py-1 px-1 transition-colors",
+                lane === "kitchen" && "cursor-pointer hover:bg-accent/50"
+              )}
+            >
+              <span
+                className={cn(
+                  "min-w-6 shrink-0 text-center text-xs font-extrabold tabular-nums rounded-md py-0.5 px-1 bg-muted/60 text-muted-foreground",
+                  isChecked && "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                )}
+              >
                 {line.quantity}×
               </span>
+
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span
                     className={cn(
-                      "text-[14px] font-bold leading-snug",
+                      "text-xs font-bold leading-snug text-foreground transition-all",
                       soldOut && "text-muted-foreground line-through",
+                      isChecked && "text-muted-foreground line-through opacity-70"
                     )}
                   >
                     {line.name}
@@ -466,7 +737,7 @@ function OrderCard({
                   )}
                 </div>
                 {line.options.length > 0 && (
-                  <div className="mt-0.5 text-[12px] font-medium leading-tight text-muted-foreground">
+                  <div className="mt-0.5 text-[11px] font-medium leading-tight text-muted-foreground">
                     {line.options.map((opt) => (
                       <span key={opt} className="block">
                         — {opt}
@@ -476,15 +747,31 @@ function OrderCard({
                 )}
               </div>
 
-              {/* Availability is only the waiter's business while deciding
-                  whether to approve; once the kitchen has it, it is too late. */}
+              {/* Plating Checklist Checkmark in Kitchen Lane */}
+              {lane === "kitchen" && (
+                <div
+                  className={cn(
+                    "flex size-5 shrink-0 items-center justify-center rounded-md border transition-all mt-0.5",
+                    isChecked
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-border bg-card text-transparent hover:border-muted-foreground"
+                  )}
+                >
+                  <Check className="size-3 stroke-[3]" aria-hidden="true" />
+                </div>
+              )}
+
+              {/* Availability Toggle in Approve Lane */}
               {lane === "approve" && inStock !== undefined && (
                 <button
                   type="button"
-                  onClick={() => onToggleAvailability(line.item_id, soldOut)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleAvailability(line.item_id, soldOut);
+                  }}
                   title={soldOut ? t("markAvailable") : t("markSoldOut")}
                   aria-label={soldOut ? t("markAvailable") : t("markSoldOut")}
-                  className="shrink-0 self-start rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {soldOut ? (
                     <RotateCcw className="size-4" aria-hidden="true" />
@@ -497,27 +784,30 @@ function OrderCard({
           );
         })}
 
+        {/* Customer Note */}
         {order.note && (
-          <p className="mt-1 rounded-lg border border-yellow-200 bg-yellow-50 p-2.5 text-[13px] font-medium italic text-yellow-800 dark:border-yellow-500/20 dark:bg-yellow-500/10 dark:text-yellow-200">
+          <p className="mt-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold italic text-amber-700 dark:text-amber-300">
             {t("note")}: {order.note}
           </p>
         )}
 
+        {/* 86 Warning in Approve Lane */}
         {lane === "approve" && soldOutLines.length > 0 && (
-          <p className="flex items-center gap-1.5 text-[12px] font-bold text-red-600 dark:text-red-400">
+          <p className="flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400">
             <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
             {t("soldOutWarning")}
           </p>
         )}
       </div>
 
+      {/* Card Actions Footer */}
       {lane === "approve" && (
         <footer className="flex gap-2 border-t border-border p-3">
           <button
             type="button"
             disabled={busy}
             onClick={() => onStatus("cancelled")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-3 text-[14px] font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
           >
             <Ban className="size-4" aria-hidden="true" />
             {t("reject")}
@@ -526,7 +816,7 @@ function OrderCard({
             type="button"
             disabled={busy}
             onClick={() => onStatus("confirmed")}
-            className="flex flex-[2] items-center justify-center gap-1.5 rounded-xl bg-[#ec5b1a] py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#d94a09] disabled:opacity-50"
+            className="flex flex-[2] items-center justify-center gap-1.5 rounded-xl bg-orange-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
           >
             <Check className="size-4" aria-hidden="true" />
             {t("approve")}
@@ -535,8 +825,16 @@ function OrderCard({
       )}
 
       {lane === "kitchen" && (
-        <footer className="border-t border-border px-3 py-2.5 text-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
-          {t("waiting")}
+        <footer className="border-t border-border p-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onStatus("ready")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+          >
+            <Check className="size-4" aria-hidden="true" />
+            {t("markReady")}
+          </button>
         </footer>
       )}
 
@@ -546,7 +844,7 @@ function OrderCard({
             type="button"
             disabled={busy}
             onClick={() => onStatus("served")}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-[14px] font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
           >
             <Check className="size-4" aria-hidden="true" />
             {t("serve")}

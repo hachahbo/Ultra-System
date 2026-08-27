@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/order-flow";
+import { ORDER_STATUS_LABELS, normalizeOrderStatus, type OrderStatus } from "@/lib/order-flow";
 import {
   CalendarClock,
   CalendarDays,
@@ -360,7 +360,12 @@ export function OverviewView({
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {lastOrders.map((o) => {
-                      const isNewUnread = o.status === "pending" && !seenOrders.has(o.id);
+                      // Normalised once per row: an un-migrated database still
+                      // returns the pre-0030 'new'/'done', which are not keys
+                      // in ORDER_STATUS_LABELS — and t(undefined) throws
+                      // MISSING_MESSAGE, taking the whole page down with it.
+                      const status = normalizeOrderStatus(o.status);
+                      const isNewUnread = status === "pending" && !seenOrders.has(o.id);
                       return (
                         <tr
                           key={o.id}
@@ -389,9 +394,9 @@ export function OverviewView({
                           <td className="py-4 pr-4">
                             <Badge variant="outline" className={cn(
                               "rounded-md border-transparent bg-neutral-100 dark:bg-neutral-800/80 font-medium",
-                              ORDER_STATUS_TEXT[o.status],
+                              ORDER_STATUS_TEXT[status],
                             )}>
-                              {tOrders(ORDER_STATUS_LABELS[o.status])}
+                              {tOrders(ORDER_STATUS_LABELS[status])}
                             </Badge>
                           </td>
                           <td className="py-4 pr-3 text-right text-xs text-muted-foreground">

@@ -151,6 +151,9 @@ export async function POST(request: Request) {
     .single();
 
   if (orderError || !order) {
+    // Was swallowed entirely, which turned every schema/constraint problem into
+    // an opaque 500 with nothing in the log to chase. Mirrors the PATCH handler.
+    console.error("POST /api/dashboard/orders insert error:", orderError);
     return NextResponse.json({ error: "Erreur d'enregistrement" }, { status: 500 });
   }
 

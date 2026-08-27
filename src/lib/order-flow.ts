@@ -32,6 +32,35 @@ export const ORDER_STATUSES = [
 /** States an order can never leave. */
 const TERMINAL_STATUSES: OrderStatus[] = ["served", "cancelled"];
 
+// Pre-0030 fulfilment states. 0030 backfills these away
+// ('new'→'pending', 'done'→'served'), but the migration and this code do not
+// have to land in the same instant: until it runs, every SELECT still returns
+// them. Mapping here rather than at each call site means a dashboard built
+// against the new machine renders correctly on an un-migrated database
+// instead of crashing on the first unknown key.
+const LEGACY_STATUS_ALIASES: Record<string, OrderStatus> = {
+  new: "pending",
+  done: "served",
+};
+
+/**
+ * Coerces any status string the database might return into a known
+ * OrderStatus. Unrecognised values fall back to "pending" — the state that
+ * grants the fewest assumptions, since it is the only non-terminal one a
+ * human is expected to act on next.
+ *
+ * Use this on every status crossing the API boundary. Indexing
+ * ORDER_STATUS_LABELS with a raw value yields undefined, and passing that to
+ * next-intl's t() throws MISSING_MESSAGE rather than degrading.
+ */
+export function normalizeOrderStatus(status: string | null | undefined): OrderStatus {
+  if (!status) return "pending";
+  if ((ORDER_STATUSES as readonly string[]).includes(status)) {
+    return status as OrderStatus;
+  }
+  return LEGACY_STATUS_ALIASES[status] ?? "pending";
+}
+
 // Message keys into the Orders.* namespace, not display text — same convention
 // as ROLE_LABELS in permissions.ts.
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -65,7 +94,10 @@ export const ORDER_TRANSITIONS: Record<
   // Transient — an order only sits here for the duration of one transaction.
   // Cancellation is still listed because a crashed trigger could strand one.
   confirmed: [{ to: "cancelled", roles: ["owner", "manager", "serveur"] }],
-  preparing: [{ to: "cancelled", roles: ["owner", "manager", "serveur"] }],
+  preparing: [
+    { to: "ready", roles: ["owner", "manager", "serveur"] },
+    { to: "cancelled", roles: ["owner", "manager", "serveur"] },
+  ],
   ready: [
     { to: "served", roles: ["owner", "manager", "serveur"] },
     { to: "cancelled", roles: ["owner", "manager", "serveur"] },
@@ -75,13 +107,10 @@ export const ORDER_TRANSITIONS: Record<
 };
 
 /**
- * The two transitions Postgres performs on its own (0030 §4 and §6). Exported
- * so the test suite can assert that client + system transitions together
- * reproduce the database's machine, and so nothing re-implements them by hand.
+ * System-only transitions that cannot be initiated manually by a user role.
  */
 export const SYSTEM_TRANSITIONS: { from: OrderStatus; to: OrderStatus }[] = [
   { from: "confirmed", to: "preparing" }, // fan_order_to_kds
-  { from: "preparing", to: "ready" },     // sync_order_ready_from_tickets
 ];
 
 export function canTransition(

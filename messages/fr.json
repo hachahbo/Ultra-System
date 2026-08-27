@@ -1118,6 +1118,7 @@
     "approve": "Approuver",
     "reject": "Refuser",
     "serve": "Servi",
+    "markReady": "Marquer prêt",
     "emptyApprove": "Aucune commande à approuver",
     "emptyKitchen": "Rien en cuisine",
     "emptyReady": "Rien à servir",
@@ -1136,6 +1137,19 @@
     "soldOutWarning": "Article en rupture — vérifiez avant d'approuver",
     "dineIn": "Sur place",
     "delivery": "Livraison",
-    "waiting": "En attente"
+    "takeaway": "À emporter",
+    "waiting": "En attente",
+    "statOpen": "OUVERTS",
+    "statAvg": "TEMPS MOY.",
+    "statLate": "EN RETARD",
+    "statServed": "SERVIS",
+    "filterAll": "Tous",
+    "filterDineIn": "Sur place",
+    "filterTakeaway": "À emporter",
+    "filterDelivery": "Livraison",
+    "sortOldest": "Plus anciens",
+    "sortNewest": "Plus récents",
+    "searchPlaceholder": "Ticket, table ou plat",
+    "subtitle": "{open} tickets en cours · {late} de plus de {max} min"
   }
 }

@@ -97,15 +97,32 @@ export async function PATCH(
 
   if (error) {
     if (error.code === CHECK_VIOLATION) {
-      // Someone else advanced the order between our read and our write.
       const { data: fresh } = await supabase
         .from("orders")
         .select("*")
         .eq("id", id)
         .maybeSingle();
+      // 23514 has two very different causes here and they were being conflated.
+      // enforce_order_transition raises it with errcode = 'check_violation'
+      // when someone else advanced the order under us — that IS a conflict.
+      // But orders_status_check raises the same code when the status simply
+      // is not one the table allows, which is a bug on our side (a schema
+      // drifted from the code), and reporting it as "already updated" sends
+      // the client into a retry loop against an error that will never clear.
+      // The row having moved is what tells the two apart.
+      if (fresh && fresh.status !== current.status) {
+        return NextResponse.json(
+          { error: "Commande déjà mise à jour", order: fresh },
+          { status: 409 },
+        );
+      }
+      console.error(
+        `PATCH /api/dashboard/orders/${id} rejected status ${current.status} → ${nextStatus}:`,
+        error,
+      );
       return NextResponse.json(
-        { error: "Commande déjà mise à jour", order: fresh },
-        { status: 409 },
+        { error: `Transition refusée : ${error.message}`, order: fresh },
+        { status: 422 },
       );
     }
     console.error(`PATCH /api/dashboard/orders/${id} db update error:`, error);

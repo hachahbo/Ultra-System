@@ -25,7 +25,10 @@ const EXPECTED_CLIENT: Record<OrderStatus, Partial<Record<OrderStatus, Role[]>>>
     cancelled: ["owner", "manager", "serveur"],
   },
   confirmed: { cancelled: ["owner", "manager", "serveur"] },
-  preparing: { cancelled: ["owner", "manager", "serveur"] },
+  preparing: {
+    ready: ["owner", "manager", "serveur"],
+    cancelled: ["owner", "manager", "serveur"],
+  },
   ready: {
     served: ["owner", "manager", "serveur"],
     cancelled: ["owner", "manager", "serveur"],
