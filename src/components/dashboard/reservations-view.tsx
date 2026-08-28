@@ -24,12 +24,15 @@ import {
   Plus,
   User,
   Hash,
+  Minus,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -366,18 +369,18 @@ export function ReservationsView() {
 
       {/* Reservation Details & Table Assignment Modal */}
       <Dialog open={assigning !== null} onOpenChange={(open) => !open && setAssigning(null)}>
-        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-4 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-[28px] p-5 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl space-y-4">
           <DialogHeader className="shrink-0">
-            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-3.5 pr-6">
+            <DialogTitle className="flex items-center justify-between font-display border-b border-border/60 pb-4 pr-6">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
-                  <CalendarDays className="size-5 sm:size-5.5 stroke-[2.25]" />
+                <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 via-orange-500/10 to-transparent text-primary border border-primary/30 shadow-inner shrink-0">
+                  <CalendarDays className="size-5 sm:size-6 stroke-[2.25]" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-none">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-tight">
                     Réservation — {assigning?.customer_name}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                       <Clock className="size-3.5 text-primary/70" />
                       {assigning && format(parseISO(assigning.date), "EEEE d MMMM", { locale: dateFnsLocale(locale) })} à {assigning?.time.slice(0, 5)}
@@ -399,7 +402,7 @@ export function ReservationsView() {
               <div className="md:col-span-5 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3.5">
                   {/* Guest Contact Box */}
-                  <div className="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-2">
+                  <div className="bg-muted/30 border border-border/60 rounded-2xl p-4 space-y-2.5 shadow-2xs">
                     <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                       Contact Client
                     </span>
@@ -412,7 +415,7 @@ export function ReservationsView() {
                         href={`https://wa.me/${assigning.customer_phone.replace(/\D/g, "").replace(/^0/, "212")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl hover:bg-emerald-500/20 transition-colors shrink-0"
+                        className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 rounded-xl hover:bg-emerald-500/20 transition-colors shrink-0 shadow-2xs"
                       >
                         <MessageCircle className="size-3.5" /> WhatsApp
                       </a>
@@ -421,18 +424,18 @@ export function ReservationsView() {
 
                   {/* Special Note */}
                   {assigning.note && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 space-y-1">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-1 shadow-2xs">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                         <FileText className="size-3.5" /> Note de réservation
                       </div>
-                      <p className="text-xs font-medium text-foreground italic">
+                      <p className="text-xs font-medium text-foreground italic leading-relaxed">
                         « {assigning.note} »
                       </p>
                     </div>
                   )}
 
                   {/* Table Status Chip */}
-                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-3.5 flex items-center justify-between">
+                  <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
                     <div className="flex items-center gap-2">
                       <MapPin className="size-4 text-primary shrink-0" />
                       <span className="text-xs font-extrabold text-foreground">
@@ -452,7 +455,7 @@ export function ReservationsView() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      className="flex-1 py-2.5 rounded-xl font-extrabold text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="flex-1 py-2.5 rounded-xl font-extrabold text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                       onClick={() => {
                         setStatus.mutate({ id: assigning.id, status: "confirmed" });
                         setAssigning(null);
@@ -478,12 +481,12 @@ export function ReservationsView() {
               </div>
 
               {/* Right Column: Floor Plan Map */}
-              <div className="md:col-span-7 space-y-2 flex flex-col">
+              <div className="md:col-span-7 space-y-2.5 flex flex-col">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <MapPin className="size-3.5 text-primary" /> Plan des tables
                   </span>
-                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                  <div className="flex items-center gap-2.5 text-[11px] font-bold">
                     <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                       <span className="size-2 rounded-full bg-emerald-500" /> Libre
                     </span>
@@ -496,7 +499,7 @@ export function ReservationsView() {
                   </div>
                 </div>
 
-                <div className="bg-muted/30 border border-border/70 rounded-2xl p-2 min-h-[300px] flex flex-col justify-center">
+                <div className="bg-muted/30 border border-border/70 rounded-2xl p-2 min-h-[300px] flex flex-col justify-center shadow-inner">
                   <FloorPlanMap
                     tables={tables ?? []}
                     mode="view"
@@ -528,17 +531,17 @@ export function ReservationsView() {
 
       {/* Create Reservation Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={(open) => !open && setIsCreateModalOpen(false)}>
-        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-3xl p-4 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/98 backdrop-blur-2xl border-border/80 shadow-2xl space-y-4">
+        <DialogContent className="max-w-3xl sm:max-w-3xl lg:max-w-4xl rounded-[28px] p-5 sm:p-7 max-h-[90vh] flex flex-col min-h-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-2xl space-y-5 overflow-hidden">
           <DialogHeader className="shrink-0">
-            <DialogTitle className="flex items-center gap-3 font-display border-b border-border/60 pb-3.5 pr-6">
-              <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
-                <Plus className="size-5 sm:size-5.5 stroke-[2.25]" />
+            <DialogTitle className="flex items-center gap-3.5 font-display border-b border-border/60 pb-4 pr-6">
+              <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/25 via-orange-500/15 to-primary/5 text-primary border border-primary/30 shadow-inner shrink-0">
+                <Plus className="size-5 sm:size-6 stroke-[2.5]" />
               </div>
               <div>
                 <h3 className="text-lg sm:text-xl font-extrabold text-foreground leading-tight">
                   Nouvelle réservation
                 </h3>
-                <p className="text-xs font-semibold text-muted-foreground mt-1">
+                <p className="text-xs font-medium text-muted-foreground mt-0.5">
                   Ajouter une réservation manuellement dans votre calendrier.
                 </p>
               </div>
@@ -549,234 +552,299 @@ export function ReservationsView() {
             <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 pr-1">
               {/* Left Column: Customer Info, Notes & Initial Status */}
               <div className="md:col-span-6 space-y-4 flex flex-col justify-between">
-                <div className="space-y-3.5">
-                  {/* Customer Info */}
-                  <div className="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-3">
-                    <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                <div className="bg-muted/30 dark:bg-muted/20 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+                  <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+                    <User className="size-4 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground/80">
                       Informations du client
                     </span>
-                    <div className="space-y-2.5">
-                      <div className="space-y-1">
-                        <Label htmlFor="new-customer-name" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                          <User className="size-3.5 text-primary" /> Nom du client *
-                        </Label>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    {/* Nom du client */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-customer-name" className="text-xs font-bold text-foreground/80">
+                        Nom du client *
+                      </Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                         <Input
                           id="new-customer-name"
                           value={newCustomerName}
                           onChange={(e) => setNewCustomerName(e.target.value)}
                           placeholder="Ex: Famille Bennani"
                           required
-                          className="rounded-xl text-xs font-bold bg-card border-border/80 h-9.5 shadow-2xs"
+                          className="pl-9.5 rounded-xl text-xs font-bold bg-background/80 border-border/70 focus-visible:ring-2 focus-visible:ring-primary/30 h-10 shadow-2xs"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="new-customer-phone" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                          <Phone className="size-3.5 text-primary" /> Téléphone *
-                        </Label>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-customer-phone" className="text-xs font-bold text-foreground/80">
+                        Téléphone *
+                      </Label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 flex items-center gap-1 text-xs font-extrabold text-muted-foreground select-none pointer-events-none">
+                          <Phone className="size-3.5 text-primary shrink-0" />
+                          <span className="text-[11px] font-semibold text-muted-foreground/80">🇲🇦</span>
+                        </span>
                         <Input
                           id="new-customer-phone"
                           value={newCustomerPhone}
                           onChange={(e) => setNewCustomerPhone(e.target.value)}
                           placeholder="0661234567"
                           required
-                          className="rounded-xl text-xs font-bold bg-card border-border/80 h-9.5 shadow-2xs"
+                          className="pl-16 rounded-xl text-xs font-bold bg-background/80 border-border/70 focus-visible:ring-2 focus-visible:ring-primary/30 h-10 shadow-2xs"
                         />
                       </div>
                     </div>
+
+                    {/* Note / Demande spéciale */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-note" className="text-xs font-bold text-foreground/80 flex items-center gap-1.5">
+                        <FileText className="size-3.5 text-primary" /> Note / Demande spéciale
+                      </Label>
+                      <Textarea
+                        id="new-note"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        placeholder="Ex: Près de la fenêtre, chaise bébé, anniversaire..."
+                        className="rounded-xl text-xs font-medium bg-background/80 border-border/70 focus-visible:ring-2 focus-visible:ring-primary/30 min-h-[76px] p-3 resize-none shadow-2xs"
+                      />
+                    </div>
                   </div>
 
-                  {/* Note */}
-                  <div className="space-y-1">
-                    <Label htmlFor="new-note" className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                      <FileText className="size-3.5 text-primary" /> Note / Demande spéciale
+                  {/* Initial Status */}
+                  <div className="space-y-2 pt-2 border-t border-border/40">
+                    <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground/90">
+                      Statut initial
                     </Label>
-                    <Input
-                      id="new-note"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Ex: Près de la fenêtre, chaise bébé..."
-                      className="rounded-xl text-xs font-medium bg-card border-border/80 h-9.5 shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Initial Status */}
-                <div className="space-y-1.5 pt-1">
-                  <Label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                    Statut initial
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setNewStatus("confirmed")}
-                      className={cn(
-                        "py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center",
-                        newStatus === "confirmed"
-                          ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20"
-                          : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <CheckCircle2 className="size-4 stroke-[2.25] shrink-0" />
-                      <span className="truncate">Confirmée</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewStatus("new")}
-                      className={cn(
-                        "py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center",
-                        newStatus === "new"
-                          ? "border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-400 ring-2 ring-orange-500/20"
-                          : "border-border/80 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <Clock className="size-4 stroke-[2.25] shrink-0" />
-                      <span className="truncate">À confirmer</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setNewStatus("confirmed")}
+                        className={cn(
+                          "relative p-3 rounded-2xl border transition-all duration-200 flex flex-col items-start gap-1 cursor-pointer text-left shadow-2xs",
+                          newStatus === "confirmed"
+                            ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20"
+                            : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground"
+                        )}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-extrabold flex items-center gap-1.5">
+                            <CheckCircle2 className="size-4 stroke-[2.25]" /> Confirmée
+                          </span>
+                          {newStatus === "confirmed" && (
+                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground leading-tight">
+                          Ajouter direct au planning
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewStatus("new")}
+                        className={cn(
+                          "relative p-3 rounded-2xl border transition-all duration-200 flex flex-col items-start gap-1 cursor-pointer text-left shadow-2xs",
+                          newStatus === "new"
+                            ? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/20"
+                            : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground"
+                        )}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-extrabold flex items-center gap-1.5">
+                            <Clock className="size-4 stroke-[2.25]" /> À confirmer
+                          </span>
+                          {newStatus === "new" && (
+                            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground leading-tight">
+                          Attendre validation
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Right Column: Slot, Party Size & Table Selection */}
               <div className="md:col-span-6 space-y-4 flex flex-col justify-between">
-                <div className="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-3 flex-1 flex flex-col justify-between">
-                  <span className="block text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                    Créneau & Table
-                  </span>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                        <CalendarDays className="size-3.5 text-primary" /> Date *
-                      </Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            className={cn(
-                              "w-full justify-start text-left font-bold text-xs rounded-xl bg-card border-border/80 h-9.5 shadow-2xs gap-2 px-3",
-                              !newDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarDays className="size-3.5 text-primary shrink-0" />
-                            <span className="truncate">
-                              {newDate
-                                ? format(parseISO(newDate), "dd MMMM yyyy", { locale: dateFnsLocale(locale) })
-                                : "Sélectionner une date"}
-                            </span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-border/80 bg-card" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={newDate ? parseISO(newDate) : undefined}
-                            onSelect={(date) => {
-                              if (date) setNewDate(format(date, "yyyy-MM-dd"));
-                            }}
-                            locale={dateFnsLocale(locale)}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                <div className="bg-muted/30 dark:bg-muted/20 border border-border/60 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 pb-2 border-b border-border/40 mb-4">
+                      <CalendarDays className="size-4 text-primary" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground/80">
+                        Créneau & Table
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                        <Clock className="size-3.5 text-primary" /> Heure *
+                    
+                    {/* Date & Time Row */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1">
+                          Date *
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              type="button"
+                              className={cn(
+                                "w-full justify-start text-left font-bold text-xs rounded-xl bg-background/80 border-border/70 h-10 shadow-2xs gap-2 px-3 hover:bg-background hover:border-primary/50 transition-colors",
+                                !newDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarDays className="size-4 text-primary shrink-0" />
+                              <span className="truncate">
+                                {newDate
+                                  ? format(parseISO(newDate), "dd MMMM yyyy", { locale: dateFnsLocale(locale) })
+                                  : "Date"}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-border/80 bg-card" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={newDate ? parseISO(newDate) : undefined}
+                              onSelect={(date) => {
+                                if (date) setNewDate(format(date, "yyyy-MM-dd"));
+                              }}
+                              locale={dateFnsLocale(locale)}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1">
+                          Heure *
+                        </Label>
+                        <Select value={newTime} onValueChange={setNewTime}>
+                          <SelectTrigger className="rounded-xl text-xs font-bold bg-background/80 border-border/70 h-10 shadow-2xs focus:ring-2 focus:ring-primary/30">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[220px]">
+                            {SLOT_OPTIONS.map((slot) => (
+                              <SelectItem key={slot} value={slot} className="text-xs font-medium">
+                                {slot}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Party Size Stepper & Quick Pills */}
+                    <div className="space-y-2 pt-2 border-t border-border/40">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5">
+                          <Users className="size-3.5 text-primary" /> Nb de personnes *
+                        </Label>
+                        <span className="text-xs font-extrabold text-primary bg-primary/10 border border-primary/25 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                          <Users className="size-3" />
+                          {newPartySize} {newPartySize > 1 ? "pers." : "per."}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {/* Stepper + Input */}
+                        <div className="flex items-center justify-between gap-3 bg-background/60 border border-border/70 p-1.5 rounded-2xl shadow-2xs">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setNewPartySize((prev) => Math.max(1, prev - 1))}
+                              disabled={newPartySize <= 1}
+                              className="size-8 rounded-xl flex items-center justify-center bg-card border border-border/60 text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                            >
+                              <Minus className="size-3.5 stroke-[2.5]" />
+                            </button>
+                            <span className="w-10 text-center text-xs font-extrabold text-foreground">
+                              {newPartySize}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setNewPartySize((prev) => Math.min(50, prev + 1))}
+                              className="size-8 rounded-xl flex items-center justify-center bg-card border border-border/60 text-foreground hover:bg-muted transition-colors cursor-pointer"
+                            >
+                              <Plus className="size-3.5 stroke-[2.5]" />
+                            </button>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 pr-1">
+                            <span className="text-[11px] font-semibold text-muted-foreground">Autre:</span>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={newPartySize}
+                              onChange={(e) => setNewPartySize(Math.max(1, Number(e.target.value)))}
+                              className="w-14 h-8 text-center text-xs font-extrabold rounded-xl bg-card border-border/70 px-1"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Quick Presets */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {[1, 2, 3, 4, 5, 6, 8, 10].map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setNewPartySize(size)}
+                              className={cn(
+                                "h-8 flex-1 min-w-[32px] rounded-xl text-xs font-extrabold border transition-all duration-150 cursor-pointer flex items-center justify-center shadow-2xs",
+                                newPartySize === size
+                                  ? "border-primary bg-primary text-primary-foreground shadow-xs scale-105"
+                                  : "border-border/70 bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground"
+                              )}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Table Selection */}
+                    <div className="space-y-1.5 pt-4">
+                      <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5">
+                        <Hash className="size-3.5 text-primary" /> Table assignée
                       </Label>
-                      <Select value={newTime} onValueChange={setNewTime}>
-                        <SelectTrigger className="rounded-xl text-xs font-bold bg-card border-border/80 h-9.5 shadow-2xs">
+                      <Select value={newTableNumber} onValueChange={setNewTableNumber}>
+                        <SelectTrigger className="rounded-xl text-xs font-bold bg-background/80 border-border/70 h-10 shadow-2xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {SLOT_OPTIONS.map((slot) => (
-                            <SelectItem key={slot} value={slot}>
-                              {slot}
+                          <SelectItem value="none" className="text-xs font-medium text-muted-foreground">
+                            Aucune table assignée
+                          </SelectItem>
+                          {(tables ?? []).map((t) => (
+                            <SelectItem key={t.id} value={t.number} className="text-xs font-bold">
+                              Table {t.number} ({t.seats} places)
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-
-                  {/* Party Size */}
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                        <Users className="size-3.5 text-primary" /> Nb de personnes *
-                      </Label>
-                      <span className="text-xs font-extrabold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                        {newPartySize} pers.
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-5 sm:flex sm:flex-wrap items-center gap-1.5">
-                      {[1, 2, 3, 4, 5, 6, 8, 10].map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setNewPartySize(size)}
-                          className={cn(
-                            "h-9 rounded-xl text-xs font-extrabold border transition-all cursor-pointer flex items-center justify-center",
-                            newPartySize === size
-                              ? "border-primary bg-primary text-primary-foreground shadow-xs"
-                              : "border-border/80 bg-card text-foreground/80 hover:bg-muted"
-                          )}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                      <div className="col-span-2 sm:w-16">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={50}
-                          value={newPartySize}
-                          onChange={(e) => setNewPartySize(Math.max(1, Number(e.target.value)))}
-                          placeholder="Autre"
-                          className={cn(
-                            "h-9 text-center text-xs font-extrabold rounded-xl bg-card border-border/80 transition-all px-1",
-                            ![1, 2, 3, 4, 5, 6, 8, 10].includes(newPartySize) &&
-                              "border-primary ring-2 ring-primary/20 bg-primary/10 text-primary font-bold"
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Table Selection */}
-                  <div className="space-y-1 pt-1">
-                    <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                      <Hash className="size-3.5 text-primary" /> Table assignée
-                    </Label>
-                    <Select value={newTableNumber} onValueChange={setNewTableNumber}>
-                      <SelectTrigger className="rounded-xl text-xs font-bold bg-card border-border/80 h-9.5 shadow-2xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Aucune table assignée</SelectItem>
-                        {(tables ?? []).map((t) => (
-                          <SelectItem key={t.id} value={t.number}>
-                            Table {t.number} ({t.seats} places)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-2.5 pt-2 border-t border-border/60 shrink-0 flex-col-reverse sm:flex-row">
+            <DialogFooter className="gap-2 sm:gap-2.5 pt-3 border-t border-border/60 shrink-0 flex-col-reverse sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="w-full sm:w-auto rounded-xl font-bold text-xs px-4 h-11 sm:h-10 border-border/80 hover:bg-muted"
+                className="w-full sm:w-auto rounded-xl font-bold text-xs px-5 h-10 border-border/80 hover:bg-muted/80"
               >
                 Annuler
               </Button>
               <Button
                 type="submit"
                 disabled={createReservationMutation.isPending}
-                className="w-full sm:w-auto rounded-xl font-extrabold text-xs px-5 h-11 sm:h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                className="w-full sm:w-auto rounded-xl font-extrabold text-xs px-6 h-10 gap-2 bg-gradient-to-r from-primary to-orange-500 text-primary-foreground hover:from-primary/90 hover:to-orange-500/90 shadow-md hover:shadow-lg transition-all"
               >
                 <Check className="size-4 stroke-[2.5]" />
                 {createReservationMutation.isPending ? "Enregistrement..." : "Ajouter la réservation"}
