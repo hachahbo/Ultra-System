@@ -5,8 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { formatDistanceToNowStrict } from "date-fns";
 import { dateFnsLocale } from "@/lib/date-locale";
-import { Check, Clock, UtensilsCrossed } from "lucide-react";
+import { Check, Clock, Eye, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Role } from "@/lib/permissions";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,10 +53,20 @@ async function bumpTicket(ticketId: string): Promise<void> {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function KdsView() {
+export function KdsView({ role }: { role: Role }) {
   const locale = useLocale();
+  // Waiters can watch the pass but not bump it — a bump is the kitchen's own
+  // assertion that a station has plated, and the order's 'ready' status is
+  // derived from it. Enforced for real in PATCH /api/dashboard/kds/[id]; this
+  // only keeps the UI honest about what the button would do.
+  const canBump = role !== "serveur";
   const t = useTranslations("Kds");
-  const supabase = createClient();
+  // Stable across renders on purpose. Created fresh per render (the old
+  // `const supabase = createClient()`), it sat in the realtime effect's
+  // dependency array below — so every re-render tore the channel down and
+  // reconnected it, which is bad on its own and made the auth race below far
+  // more likely to lose the window.
+  const [supabase] = useState(() => createClient());
   const queryClient = useQueryClient();
   const [selectedStation, setSelectedStation] = useState<string | "all">("all");
   const [now, setNow] = useState(Date.now());
@@ -66,10 +77,14 @@ export function KdsView() {
     return () => clearInterval(timer);
   }, []);
 
+  // Same reasoning as service-view.tsx: the realtime subscription below is a
+  // latency optimisation, and a kitchen screen that silently stops showing new
+  // tickets is worse than one that lags 10s. A wall display is never focused,
+  // so refetchOnWindowFocus would never fire for it.
   const { data, isLoading } = useQuery({
     queryKey: ["kds-tickets"],
     queryFn: fetchKdsData,
-    staleTime: 60_000,
+    refetchInterval: 10_000,
   });
 
   const bumpMutation = useMutation({
@@ -98,26 +113,57 @@ export function KdsView() {
   });
 
   // Realtime subscription
+  //
+  // supabase-js authenticates the realtime socket from _handleTokenChanged,
+  // which only calls realtime.setAuth(token) on the SIGNED_IN and
+  // TOKEN_REFRESHED auth events — never on INITIAL_SESSION, which is what
+  // fires for a session that already existed when the client was constructed
+  // (i.e. a wall-mounted KDS display left open, or just a cook who logged in
+  // earlier today). Left alone, the socket joins on the anon key and RLS on
+  // kds_tickets (tenant-scoped via my_restaurant_id(), which needs
+  // auth.uid()) matches nothing for it — silently, with no error, until the
+  // access token happens to refresh on its own timer. Reading the session and
+  // calling setAuth explicitly before subscribing closes that gap; listening
+  // for TOKEN_REFRESHED keeps a long-lived screen authenticated for as long as
+  // it stays open.
   useEffect(() => {
-    const channel = supabase
-      .channel("kds-live")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "kds_tickets" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["kds-tickets"] });
-          // Optional: play a subtle notification sound here for new tickets
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "kds_tickets" },
-        () => queryClient.invalidateQueries({ queryKey: ["kds-tickets"] })
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    const subscribe = () => {
+      if (cancelled || channel) return;
+      channel = supabase
+        .channel("kds-live")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "kds_tickets" },
+          () => queryClient.invalidateQueries({ queryKey: ["kds-tickets"] }),
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "kds_tickets" },
+          () => queryClient.invalidateQueries({ queryKey: ["kds-tickets"] }),
+        )
+        .subscribe();
+    };
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session?.access_token) await supabase.realtime.setAuth(session.access_token);
+      subscribe();
+    })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.access_token) {
+        supabase.realtime.setAuth(session.access_token);
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      authListener.subscription.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, [supabase, queryClient]);
 
@@ -268,14 +314,21 @@ export function KdsView() {
 
                 {/* Footer Bump Action */}
                 <div className="p-3 border-t border-border bg-white dark:bg-[#1a1a1c]">
-                  <button
-                    onClick={() => bumpMutation.mutate(ticket.id)}
-                    disabled={bumpMutation.isPending}
-                    className="w-full py-3 rounded-xl bg-[#ec5b1a] text-white font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#d94a09] transition-colors disabled:opacity-50"
-                  >
-                    <Check className="size-4" />
-                    {t("completeTicket")}
-                  </button>
+                  {canBump ? (
+                    <button
+                      onClick={() => bumpMutation.mutate(ticket.id)}
+                      disabled={bumpMutation.isPending}
+                      className="w-full py-3 rounded-xl bg-[#ec5b1a] text-white font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#d94a09] transition-colors disabled:opacity-50"
+                    >
+                      <Check className="size-4" />
+                      {t("completeTicket")}
+                    </button>
+                  ) : (
+                    <div className="w-full py-3 rounded-xl bg-muted/60 text-muted-foreground font-bold text-[13px] flex items-center justify-center gap-2">
+                      <Eye className="size-4" aria-hidden="true" />
+                      {t("viewOnly")}
+                    </div>
+                  )}
                 </div>
               </div>
             );

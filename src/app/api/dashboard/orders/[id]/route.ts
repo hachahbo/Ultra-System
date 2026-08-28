@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/dashboard";
-import { canTransition, ORDER_STATUSES, type OrderStatus } from "@/lib/order-flow";
+import { canTransition, normalizeOrderStatus, ORDER_STATUSES } from "@/lib/order-flow";
 
 const patchSchema = z.object({
   status: z.enum(ORDER_STATUSES).optional(),
@@ -54,13 +54,42 @@ export async function PATCH(
 
   const role = guard.ctx.profile.role;
   const nextStatus = parsed.data.status;
-  const isStatusChange = nextStatus !== undefined && nextStatus !== current.status;
+  // The row can still carry a pre-0030 status ('new'/'done') on a database the
+  // migration has not reached yet. fetchOrders (service-view.tsx) already
+  // normalises on the way in, so the board renders an Approve button that the
+  // raw value would then reject with a 403 the waiter cannot act on — the
+  // client and the server disagreeing about what state the order is in.
+  // order-flow.ts asks for this on every status crossing the API boundary;
+  // this was the one place still casting instead.
+  const currentStatus = normalizeOrderStatus(current.status);
+  const isStatusChange = nextStatus !== undefined && nextStatus !== currentStatus;
 
   if (isStatusChange) {
-    if (!canTransition(role, current.status as OrderStatus, nextStatus)) {
+    if (!canTransition(role, currentStatus, nextStatus)) {
       return NextResponse.json(
         {
-          error: `Transition non autorisée pour ce rôle (${current.status} → ${nextStatus})`,
+          error: `Transition non autorisée pour ce rôle (${currentStatus} → ${nextStatus})`,
+          order: current,
+        },
+        { status: 403 },
+      );
+    }
+
+    // ORDER_TRANSITIONS is pure and feature-blind, so this last rule lives
+    // here, where the SessionContext is. With a live KDS 'ready' is derived
+    // from station bumps (sync_order_ready_from_tickets, 0030 §6) and a waiter
+    // writing it directly would pre-empt stations that are still cooking.
+    // service-view.tsx hides the button, but a hidden button is not a
+    // boundary. owner/manager keep the manual override for a stuck ticket.
+    if (
+      guard.ctx.features.kds &&
+      role === "serveur" &&
+      currentStatus === "preparing" &&
+      nextStatus === "ready"
+    ) {
+      return NextResponse.json(
+        {
+          error: "La cuisine valide les plats prêts depuis le KDS",
           order: current,
         },
         { status: 403 },

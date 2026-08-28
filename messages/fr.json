@@ -488,7 +488,8 @@
     "dineIn": "Sur place",
     "completeTicket": "Terminer le bon",
     "allStations": "Toutes les stations",
-    "takeaway": "À emporter"
+    "takeaway": "À emporter",
+    "viewOnly": "Validé par la cuisine"
   },
   "Pos": {
     "addItems": "Ajoutez des articles du menu.",
@@ -1150,6 +1151,7 @@
     "sortOldest": "Plus anciens",
     "sortNewest": "Plus récents",
     "searchPlaceholder": "Ticket, table ou plat",
-    "subtitle": "{open} tickets en cours · {late} de plus de {max} min"
+    "subtitle": "{open} tickets en cours · {late} de plus de {max} min",
+    "awaitingKitchen": "En attente de la cuisine"
   }
 }

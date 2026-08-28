@@ -488,7 +488,8 @@
     "dineIn": "Dine-in",
     "completeTicket": "Complete ticket",
     "allStations": "All stations",
-    "takeaway": "Takeaway"
+    "takeaway": "Takeaway",
+    "viewOnly": "Kitchen bumps this"
   },
   "Pos": {
     "addItems": "Add items from the menu.",
@@ -1150,6 +1151,7 @@
     "sortOldest": "Oldest first",
     "sortNewest": "Newest first",
     "searchPlaceholder": "Ticket, table or item",
-    "subtitle": "{open} live tickets · {late} past {max} min"
+    "subtitle": "{open} live tickets · {late} past {max} min",
+    "awaitingKitchen": "Waiting for the kitchen"
   }
 }

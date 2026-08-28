@@ -31,7 +31,7 @@ export default async function ServicePage() {
           {ts("laneApprove")} · {ts("laneKitchen")} · {ts("laneReady")}
         </p>
       </div>
-      <ServiceView />
+      <ServiceView kdsEnabled={ctx.features.kds} />
     </div>
   );
 }

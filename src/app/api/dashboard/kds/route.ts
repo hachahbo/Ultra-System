@@ -10,7 +10,14 @@ export async function GET() {
   if (featureError) return featureError;
 
   const supabase = await createClient();
-  const since = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(); // last 8h
+  // The window bounds HISTORY, never outstanding work. A pending ticket is food
+  // nobody has plated yet, and the order it belongs to cannot reach 'ready'
+  // until it is bumped (sync_order_ready_from_tickets, 0030 §6) — so hiding one
+  // for being old strands its order for good: invisible to the kitchen that
+  // must bump it, and unreachable for a waiter, whose manual "Mark ready" is
+  // withdrawn precisely because the KDS owns that call. Bumped tickets are just
+  // a recall trail and stay capped at 8h.
+  const since = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
 
   const [{ data: tickets, error }, { data: stations }] = await Promise.all([
     supabase
@@ -19,7 +26,7 @@ export async function GET() {
         id, order_id, station_id, lines, status, created_at, bumped_at,
         order:orders(id, table_number, type, customer_name, note, created_at)
       `)
-      .gte("created_at", since)
+      .or(`status.eq.pending,created_at.gte.${since}`)
       .order("created_at", { ascending: true }),
     supabase
       .from("stations")

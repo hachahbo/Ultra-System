@@ -172,7 +172,7 @@ function channelTypeOf(order: ServiceOrder): ChannelFilter {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function ServiceView() {
+export function ServiceView({ kdsEnabled }: { kdsEnabled: boolean }) {
   const locale = useLocale();
   const t = useTranslations("Service");
   const queryClient = useQueryClient();
@@ -190,10 +190,18 @@ export function ServiceView() {
     return () => clearInterval(timer);
   }, []);
 
+  // Realtime is an accelerator, not the guarantee. The subscription below only
+  // delivers to a client whose socket carries a session JWT — RLS on `orders`
+  // is tenant-scoped, so an unauthenticated socket matches no rows and is
+  // simply told nothing. That failure is silent and one-sided: everything the
+  // waiter does themselves repaints from the mutation's own invalidate, so the
+  // board only looks stuck for changes made in someone ELSE's browser —
+  // exactly the kitchen bumping a ticket. Poll on the same 10s cadence as
+  // orders-view.tsx so the lane is correct within one tick regardless.
   const { data: orders, isLoading, isError } = useQuery({
     queryKey: ["orders"],
     queryFn: fetchOrders,
-    staleTime: 30_000,
+    refetchInterval: 10_000,
   });
 
   const { data: availability } = useQuery({
@@ -203,18 +211,54 @@ export function ServiceView() {
   });
 
   // Supabase Realtime subscription
+  //
+  // supabase-js authenticates the realtime socket from _handleTokenChanged,
+  // which only calls realtime.setAuth(token) on the SIGNED_IN and
+  // TOKEN_REFRESHED auth events — never on INITIAL_SESSION, which is what
+  // fires for a session that already existed when this client was constructed
+  // (i.e. any waiter who logged in earlier and is just viewing this page —
+  // the normal case, not the exception). Left alone, the socket joins on the
+  // anon key and RLS on `orders` (tenant-scoped via my_restaurant_id(), which
+  // needs auth.uid()) matches nothing for it — silently, with no error, until
+  // the access token happens to refresh on its own timer. This is why a bump
+  // on the KDS (a change made in someone else's browser, from another role)
+  // was not reaching this board: reading the session and calling setAuth
+  // explicitly before subscribing closes that gap, and listening for
+  // TOKEN_REFRESHED keeps the shift's session authenticated.
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel("service-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    const subscribe = () => {
+      if (cancelled || channel) return;
+      channel = supabase
+        .channel("service-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "orders" },
+          () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        )
+        .subscribe();
+    };
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session?.access_token) await supabase.realtime.setAuth(session.access_token);
+      subscribe();
+    })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.access_token) {
+        supabase.realtime.setAuth(session.access_token);
+      }
+    });
+
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      authListener.subscription.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, [queryClient]);
 
@@ -581,6 +625,7 @@ export function ServiceView() {
                     key={order.id}
                     order={order}
                     lane={lane.key}
+                    kdsEnabled={kdsEnabled}
                     locale={locale}
                     now={now}
                     availability={availability}
@@ -607,6 +652,7 @@ export function ServiceView() {
 function OrderCard({
   order,
   lane,
+  kdsEnabled,
   locale,
   now,
   availability,
@@ -618,6 +664,7 @@ function OrderCard({
 }: {
   order: ServiceOrder;
   lane: LaneKey;
+  kdsEnabled: boolean;
   locale: string;
   now: number;
   availability: Record<string, boolean> | undefined;
@@ -824,7 +871,13 @@ function OrderCard({
         </footer>
       )}
 
-      {lane === "kitchen" && (
+      {/* With a live KDS the kitchen owns this call: every station bumps its own
+          ticket and sync_order_ready_from_tickets() (0030 §6) flips the order to
+          'ready' only once all of them are in. A per-order button here would let
+          the cold station declare a table's food ready while the grill is still
+          working — exactly what that trigger exists to prevent. Without KDS the
+          button is the only way anyone can say the food is done, so it stays. */}
+      {lane === "kitchen" && !kdsEnabled && (
         <footer className="border-t border-border p-3">
           <button
             type="button"
@@ -835,6 +888,13 @@ function OrderCard({
             <Check className="size-4" aria-hidden="true" />
             {t("markReady")}
           </button>
+        </footer>
+      )}
+
+      {lane === "kitchen" && kdsEnabled && (
+        <footer className="flex items-center justify-center gap-2 border-t border-border p-3 text-xs font-bold text-muted-foreground">
+          <ChefHat className="size-4 shrink-0" aria-hidden="true" />
+          {t("awaitingKitchen")}
         </footer>
       )}
 

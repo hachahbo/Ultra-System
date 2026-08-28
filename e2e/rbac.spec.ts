@@ -27,8 +27,15 @@ const TEAM_CREDENTIALS = {
 
 const ROUTE_MATRIX: Record<string, ("manager" | "serveur" | "cuisine")[]> = {
   "/dashboard": ["manager"],
+  // ⚠ FEATURE-DEPENDENT. orendezvous is on `pro`, where PLAN_DEFAULTS leaves
+  // `kds` off — but it carries a restaurant_features override turning it back
+  // on, so all three roles render the page. If that override is ever removed,
+  // src/app/dashboard/kds/page.tsx redirects everyone who cannot buy the
+  // feature: narrow this to ["manager"] and point DEFAULT_ROUTE.cuisine at
+  // "/dashboard/orders".
   "/dashboard/kds": ["manager", "serveur", "cuisine"],
   "/dashboard/orders": ["manager", "serveur", "cuisine"],
+  "/dashboard/service": ["manager", "serveur"],
   "/dashboard/orders/reconciliation": ["manager"],
   "/dashboard/reservations": ["manager", "serveur"],
   "/dashboard/menu": ["manager", "serveur", "cuisine"],
@@ -40,9 +47,14 @@ const ROUTE_MATRIX: Record<string, ("manager" | "serveur" | "cuisine")[]> = {
   "/dashboard/team": [],
 };
 
+// Mirrors defaultRouteFor() in src/lib/permissions.ts.
 const DEFAULT_ROUTE: Record<"manager" | "serveur" | "cuisine", string> = {
   manager: "/dashboard",
-  serveur: "/dashboard/orders",
+  // Was "/dashboard/orders", which had drifted from defaultRouteFor: a waiter's
+  // landing page is the service queue, not the back-office orders grid.
+  serveur: "/dashboard/service",
+  // Mirrors defaultRouteFor. With `kds` off the page bounces them to
+  // /dashboard/orders instead — see ROUTE_MATRIX above.
   cuisine: "/dashboard/kds",
 };
 
