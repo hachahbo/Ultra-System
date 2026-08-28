@@ -267,7 +267,9 @@
     "errorPhone": "Numéro de téléphone invalide",
     "nameOptional": "Nom (optionnel)",
     "phoneOptional": "Téléphone (optionnel)",
-    "discount": "Réduction ({code})"
+    "discount": "Réduction ({code})",
+    "trackHint": "Scannez pour suivre votre commande à tout moment",
+    "trackOrder": "Suivre ma commande"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -1153,5 +1155,21 @@
     "searchPlaceholder": "Ticket, table ou plat",
     "subtitle": "{open} tickets en cours · {late} de plus de {max} min",
     "awaitingKitchen": "En attente de la cuisine"
+  },
+  "Track": {
+    "backToMenu": "Retour au menu",
+    "bannerCta": "Suivre",
+    "bannerText": "Votre commande est en cours.",
+    "cancelled": "Cette commande a été annulée.",
+    "dismiss": "Masquer",
+    "itemsHeading": "Votre commande",
+    "loading": "Chargement de votre commande…",
+    "metaTitle": "Suivre ma commande",
+    "notFound": "Impossible de retrouver cette commande.",
+    "stepPreparing": "En préparation",
+    "stepReady": "Prête",
+    "stepReceived": "Reçue",
+    "stepServed": "Servie",
+    "table": "Table {table}"
   }
 }

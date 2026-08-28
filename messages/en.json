@@ -267,7 +267,9 @@
     "errorPhone": "Invalid phone number",
     "nameOptional": "Name (optional)",
     "phoneOptional": "Phone (optional)",
-    "discount": "Discount ({code})"
+    "discount": "Discount ({code})",
+    "trackHint": "Scan to check your order's status anytime",
+    "trackOrder": "Track my order"
   },
   "Menu": {
     "metaTitle": "Menu",
@@ -1153,5 +1155,21 @@
     "searchPlaceholder": "Ticket, table or item",
     "subtitle": "{open} live tickets · {late} past {max} min",
     "awaitingKitchen": "Waiting for the kitchen"
+  },
+  "Track": {
+    "backToMenu": "Back to menu",
+    "bannerCta": "Track it",
+    "bannerText": "Your order is on its way.",
+    "cancelled": "This order was cancelled.",
+    "dismiss": "Dismiss",
+    "itemsHeading": "Your order",
+    "loading": "Loading your order…",
+    "metaTitle": "Track your order",
+    "notFound": "We couldn't find this order.",
+    "stepPreparing": "Preparing",
+    "stepReady": "Ready",
+    "stepReceived": "Received",
+    "stepServed": "Served",
+    "table": "Table {table}"
   }
 }

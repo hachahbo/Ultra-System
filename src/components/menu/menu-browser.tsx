@@ -12,6 +12,7 @@ import { formatPrice } from "@/lib/format";
 import { getDishImage } from "@/lib/image";
 import type { Item, PublicMenu } from "@/lib/types";
 import { ItemDialog } from "./item-dialog";
+import { TrackedOrderBanner } from "./tracked-order-banner";
 
 interface DetailRow {
   name: string;
@@ -203,6 +204,8 @@ export function MenuBrowser({
 
   return (
     <>
+      <TrackedOrderBanner slug={restaurant.slug} table={table} />
+
       {/* ── Category Tabs ─────────────────────────────────── */}
       <div className="sticky top-16 z-30 -mx-4 mt-5 overflow-x-auto bg-background/80 px-4 py-3 backdrop-blur-xl [scrollbar-width:none]">
         <div className="flex gap-2 w-max">

@@ -297,6 +297,16 @@ export const promoCodeValidateSchema = z.object({
 
 export type PromoCodeValidateInput = z.infer<typeof promoCodeValidateSchema>;
 
+// Query-string validation for GET /api/orders/[id]/status (public order
+// tracking). restaurant_id is deliberately part of the lookup predicate in
+// the route, not just this shape — the slug must match the order's own
+// tenant, so a valid order id from restaurant A can't be probed against
+// restaurant B's slug.
+export const orderTrackSchema = z.object({
+  restaurant_slug: z.string().min(1),
+  order_id: idSchema(),
+});
+
 export const tableSchema = z.object({
   number: z.string().trim().min(1, "Numéro requis").max(10),
   seats: z.number({ message: "Nombre de places invalide" }).int().min(1).max(30),

@@ -7,7 +7,8 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle2, Minus, Plus, UtensilsCrossed } from "lucide-react";
+import { CheckCircle2, Minus, Plus, QrCode, UtensilsCrossed } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cartDiscount, cartSubtotal, useCart, useCartHydrated } from "@/store/cart";
+import { trackOrder } from "@/lib/tracked-orders";
 import { formatPrice } from "@/lib/format";
 import { getDishImage } from "@/lib/image";
 import { makePhoneSchema } from "@/lib/schemas";
@@ -148,6 +150,7 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
         return;
       }
       setOrderId(data.id);
+      trackOrder({ id: data.id, slug: restaurant.slug, table: table ?? null });
       clear();
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -166,6 +169,10 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
   if (!hydrated) return null;
 
   if (orderId) {
+    const trackingUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/${restaurant.slug}/orders/${orderId}`
+        : `/${restaurant.slug}/orders/${orderId}`;
     return (
       <motion.div
         variants={blurFadeUp}
@@ -180,7 +187,19 @@ export function CheckoutClient({ restaurant }: { restaurant: Restaurant }) {
         <p className="mt-2 max-w-sm text-muted-foreground">
           {isDineIn ? t("sentDineIn") : t("sentDelivery")}
         </p>
-        <Button asChild variant="outline" className="mt-8">
+
+        <div className="mt-8 flex flex-col items-center gap-3 rounded-[24px] border bg-card p-6">
+          <QRCodeCanvas value={trackingUrl} size={140} level="M" />
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <QrCode className="size-3.5" aria-hidden="true" />
+            {t("trackHint")}
+          </p>
+          <Button asChild size="sm" className="mt-1">
+            <Link href={`/${restaurant.slug}/orders/${orderId}`}>{t("trackOrder")}</Link>
+          </Button>
+        </div>
+
+        <Button asChild variant="outline" className="mt-4">
           <Link href={`/${restaurant.slug}/menu`}>{t("backToMenu")}</Link>
         </Button>
       </motion.div>
