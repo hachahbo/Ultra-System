@@ -67,10 +67,12 @@ export async function GET(
     type: order.type,
     created_at: order.created_at,
     ready_at: order.ready_at,
-    // name + quantity only — unit_price dropped, same reasoning as the total.
+    // name, quantity and chosen options — the diner's own receipt of what
+    // they ordered. unit_price still dropped, same reasoning as the total.
     items: (order.items as OrderLine[]).map((l) => ({
       name: l.name,
       quantity: l.quantity,
+      options: l.options,
     })),
   });
 }

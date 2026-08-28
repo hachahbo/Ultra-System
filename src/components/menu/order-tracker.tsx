@@ -16,7 +16,7 @@ type TrackedTicket = {
   type: "dine_in" | "takeaway" | "delivery";
   created_at: string;
   ready_at: string | null;
-  items: { name: string; quantity: number }[];
+  items: { name: string; quantity: number; options: string[] }[];
 };
 
 // Mirrors the client-facing half of order-flow.ts's state machine (pending →
@@ -191,18 +191,44 @@ export function OrderTracker({
         })}
       </div>
 
-      <div className="rounded-2xl border bg-card p-5">
-        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {t("itemsHeading")}
-        </p>
-        <ul className="flex flex-col gap-2">
-          {ticket.items.map((line, i) => (
-            <li key={i} className="flex justify-between text-sm">
-              <span className="font-medium">{line.name}</span>
-              <span className="text-muted-foreground">×{line.quantity}</span>
-            </li>
-          ))}
-        </ul>
+      {/* Kitchen-ticket look — this is the guest's own receipt of what they
+          ordered, mirroring the same "one card per order" idea as the
+          KDS ticket the kitchen works from (kds-view.tsx), just without the
+          station grouping or the bump button. The perforated top edge and
+          monospace quantities are the only things borrowed from that visual
+          language; everything price-related stays off, same as the API. */}
+      <div className="relative overflow-hidden rounded-2xl border bg-card shadow-sm">
+        <div
+          aria-hidden="true"
+          className="h-3 w-full bg-[radial-gradient(circle_at_6px_0,transparent_6px,var(--card)_6.5px)] bg-[length:12px_12px] bg-repeat-x"
+        />
+        <div className="px-5 pb-5 pt-1">
+          <div className="flex items-baseline justify-between border-b border-dashed pb-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              {t("itemsHeading")}
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              #{ticket.id.slice(0, 5).toUpperCase()}
+            </p>
+          </div>
+          <ul className="flex flex-col divide-y divide-dashed">
+            {ticket.items.map((line, i) => (
+              <li key={i} className="flex items-start gap-3 py-2.5">
+                <span className="font-mono text-sm font-bold tabular-nums text-foreground">
+                  {line.quantity}×
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium leading-tight">{line.name}</p>
+                  {line.options.length > 0 && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {line.options.map((opt) => `— ${opt}`).join("  ")}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {ticket.status === "served" && (
