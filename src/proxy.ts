@@ -40,9 +40,14 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally (WebCrypto) instead of calling the
+  // auth server. This runs on EVERY request that matches the proxy matcher,
+  // so it was the single most-executed network hop in the app. Same trust
+  // level as getUser() — the signature is still verified, just not remotely.
+  // Requires asymmetric JWT signing keys on the project to actually skip the
+  // network; falls back to a server call on the legacy shared secret.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims ?? null;
 
   if (
     !user &&
@@ -60,7 +65,7 @@ export async function proxy(request: NextRequest) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", user.id)
+      .eq("id", user.sub)
       .maybeSingle();
     const role = profile?.role as Role | undefined;
     if (role && role !== "owner") {
@@ -77,7 +82,7 @@ export async function proxy(request: NextRequest) {
     const { data: membership } = await supabase
       .from("platform_admins")
       .select("user_id")
-      .eq("user_id", user.id)
+      .eq("user_id", user.sub)
       .maybeSingle();
     const url = request.nextUrl.clone();
     if (membership) {
@@ -90,7 +95,7 @@ export async function proxy(request: NextRequest) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", user.id)
+        .eq("id", user.sub)
         .maybeSingle();
       const role = profile?.role as Role | undefined;
       url.pathname = role ? defaultRouteFor(role) : "/dashboard";

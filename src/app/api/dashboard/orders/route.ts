@@ -16,9 +16,26 @@ export async function GET() {
   if ("response" in guard) return guard.response;
 
   const supabase = await createClient();
+  // Two things matter here beyond the column list:
+  //
+  // 1. Explicit .eq("restaurant_id") even though RLS already enforces it.
+  //    RLS is a *filter*, and PostgREST sends no predicate of its own — the
+  //    planner sees only the policy expression and will not always turn it
+  //    into an index condition on orders_restaurant_created_idx. A literal
+  //    restaurant_id in the WHERE clause makes the index scan unambiguous.
+  //    It is not a second security boundary (RLS remains that); it is a hint.
+  //
+  // 2. select("*") pulled columns the table never reads — subtotal,
+  //    delivery_fee, address, note, customer_id, confirmed_by/at, ready_at,
+  //    served_by/at, paid_by. `items` is kept: the table renders line
+  //    thumbnails, names, quantities and options straight out of it.
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("*")
+    .select(
+      "id, type, table_number, customer_name, customer_phone, items, total, " +
+        "status, payment_status, payment_method, created_at, updated_at",
+    )
+    .eq("restaurant_id", guard.ctx.restaurant.id)
     .order("created_at", { ascending: false })
     .limit(100);
 

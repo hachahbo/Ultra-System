@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFeatures } from "@/lib/features";
@@ -13,53 +14,59 @@ export type SessionContext = {
   userEmail: string | null;
 };
 
+type SessionContextRow = {
+  profile: Profile;
+  restaurant: Restaurant;
+  features: RestaurantFeature[];
+  theme_logo_url: string | null;
+};
+
 // Resolves the logged-in dashboard user and their tenant. RLS already keys
 // every query off the profile's restaurant_id; this gives pages the context.
-export async function getSessionContext(): Promise<SessionContext | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+//
+// Wrapped in React's cache(): the dashboard layout and the page it renders
+// both call this during the same render pass, and every /api/dashboard/*
+// route calls it once. cache() dedupes it to one execution per request —
+// without it, a single dashboard navigation paid the whole chain twice.
+export const getSessionContext = cache(
+  async function getSessionContext(): Promise<SessionContext | null> {
+    const supabase = await createClient();
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, restaurant_id, role, active, must_change_password, consented_at")
-    .eq("id", user.id)
-    .maybeSingle();
+    // getClaims() verifies the access token's signature locally with WebCrypto
+    // and reads the claims out of it — no round trip to the auth server, which
+    // is what getUser() cost on every single dashboard request (twice, since
+    // proxy.ts calls it too).
+    //
+    // NOTE: this is only free if the Supabase project uses asymmetric JWT
+    // signing keys (Dashboard → Authentication → JWT Keys → migrate off the
+    // legacy shared secret). On a legacy HS256 secret getClaims() falls back
+    // to the same network call getUser() made — correct either way, just not
+    // faster until the key migration is done.
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+    if (claimsError || !claimsData?.claims?.sub) return null;
 
-  if (profileError) {
-    console.error("Profile fetch error:", profileError);
-  }
-  if (!profile) return null;
-  // Soft-disabled team members lose dashboard access immediately, even with
-  // a live session cookie.
-  if (profile.active === false) return null;
+    // One RPC instead of profiles → then (restaurants + features + theme).
+    // Same data, same active/tenant checks, one round trip (0033).
+    const { data, error } = await supabase.rpc("get_session_context");
+    if (error) {
+      console.error("Session context fetch error:", error);
+      return null;
+    }
+    if (!data) return null;
 
-  // Both only depend on profile.restaurant_id, not on each other — fetch in
-  // parallel instead of two sequential round-trips.
-  const [{ data: restaurant, error: restaurantError }, { data: overrides }, { data: theme }] = await Promise.all([
-    supabase.from("restaurants").select("*").eq("id", profile.restaurant_id).maybeSingle(),
-    supabase.from("restaurant_features").select("*").eq("restaurant_id", profile.restaurant_id),
-    supabase.from("restaurant_theme").select("logo_url").eq("restaurant_id", profile.restaurant_id).maybeSingle(),
-  ]);
+    const row = data as SessionContextRow;
+    const restaurant = row.restaurant;
+    if (!restaurant) return null;
 
-  if (restaurantError) {
-    console.error("Restaurant fetch error:", restaurantError);
-  }
-  if (!restaurant) return null;
-
-  const restaurantRow = restaurant as Restaurant;
-  const features = resolveFeatures(restaurantRow.plan, (overrides ?? []) as RestaurantFeature[]);
-
-  return { 
-    profile: profile as Profile, 
-    restaurant: restaurantRow, 
-    features,
-    themeLogoUrl: theme?.logo_url ?? null,
-    userEmail: user.email ?? null
-  };
-}
+    return {
+      profile: row.profile,
+      restaurant,
+      features: resolveFeatures(restaurant.plan, row.features ?? []),
+      themeLogoUrl: row.theme_logo_url ?? null,
+      userEmail: (claimsData.claims.email as string | undefined) ?? null,
+    };
+  },
+);
 
 /** Suspended or expired-trial restaurants lose dashboard access entirely. */
 export function isSuspended(restaurant: Restaurant): boolean {
